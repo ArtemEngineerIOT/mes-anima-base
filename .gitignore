@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ENV
+.env.production
+.env.development
+.env.development.local
+
+# Cursor / local docs / mockups
+.cursor/
+.requirements/
+mockup/
