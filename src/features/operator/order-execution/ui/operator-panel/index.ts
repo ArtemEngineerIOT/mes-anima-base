@@ -1,0 +1,12 @@
+export { OrderExecutionDefectRegistrationSection } from "./defect-registration-section";
+export { OrderExecutionDefectRemovalSection } from "./defect-removal-section";
+export { OrderExecutionDowntimesSection } from "./downtimes-section";
+export { OrderExecutionEventRegistrationSection } from "./event-registration-section";
+export { OrderExecutionJbSection } from "./jb-section";
+export { OrderExecutionMachineDataSection } from "./machine-data-section";
+export { OrderExecutionMaterialsSection } from "./materials-section";
+export { OrderExecutionOrderDetailsSection } from "./order-details-section";
+export { OrderExecutionProcessControlSection } from "./process-control-section";
+export { OrderExecutionProcessJournalSection } from "./process-journal-section";
+export { OrderExecutionReleaseSection } from "./release-section";
+export { OrderExecutionStageCompletionSection } from "./stage-completion-section";

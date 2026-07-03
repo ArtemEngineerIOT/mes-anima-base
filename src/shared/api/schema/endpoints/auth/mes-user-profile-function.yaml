@@ -1,0 +1,24 @@
+postMesUserProfile:
+    summary: MES-профиль после аутентификации (RPC mesUserProfile)
+    description: "Вызывается с Bearer после POST /auth. Тело — [{ login — значение sub из JWT }]. Ответ — массив с обязательным outcome."
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MesUserProfileRequest"
+    responses:
+        "200":
+            description: Профиль MES (outcome SUCCESS / FAILED)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MesUserProfileResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+        "403":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

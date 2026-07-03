@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+# ESLint boundaries: правила
+
+- Архитектурные границы проверяются через `eslint-plugin-boundaries`.
+- Patterns элементов лежат в `eslint.boundaries.js` — держать их синхронизированными с реальной структурой `src/**`.
+
+## Ожидаемое поведение
+
+- `shared` не импортирует `features`/`app`
+- `features` не импортирует `app`
+- Фичи импортируем через:
+  - `**/index.(ts|tsx)` (public API), или
+  - `**/*.page.tsx` (entrypoint страницы)
+
+## Когда меняется структура папок
+
+- Если добавляются новые верхнеуровневые слои (например `pages`, `widgets`, `entities`), обновить:
+  - `boundaries/elements`
+  - `boundaries/element-types` rules
+  - `boundaries/entry-point` allow-list

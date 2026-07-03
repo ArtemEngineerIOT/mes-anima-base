@@ -1,0 +1,74 @@
+createTask:
+    post:
+        summary: Создание новой задачи
+        description: Создание новой задачи для обслуживания оборудования
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        required:
+                            - title
+                            - equipmentId
+                            - startDate
+                            - assignedTo
+                        properties:
+                            title:
+                                type: string
+                            equipmentId:
+                                type: string
+                            startDate:
+                                type: string
+                                format: date-time
+                            endDate:
+                                type: string
+                                format: date-time
+                            assignedTo:
+                                type: string
+                            type:
+                                type: string
+                                enum: [maintenance, inspection, repair, calibration, replacement]
+                            priority:
+                                type: string
+                                enum: [low, medium, high, critical]
+                            description:
+                                type: string
+        responses:
+            "201":
+                description: Задача успешно создана
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                success:
+                                    type: boolean
+                                data:
+                                    type: object
+                                    properties:
+                                        id:
+                                            type: string
+                                        title:
+                                            type: string
+                                        equipmentId:
+                                            type: string
+                                        startDate:
+                                            type: string
+                                            format: date-time
+                                        endDate:
+                                            type: string
+                                            format: date-time
+                                        type:
+                                            type: string
+                                        assignedTo:
+                                            type: string
+                                        status:
+                                            type: string
+                                timestamp:
+                                    type: string
+                                    format: date-time
+                                requestId:
+                                    type: string
+            "401":
+                $ref: "../../shared/responses.yaml#/components/responses/Unauthorized"

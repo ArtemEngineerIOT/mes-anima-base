@@ -1,0 +1,1679 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Система мониторинга - Заявки на обслуживание</title>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+            rel="stylesheet"
+        />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <style>
+            .material-symbols-outlined {
+                font-variation-settings:
+                    "FILL" 0,
+                    "wght" 400,
+                    "GRAD" 0,
+                    "opsz" 24;
+            }
+
+            /* Сохраняем оригинальные стили для контента */
+            :root {
+                --primary-color: #1976d2;
+                --primary-light: #42a5f5;
+                --primary-dark: #1565c0;
+                --secondary-color: #dc004e;
+                --background: #f8f9fa;
+                --surface: #ffffff;
+                --on-primary: #ffffff;
+                --on-secondary: #ffffff;
+                --on-background: #1a1a1a;
+                --on-surface: #1a1a1a;
+                --error: #b00020;
+                --text-primary: rgba(0, 0, 0, 0.87);
+                --text-secondary: rgba(0, 0, 0, 0.6);
+                --text-disabled: rgba(0, 0, 0, 0.38);
+                --divider: rgba(0, 0, 0, 0.12);
+                --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+                --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.12);
+                --radius: 12px;
+                --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .dark-theme {
+                --primary-color: #90caf9;
+                --primary-light: #e3f2fd;
+                --primary-dark: #42a5f5;
+                --secondary-color: #f48fb1;
+                --background: #121212;
+                --surface: #1e1e1e;
+                --on-primary: #000000;
+                --on-secondary: #000000;
+                --on-background: #ffffff;
+                --on-surface: #ffffff;
+                --error: #cf6679;
+                --text-primary: rgba(255, 255, 255, 0.87);
+                --text-secondary: rgba(255, 255, 255, 0.6);
+                --text-disabled: rgba(255, 255, 255, 0.38);
+                --divider: rgba(255, 255, 255, 0.12);
+                --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+
+            /* Стили для контента */
+            .card {
+                background-color: var(--surface);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                padding: 20px;
+                margin-bottom: 20px;
+                transition: box-shadow 0.3s;
+                height: fit-content;
+            }
+
+            .card:hover {
+                box-shadow: var(--shadow-hover);
+            }
+
+            .card-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 16px;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .card-title-icon {
+                color: var(--primary-color);
+            }
+
+            .button {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 20px;
+                border: none;
+                border-radius: var(--radius);
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-decoration: none;
+            }
+
+            .button.primary {
+                background-color: var(--primary-color);
+                color: var(--on-primary);
+            }
+
+            .button.primary:hover:not(:disabled) {
+                background-color: var(--primary-dark);
+                transform: translateY(-2px);
+            }
+
+            .button.secondary {
+                background-color: transparent;
+                color: var(--primary-color);
+                border: 1px solid var(--primary-color);
+            }
+
+            .button.secondary:hover:not(:disabled) {
+                background-color: rgba(25, 118, 210, 0.08);
+            }
+
+            .button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none !important;
+            }
+
+            /* Tables */
+            .table-container {
+                overflow-x: auto;
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: var(--surface);
+            }
+
+            th,
+            td {
+                padding: 12px 16px;
+                text-align: left;
+                border-bottom: 1px solid var(--divider);
+            }
+
+            th {
+                font-weight: 600;
+                color: var(--text-primary);
+                background-color: rgba(0, 0, 0, 0.02);
+            }
+
+            .dark-theme th {
+                background-color: rgba(255, 255, 255, 0.02);
+            }
+
+            td {
+                color: var(--text-secondary);
+            }
+
+            tr:hover {
+                background-color: rgba(0, 0, 0, 0.02);
+            }
+
+            .dark-theme tr:hover {
+                background-color: rgba(255, 255, 255, 0.02);
+            }
+
+            /* Status badges */
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 4px 8px;
+                border-radius: 16px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                gap: 4px;
+            }
+
+            .badge.создана {
+                background-color: rgba(255, 193, 7, 0.1);
+                color: #ff9800;
+            }
+
+            .badge.в-работе {
+                background-color: rgba(33, 150, 243, 0.1);
+                color: #2196f3;
+            }
+
+            .badge.закрыта {
+                background-color: rgba(76, 175, 80, 0.1);
+                color: #4caf50;
+            }
+
+            .badge.норма {
+                background-color: rgba(76, 175, 80, 0.1);
+                color: #4caf50;
+            }
+
+            .badge.внимание {
+                background-color: rgba(255, 152, 0, 0.1);
+                color: #ff9800;
+            }
+
+            .badge.критично {
+                background-color: rgba(244, 67, 54, 0.1);
+                color: #f44336;
+            }
+
+            /* Priority indicators */
+            .priority-high {
+                color: #f44336;
+                font-weight: 600;
+            }
+
+            .priority-medium {
+                color: #ff9800;
+                font-weight: 600;
+            }
+
+            .priority-low {
+                color: #4caf50;
+                font-weight: 600;
+            }
+
+            /* Tabs */
+            .tabs {
+                display: flex;
+                border-bottom: 1px solid var(--divider);
+                margin-bottom: 20px;
+            }
+
+            .tab {
+                padding: 12px 24px;
+                cursor: pointer;
+                font-weight: 500;
+                color: var(--text-secondary);
+                border-bottom: 2px solid transparent;
+                transition: all 0.2s;
+            }
+
+            .tab.active {
+                color: var(--primary-color);
+                border-bottom: 2px solid var(--primary-color);
+            }
+
+            .tab-content {
+                display: none;
+            }
+
+            .tab-content.active {
+                display: block;
+            }
+
+            /* Action buttons in tables */
+            .action-buttons {
+                display: flex;
+                gap: 8px;
+            }
+
+            .action-btn {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .action-btn.view {
+                background-color: rgba(33, 150, 243, 0.1);
+                color: #2196f3;
+            }
+
+            .action-btn.take {
+                background-color: rgba(76, 175, 80, 0.1);
+                color: #4caf50;
+            }
+
+            .action-btn.update {
+                background-color: rgba(255, 152, 0, 0.1);
+                color: #ff9800;
+            }
+
+            .action-btn.close {
+                background-color: rgba(244, 67, 54, 0.1);
+                color: #f44336;
+            }
+
+            /* Forms */
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+
+            .form-control {
+                width: 100%;
+                padding: 12px 16px;
+                border: 1px solid var(--divider);
+                border-radius: var(--radius);
+                background-color: var(--surface);
+                color: var(--text-primary);
+                font-size: 1rem;
+            }
+
+            .form-control:focus {
+                outline: none;
+                border-color: var(--primary-color);
+            }
+
+            textarea.form-control {
+                min-height: 120px;
+                resize: vertical;
+            }
+
+            /* Modal styles */
+            .modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal.active {
+                display: flex;
+            }
+
+            .modal-content {
+                background-color: var(--surface);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow-hover);
+                width: 90%;
+                max-width: 600px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .modal-header {
+                padding: 20px;
+                border-bottom: 1px solid var(--divider);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .modal-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            .modal-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: var(--text-secondary);
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .modal-footer {
+                padding: 20px;
+                border-top: 1px solid var(--divider);
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+        </style>
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                DEFAULT: "#135bec",
+                                light: "#90CAF9",
+                                dark: "#135bec",
+                            },
+                            "background-light": "#F5F5F5",
+                            "background-dark": "#101622",
+                            "surface-light": "#FFFFFF",
+                            "surface-dark": "#1E1E1E",
+                            "text-light-primary": "#212121",
+                            "text-dark-primary": "#E0E0E0",
+                            "text-light-secondary": "#616161",
+                            "text-dark-secondary": "#BDBDBD",
+                            "border-light": "#E0E0E0",
+                            "border-dark": "#324467",
+                        },
+                        fontFamily: {
+                            display: ["Inter", "sans-serif"],
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.5rem",
+                            lg: "0.75rem",
+                            xl: "1rem",
+                            full: "9999px",
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body
+        class="bg-background-light dark:bg-background-dark font-display text-text-light-primary dark:text-text-dark-primary light-theme"
+    >
+        <div class="flex min-h-screen flex-col lg:flex-row">
+            <!-- Navigation -->
+            <aside
+                class="w-64 flex-col bg-surface-light dark:bg-surface-dark p-4 border-r border-border-light dark:border-border-dark hidden lg:flex"
+            >
+                <div class="flex items-center gap-3 p-2 mb-6">
+                    <div class="text-primary-dark dark:text-primary-light">
+                        <span class="material-symbols-outlined text-4xl">monitoring</span>
+                    </div>
+                    <h1 class="text-xl font-bold dark:text-text-dark-primary">Мониторинг систем</h1>
+                </div>
+                <div class="flex flex-1 flex-col justify-between">
+                    <nav class="flex flex-col gap-2">
+                        <a
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                            href="index.html"
+                        >
+                            <span class="material-symbols-outlined">dashboard</span>
+                            <p class="text-sm font-medium">Сводный экран</p>
+                        </a>
+                        <div>
+                            <button
+                                class="w-full flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary nav-toggle"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined">engineering</span>
+                                    <p class="text-sm text-left">Инженерные системы</p>
+                                </div>
+                                <span class="material-symbols-outlined text-lg transition-transform transform ml-auto"
+                                    >expand_more</span
+                                >
+                            </button>
+                            <div
+                                class="mt-2 ml-4 pl-4 border-l border-border-light dark:border-border-dark/50 flex flex-col gap-1 nav-submenu"
+                                style="display: none"
+                            >
+                                <a
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                                    href="hvac-system.html"
+                                >
+                                    <span class="material-symbols-outlined text-xl">ac_unit</span>
+                                    <p class="text-xs">Система ЖКХ</p>
+                                </a>
+                                <a
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                                    href="access-system.html"
+                                >
+                                    <span class="material-symbols-outlined text-xl">lock</span>
+                                    <p class="text-xs">Система СКУД</p>
+                                </a>
+                                <a
+                                    class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                                    href="cctv-system.html"
+                                >
+                                    <span class="material-symbols-outlined text-xl">videocam</span>
+                                    <p class="text-xs">Видеонаблюдение</p>
+                                </a>
+                            </div>
+                        </div>
+                        <a
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 bg-primary-dark/10 dark:bg-primary-light/10 text-primary-dark dark:text-primary-light"
+                            href="requests.html"
+                        >
+                            <span class="material-symbols-outlined">assignment</span>
+                            <p class="text-sm font-medium">Заявки на обслуживание</p>
+                        </a>
+                        <a
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                            href="admin.html"
+                        >
+                            <span class="material-symbols-outlined">admin_panel_settings</span>
+                            <p class="text-sm">Администрирование</p>
+                        </a>
+                        <a
+                            class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 dark:text-text-dark-secondary text-text-light-secondary"
+                            href="reports.html"
+                        >
+                            <span class="material-symbols-outlined">assessment</span>
+                            <p class="text-sm">Отчеты</p>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col">
+                <!-- Header -->
+                <header
+                    class="flex h-16 items-center justify-between gap-4 border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 md:px-6 sticky top-0 z-10 flex-shrink-0"
+                >
+                    <div class="flex items-center gap-2">
+                        <button class="lg:hidden p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5">
+                            <span class="material-symbols-outlined">menu</span>
+                        </button>
+                        <h2 class="text-lg font-semibold">Заявки на обслуживание</h2>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button
+                            class="flex cursor-pointer items-center justify-center rounded-full size-10 hover:bg-black/5 dark:hover:bg-white/5"
+                            id="themeToggle"
+                        >
+                            <span class="material-symbols-outlined">dark_mode</span>
+                        </button>
+                        <button
+                            class="flex cursor-pointer items-center justify-center rounded-full size-10 hover:bg-black/5 dark:hover:bg-white/5"
+                        >
+                            <span class="material-symbols-outlined">notifications</span>
+                        </button>
+                        <div
+                            class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+                        >
+                            <div
+                                class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-primary-dark/20 dark:bg-primary-light/20 flex items-center justify-center text-primary-dark dark:text-primary-light font-medium"
+                            >
+                                АО
+                            </div>
+                            <span class="text-sm">Администратор</span>
+                        </div>
+                        <button
+                            class="flex cursor-pointer items-center justify-center rounded-full size-10 hover:bg-black/5 dark:hover:bg-white/5"
+                        >
+                            <span class="material-symbols-outlined">settings</span>
+                        </button>
+                        <button
+                            class="flex cursor-pointer items-center justify-center rounded-full size-10 hover:bg-black/5 dark:hover:bg-white/5"
+                        >
+                            <span class="material-symbols-outlined">logout</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Основной контент -->
+                <main
+                    class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
+                    style="background-color: var(--background); color: var(--on-background)"
+                >
+                    <div class="max-w-full mx-auto">
+                        <!-- Requests Section -->
+                        <section id="requests">
+                            <div class="card">
+                                <h2 class="card-title">
+                                    <span class="material-icons card-title-icon">assignment</span>
+                                    Управление заявками на обслуживание
+                                </h2>
+
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        margin-bottom: 20px;
+                                    "
+                                >
+                                    <button class="button primary" id="createRequestBtn">
+                                        <span class="material-icons">add</span>
+                                        Создать новую заявку
+                                    </button>
+
+                                    <div style="display: flex; gap: 10px">
+                                        <input
+                                            type="text"
+                                            class="form-control"
+                                            placeholder="Поиск по заявкам..."
+                                            style="width: 250px"
+                                        />
+                                        <button class="button secondary">
+                                            <span class="material-icons">search</span>
+                                            Поиск
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tabs for different request statuses -->
+                                <div class="tabs">
+                                    <div class="tab active" data-tab="created-tab">Созданы (8)</div>
+                                    <div class="tab" data-tab="inprogress-tab">В работе (6)</div>
+                                    <div class="tab" data-tab="closed-tab">Закрыты (4)</div>
+                                </div>
+
+                                <!-- Created Requests Tab -->
+                                <div class="tab-content active" id="created-tab">
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Тип заявки</th>
+                                                    <th>Оборудование</th>
+                                                    <th>Описание</th>
+                                                    <th>Статус</th>
+                                                    <th>Дата создания</th>
+                                                    <th>Приоритет</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>#00123</td>
+                                                    <td>Обслуживание</td>
+                                                    <td>Контроллер доступа №5</td>
+                                                    <td>Необходимо провести плановое обслуживание контроллера</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>24.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-medium">Средний</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00123">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00123">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00125</td>
+                                                    <td>Замена</td>
+                                                    <td>Камера наблюдения №12</td>
+                                                    <td>Требуется замена неисправной камеры</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>26.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-high">Высокий</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00125">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00125">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00126</td>
+                                                    <td>Ремонт</td>
+                                                    <td>Тепловой узел №3</td>
+                                                    <td>Протечка в системе отопления</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>27.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-high">Высокий</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00126">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00126">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00130</td>
+                                                    <td>Настройка</td>
+                                                    <td>Сервер видеонаблюдения</td>
+                                                    <td>Настройка расписания записи</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>29.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-low">Низкий</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00130">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00130">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00131</td>
+                                                    <td>Обслуживание</td>
+                                                    <td>Система вентиляции</td>
+                                                    <td>Замена фильтров в системе вентиляции</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>30.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-medium">Средний</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00131">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00131">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00132</td>
+                                                    <td>Ремонт</td>
+                                                    <td>Электрощитовая №2</td>
+                                                    <td>Нестабильное напряжение в сети</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>31.05.2023</td>
+                                                    <td>
+                                                        <span class="priority-high">Высокий</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00132">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00132">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00133</td>
+                                                    <td>Замена</td>
+                                                    <td>Датчик температуры</td>
+                                                    <td>Замена неисправного датчика в коридоре 3 этажа</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>01.06.2023</td>
+                                                    <td>
+                                                        <span class="priority-medium">Средний</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00133">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00133">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00134</td>
+                                                    <td>Настройка</td>
+                                                    <td>СКУД главного входа</td>
+                                                    <td>Добавление новых сотрудников в систему</td>
+                                                    <td>
+                                                        <span class="badge создана">Создана</span>
+                                                    </td>
+                                                    <td>02.06.2023</td>
+                                                    <td>
+                                                        <span class="priority-low">Низкий</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00134">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn take" data-id="00134">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >play_arrow</span
+                                                                >
+                                                                В работу
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- In Progress Requests Tab -->
+                                <div class="tab-content" id="inprogress-tab">
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Тип заявки</th>
+                                                    <th>Оборудование</th>
+                                                    <th>Описание</th>
+                                                    <th>Статус</th>
+                                                    <th>Инженер</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>#00124</td>
+                                                    <td>Ремонт</td>
+                                                    <td>Насосная станция №1</td>
+                                                    <td>Неисправность насоса подачи воды</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Петров И.С.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00124">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00124">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00124">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00127</td>
+                                                    <td>Настройка</td>
+                                                    <td>Сервер архивации</td>
+                                                    <td>Настройка резервного копирования</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Сидоров А.В.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00127">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00127">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00127">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00128</td>
+                                                    <td>Обслуживание</td>
+                                                    <td>Кондиционеры 4 этажа</td>
+                                                    <td>Плановое техническое обслуживание</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Козлов Д.М.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00128">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00128">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00128">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00129</td>
+                                                    <td>Ремонт</td>
+                                                    <td>Система пожарной сигнализации</td>
+                                                    <td>Ложные срабатывания датчиков</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Федоров С.П.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00129">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00129">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00129">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00135</td>
+                                                    <td>Замена</td>
+                                                    <td>Светильники в холле</td>
+                                                    <td>Замена светодиодных ламп</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Николаев В.Г.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00135">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00135">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00135">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00136</td>
+                                                    <td>Настройка</td>
+                                                    <td>Сетевое оборудование</td>
+                                                    <td>Оптимизация настроек маршрутизатора</td>
+                                                    <td>
+                                                        <span class="badge в-работе">В работе</span>
+                                                    </td>
+                                                    <td>Белов А.К.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00136">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                            <button class="action-btn update" data-id="00136">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >update</span
+                                                                >
+                                                                Прогресс
+                                                            </button>
+                                                            <button class="action-btn close" data-id="00136">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >check</span
+                                                                >
+                                                                Закрыть
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Closed Requests Tab -->
+                                <div class="tab-content" id="closed-tab">
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Тип заявки</th>
+                                                    <th>Оборудование</th>
+                                                    <th>Описание</th>
+                                                    <th>Статус</th>
+                                                    <th>Дата закрытия</th>
+                                                    <th>Инженер</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>#00122</td>
+                                                    <td>Замена</td>
+                                                    <td>Камера наблюдения №12</td>
+                                                    <td>Замена неисправной камеры наблюдения</td>
+                                                    <td>
+                                                        <span class="badge закрыта">Закрыта</span>
+                                                    </td>
+                                                    <td>22.05.2023</td>
+                                                    <td>Иванов П.К.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00122">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00120</td>
+                                                    <td>Обслуживание</td>
+                                                    <td>Система отопления</td>
+                                                    <td>Плановый осмотр и настройка</td>
+                                                    <td>
+                                                        <span class="badge закрыта">Закрыта</span>
+                                                    </td>
+                                                    <td>20.05.2023</td>
+                                                    <td>Смирнов А.Л.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00120">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00119</td>
+                                                    <td>Ремонт</td>
+                                                    <td>Лифт №2</td>
+                                                    <td>Устранение неисправности дверей</td>
+                                                    <td>
+                                                        <span class="badge закрыта">Закрыта</span>
+                                                    </td>
+                                                    <td>18.05.2023</td>
+                                                    <td>Васильев М.С.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00119">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>#00118</td>
+                                                    <td>Настройка</td>
+                                                    <td>Система контроля доступа</td>
+                                                    <td>Обновление firmware контроллеров</td>
+                                                    <td>
+                                                        <span class="badge закрыта">Закрыта</span>
+                                                    </td>
+                                                    <td>15.05.2023</td>
+                                                    <td>Попов Д.В.</td>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="action-btn view" data-id="00118">
+                                                                <span class="material-icons" style="font-size: 16px"
+                                                                    >visibility</span
+                                                                >
+                                                                Просмотр
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div
+                class="fixed bottom-0 left-0 right-0 lg:hidden bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark flex justify-around"
+            >
+                <a
+                    class="flex flex-col items-center justify-center p-2 w-1/4 text-text-light-secondary dark:text-text-dark-secondary hover:text-primary-dark dark:hover:text-primary-light"
+                    href="index.html"
+                >
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span class="text-xs">Сводка</span>
+                </a>
+                <a
+                    class="flex flex-col items-center justify-center p-2 w-1/4 text-text-light-secondary dark:text-text-dark-secondary hover:text-primary-dark dark:hover:text-primary-light"
+                    href="hvac-system.html"
+                >
+                    <span class="material-symbols-outlined">handyman</span>
+                    <span class="text-xs">ЖКХ</span>
+                </a>
+                <a
+                    class="flex flex-col items-center justify-center p-2 w-1/4 text-text-light-secondary dark:text-text-dark-secondary hover:text-primary-dark dark:hover:text-primary-light"
+                    href="access-system.html"
+                >
+                    <span class="material-symbols-outlined">sensor_door</span>
+                    <span class="text-xs">СКУД</span>
+                </a>
+                <a
+                    class="flex flex-col items-center justify-center p-2 w-1/4 text-primary-dark dark:text-primary-light"
+                    href="requests.html"
+                >
+                    <span class="material-symbols-outlined">assignment</span>
+                    <span class="text-xs">Заявки</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Модальные окна -->
+
+        <!-- Модальное окно создания заявки -->
+        <div class="modal" id="createRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Создание новой заявки</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createRequestForm">
+                        <div class="form-group">
+                            <label class="form-label" for="requestType">Тип заявки</label>
+                            <select class="form-control" id="requestType" required>
+                                <option value="">Выберите тип</option>
+                                <option value="Обслуживание">Обслуживание</option>
+                                <option value="Ремонт">Ремонт</option>
+                                <option value="Замена">Замена</option>
+                                <option value="Настройка">Настройка</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="equipment">Оборудование</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="equipment"
+                                placeholder="Введите название оборудования"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="priority">Приоритет</label>
+                            <select class="form-control" id="priority" required>
+                                <option value="">Выберите приоритет</option>
+                                <option value="low">Низкий</option>
+                                <option value="medium">Средний</option>
+                                <option value="high">Высокий</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="description">Описание проблемы</label>
+                            <textarea
+                                class="form-control"
+                                id="description"
+                                placeholder="Подробно опишите проблему..."
+                                required
+                            ></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary" id="cancelCreateRequest">Отмена</button>
+                    <button class="button primary" id="submitCreateRequest">Создать заявку</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно просмотра заявки -->
+        <div class="modal" id="viewRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Просмотр заявки #<span id="viewRequestId"></span></h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Тип заявки:</label>
+                        <p id="viewRequestType"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Оборудование:</label>
+                        <p id="viewRequestEquipment"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Описание:</label>
+                        <p id="viewRequestDescription"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Статус:</label>
+                        <p id="viewRequestStatus"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Приоритет:</label>
+                        <p id="viewRequestPriority"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дата создания:</label>
+                        <p id="viewRequestDate"></p>
+                    </div>
+                    <div class="form-group" id="viewRequestEngineerGroup" style="display: none">
+                        <label class="form-label">Инженер:</label>
+                        <p id="viewRequestEngineer"></p>
+                    </div>
+                    <div class="form-group" id="viewRequestCloseDateGroup" style="display: none">
+                        <label class="form-label">Дата закрытия:</label>
+                        <p id="viewRequestCloseDate"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary" id="closeViewRequest">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно взятия в работу -->
+        <div class="modal" id="takeRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Взять заявку в работу</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Вы уверены, что хотите взять заявку
+                        <strong>#<span id="takeRequestId"></span></strong> в работу?
+                    </p>
+                    <div class="form-group" style="margin-top: 20px">
+                        <label class="form-label" for="assignEngineer">Назначить инженера</label>
+                        <select class="form-control" id="assignEngineer">
+                            <option value="Петров И.С.">Петров И.С.</option>
+                            <option value="Сидоров А.В.">Сидоров А.В.</option>
+                            <option value="Козлов Д.М.">Козлов Д.М.</option>
+                            <option value="Федоров С.П.">Федоров С.П.</option>
+                            <option value="Николаев В.Г.">Николаев В.Г.</option>
+                            <option value="Белов А.К.">Белов А.К.</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary" id="cancelTakeRequest">Отмена</button>
+                    <button class="button primary" id="confirmTakeRequest">Взять в работу</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно обновления прогресса -->
+        <div class="modal" id="updateRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Обновление прогресса заявки #<span id="updateRequestId"></span></h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="progressStatus">Статус выполнения</label>
+                        <select class="form-control" id="progressStatus">
+                            <option value="в-работе">В работе</option>
+                            <option value="на-паузе">На паузе</option>
+                            <option value="ожидание-запчастей">Ожидание запчастей</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="progressPercent">Процент выполнения</label>
+                        <input type="range" class="form-control" id="progressPercent" min="0" max="100" value="50" />
+                        <div style="text-align: center; margin-top: 5px">
+                            <span id="progressPercentValue">50%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="progressNotes">Комментарии к прогрессу</label>
+                        <textarea
+                            class="form-control"
+                            id="progressNotes"
+                            placeholder="Опишите текущий прогресс..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary" id="cancelUpdateRequest">Отмена</button>
+                    <button class="button primary" id="confirmUpdateRequest">Сохранить изменения</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно закрытия заявки -->
+        <div class="modal" id="closeRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Закрытие заявки #<span id="closeRequestId"></span></h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Вы уверены, что хотите закрыть заявку
+                        <strong>#<span id="closeRequestIdText"></span></strong>?
+                    </p>
+                    <div class="form-group" style="margin-top: 20px">
+                        <label class="form-label" for="closeSolution">Решение проблемы</label>
+                        <textarea
+                            class="form-control"
+                            id="closeSolution"
+                            placeholder="Опишите, как была решена проблема..."
+                        ></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="closeNotes">Дополнительные заметки</label>
+                        <textarea
+                            class="form-control"
+                            id="closeNotes"
+                            placeholder="Любые дополнительные заметки..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary" id="cancelCloseRequest">Отмена</button>
+                    <button class="button primary" id="confirmCloseRequest">Закрыть заявку</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Theme toggle functionality
+            const themeToggle = document.getElementById("themeToggle");
+            const body = document.body;
+
+            themeToggle.addEventListener("click", () => {
+                document.documentElement.classList.toggle("dark");
+                body.classList.toggle("dark-theme");
+                body.classList.toggle("light-theme");
+
+                const icon = themeToggle.querySelector(".material-symbols-outlined");
+                if (document.documentElement.classList.contains("dark")) {
+                    icon.textContent = "light_mode";
+                } else {
+                    icon.textContent = "dark_mode";
+                }
+            });
+
+            // Navigation submenu functionality
+            const navToggle = document.querySelector(".nav-toggle");
+            const navSubmenu = document.querySelector(".nav-submenu");
+
+            if (navToggle && navSubmenu) {
+                navToggle.addEventListener("click", () => {
+                    const isOpen = navSubmenu.style.display === "flex";
+                    const icon = navToggle.querySelector(".material-symbols-outlined:last-child");
+
+                    if (isOpen) {
+                        navSubmenu.style.display = "none";
+                        icon.style.transform = "rotate(0deg)";
+                    } else {
+                        navSubmenu.style.display = "flex";
+                        icon.style.transform = "rotate(180deg)";
+                    }
+                });
+            }
+
+            // Tabs functionality
+            const tabs = document.querySelectorAll(".tab");
+            const tabContents = document.querySelectorAll(".tab-content");
+
+            tabs.forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    const tabId = tab.getAttribute("data-tab");
+
+                    // Update active tab
+                    tabs.forEach((t) => t.classList.remove("active"));
+                    tab.classList.add("active");
+
+                    // Show active tab content
+                    tabContents.forEach((content) => {
+                        content.classList.remove("active");
+                        if (content.id === tabId) {
+                            content.classList.add("active");
+                        }
+                    });
+                });
+            });
+
+            // Modal functionality
+            const modals = document.querySelectorAll(".modal");
+            const modalCloseButtons = document.querySelectorAll(".modal-close");
+
+            // Close modal function
+            function closeModal(modal) {
+                modal.classList.remove("active");
+            }
+
+            // Open modal function
+            function openModal(modal) {
+                modal.classList.add("active");
+            }
+
+            // Close modals when clicking on close button or outside
+            modalCloseButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const modal = button.closest(".modal");
+                    closeModal(modal);
+                });
+            });
+
+            modals.forEach((modal) => {
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal);
+                    }
+                });
+            });
+
+            // Create request modal
+            document.getElementById("createRequestBtn").addEventListener("click", () => {
+                openModal(document.getElementById("createRequestModal"));
+            });
+
+            document.getElementById("cancelCreateRequest").addEventListener("click", () => {
+                closeModal(document.getElementById("createRequestModal"));
+            });
+
+            document.getElementById("submitCreateRequest").addEventListener("click", () => {
+                const form = document.getElementById("createRequestForm");
+                if (form.checkValidity()) {
+                    alert("Заявка успешно создана!");
+                    closeModal(document.getElementById("createRequestModal"));
+                    form.reset();
+                } else {
+                    alert("Пожалуйста, заполните все обязательные поля");
+                }
+            });
+
+            // View request modal
+            document.querySelectorAll(".action-btn.view").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const requestId = btn.getAttribute("data-id");
+                    document.getElementById("viewRequestId").textContent = requestId;
+
+                    // In a real application, you would fetch this data from a server
+                    // For demo purposes, we'll use mock data
+                    const mockData = {
+                        type: "Ремонт",
+                        equipment: "Насосная станция №1",
+                        description: "Неисправность насоса подачи воды. Насос не включается при подаче сигнала.",
+                        status: "В работе",
+                        priority: "Высокий",
+                        date: "25.05.2023",
+                        engineer: "Петров И.С.",
+                        closeDate: "",
+                    };
+
+                    document.getElementById("viewRequestType").textContent = mockData.type;
+                    document.getElementById("viewRequestEquipment").textContent = mockData.equipment;
+                    document.getElementById("viewRequestDescription").textContent = mockData.description;
+                    document.getElementById("viewRequestStatus").textContent = mockData.status;
+                    document.getElementById("viewRequestPriority").textContent = mockData.priority;
+                    document.getElementById("viewRequestDate").textContent = mockData.date;
+
+                    if (mockData.engineer) {
+                        document.getElementById("viewRequestEngineer").textContent = mockData.engineer;
+                        document.getElementById("viewRequestEngineerGroup").style.display = "block";
+                    } else {
+                        document.getElementById("viewRequestEngineerGroup").style.display = "none";
+                    }
+
+                    if (mockData.closeDate) {
+                        document.getElementById("viewRequestCloseDate").textContent = mockData.closeDate;
+                        document.getElementById("viewRequestCloseDateGroup").style.display = "block";
+                    } else {
+                        document.getElementById("viewRequestCloseDateGroup").style.display = "none";
+                    }
+
+                    openModal(document.getElementById("viewRequestModal"));
+                });
+            });
+
+            document.getElementById("closeViewRequest").addEventListener("click", () => {
+                closeModal(document.getElementById("viewRequestModal"));
+            });
+
+            // Take request modal
+            document.querySelectorAll(".action-btn.take").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const requestId = btn.getAttribute("data-id");
+                    document.getElementById("takeRequestId").textContent = requestId;
+                    openModal(document.getElementById("takeRequestModal"));
+                });
+            });
+
+            document.getElementById("cancelTakeRequest").addEventListener("click", () => {
+                closeModal(document.getElementById("takeRequestModal"));
+            });
+
+            document.getElementById("confirmTakeRequest").addEventListener("click", () => {
+                const requestId = document.getElementById("takeRequestId").textContent;
+                const engineer = document.getElementById("assignEngineer").value;
+                alert(`Заявка #${requestId} взята в работу инженером ${engineer}`);
+                closeModal(document.getElementById("takeRequestModal"));
+
+                // In a real application, you would update the UI here
+            });
+
+            // Update request modal
+            document.querySelectorAll(".action-btn.update").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const requestId = btn.getAttribute("data-id");
+                    document.getElementById("updateRequestId").textContent = requestId;
+
+                    // Update progress slider value display
+                    const progressSlider = document.getElementById("progressPercent");
+                    const progressValue = document.getElementById("progressPercentValue");
+
+                    progressSlider.addEventListener("input", () => {
+                        progressValue.textContent = `${progressSlider.value}%`;
+                    });
+
+                    openModal(document.getElementById("updateRequestModal"));
+                });
+            });
+
+            document.getElementById("cancelUpdateRequest").addEventListener("click", () => {
+                closeModal(document.getElementById("updateRequestModal"));
+            });
+
+            document.getElementById("confirmUpdateRequest").addEventListener("click", () => {
+                const requestId = document.getElementById("updateRequestId").textContent;
+                const progress = document.getElementById("progressPercent").value;
+                const status = document.getElementById("progressStatus").value;
+                const notes = document.getElementById("progressNotes").value;
+
+                alert(`Прогресс заявки #${requestId} обновлен: ${progress}% выполнено`);
+                closeModal(document.getElementById("updateRequestModal"));
+
+                // In a real application, you would update the UI here
+            });
+
+            // Close request modal
+            document.querySelectorAll(".action-btn.close").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const requestId = btn.getAttribute("data-id");
+                    document.getElementById("closeRequestId").textContent = requestId;
+                    document.getElementById("closeRequestIdText").textContent = requestId;
+                    openModal(document.getElementById("closeRequestModal"));
+                });
+            });
+
+            document.getElementById("cancelCloseRequest").addEventListener("click", () => {
+                closeModal(document.getElementById("closeRequestModal"));
+            });
+
+            document.getElementById("confirmCloseRequest").addEventListener("click", () => {
+                const requestId = document.getElementById("closeRequestId").textContent;
+                const solution = document.getElementById("closeSolution").value;
+                const notes = document.getElementById("closeNotes").value;
+
+                alert(`Заявка #${requestId} закрыта`);
+                closeModal(document.getElementById("closeRequestModal"));
+
+                // In a real application, you would update the UI here
+            });
+        </script>
+    </body>
+</html>

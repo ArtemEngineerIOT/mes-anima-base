@@ -1,0 +1,2201 @@
+components:
+    schemas:
+        # Схемы для summary
+        Summary:
+            type: object
+            properties:
+                systems:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/System"
+                kpi:
+                    $ref: "#/components/schemas/KPI"
+                equipment:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Equipment"
+
+        System:
+            type: object
+            properties:
+                id:
+                    type: string
+                systemName:
+                    type: string
+                availability:
+                    type: string
+                activeRequests:
+                    type: integer
+                averageResponseTime:
+                    type: string
+                onTimeCompletion:
+                    type: string
+                icon:
+                    type: string
+                status:
+                    type: string
+                activeAlerts:
+                    type: integer
+                equipmentCount:
+                    type: integer
+                onlineEquipment:
+                    type: integer
+                lastUpdate:
+                    type: string
+                    format: date-time
+
+        KPI:
+            type: object
+            properties:
+                totalActive:
+                    type: integer
+                averageResponseTime:
+                    type: string
+                onTimeCompletion:
+                    type: string
+                criticalIncidents:
+                    type: integer
+
+        Equipment:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                systemId:
+                    type: string
+                systemLabel:
+                    type: string
+                status:
+                    type: string
+                statusLabel:
+                    type: string
+                location:
+                    type: string
+                lastMaintenanceDate:
+                    type: string
+                    format: date-time
+
+        # Схемы для аутентификации
+        User:
+            type: object
+            required:
+                - username
+                - password
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+
+        LoginResponse:
+            type: object
+            properties:
+                code:
+                    type: string
+                message:
+                    type: string
+                token:
+                    type: string
+
+        MesUserProfileRequestItem:
+            type: object
+            required:
+                - login
+            properties:
+                login:
+                    type: string
+                    description: Логин пользователя из JWT (`sub`)
+            additionalProperties: true
+
+        MesUserProfileRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MesUserProfileRequestItem"
+
+        MesUserProfileRow:
+            type: object
+            required:
+                - outcome
+            properties:
+                outcome:
+                    type: string
+                    description: "SUCCESS или FAILED"
+                code:
+                    type: string
+                    nullable: true
+                    description: "MES_ACCOUNT_NOT_FOUND, MES_ACCOUNT_INACTIVE, MES_EMPLOYEE_INACTIVE"
+                message:
+                    type: string
+                    nullable: true
+                user_account_id:
+                    type: string
+                    nullable: true
+                employee_id:
+                    type: string
+                    nullable: true
+                fio:
+                    type: string
+                    nullable: true
+                position:
+                    type: string
+                    nullable: true
+                    description: Должность для UI — roles.name (человекочитаемо)
+                position_code:
+                    type: string
+                    nullable: true
+                    description: Код должности — roles.code (например OPERATOR)
+                app_role_codes:
+                    type: string
+                    nullable: true
+                    description: Коды app_roles.code через запятую (SYSTEM, OPERATOR, …) — меню и права UI
+                allowed_resource_codes:
+                    type: string
+                    nullable: true
+                    description: Коды resources.resource_code через запятую (допуски оператора)
+                rights_load_outcome:
+                    type: string
+                    nullable: true
+                    description: SUCCESS / FAILED — итог загрузки прав (при успешном профиле)
+                rights_load_code:
+                    type: string
+                    nullable: true
+                    description: MES_RIGHTS_LOAD_ERROR при сбое прав
+                rights_load_message:
+                    type: string
+                    nullable: true
+                    description: Сообщение при сбое загрузки прав
+            additionalProperties: true
+
+        MesUserProfileResponse:
+            type: array
+            items:
+                $ref: "#/components/schemas/MesUserProfileRow"
+
+        OrderExecutionRequestItem:
+            type: object
+            properties:
+                resourceCode:
+                    type: string
+                    description: Код ресурса (машины) из getProductionPlanMachines
+            required:
+                - resourceCode
+            additionalProperties: true
+
+        OrderExecutionRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionRequestItem"
+
+        OrderExecutionSidebarBadge:
+            type: object
+            properties:
+                unprocessed_events_count:
+                    type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionHeaderRow:
+            type: object
+            properties:
+                product:
+                    type: string
+                    nullable: true
+                project:
+                    type: string
+                    nullable: true
+                client:
+                    type: string
+                    nullable: true
+                order:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionResultItem:
+            type: object
+            description: Элемент `result` в ответе getOrderExecution
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                    description: Пусто/null — на машине нет назначенного этапа
+                resource_id:
+                    type: string
+                    nullable: true
+                sidebar_badges:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionSidebarBadge"
+                header:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionHeaderRow"
+            additionalProperties: true
+
+        OrderExecutionResultRow:
+            type: object
+            description: Обёртка ответа RPC getOrderExecution
+            properties:
+                error_code:
+                    type: string
+                    description: Код результата; `OK` — успех, иначе ошибка
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionResultItem"
+            additionalProperties: true
+
+        OrderExecutionResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionResultRow"
+
+        OrderExecutionMaterialSeriesRequestItem:
+            type: object
+            properties:
+                barcode:
+                    type: string
+                    description: Штрихкод серии материала
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - barcode
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionMaterialSeriesRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialSeriesRequestItem"
+
+        OrderExecutionMaterialSeriesResultItem:
+            type: object
+            description: Элемент `result` в ответе getOrderExecutionMaterialSeries
+            properties:
+                stage_spec_status:
+                    type: string
+                    nullable: true
+                stage_spec_banner_visible:
+                    type: boolean
+                    nullable: true
+                stage_spec_banner_title:
+                    type: string
+                    nullable: true
+                stage_spec_banner_detail:
+                    type: string
+                    nullable: true
+                already_registered_on_stage:
+                    type: boolean
+                    nullable: true
+                material_roll_id:
+                    type: string
+                    nullable: true
+                roll_trace_context_id:
+                    type: string
+                    nullable: true
+                stage_registry_refresh_hint:
+                    type: boolean
+                    nullable: true
+                series_card:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialSeriesCard"
+            additionalProperties: true
+
+        OrderExecutionMaterialSeriesCard:
+            type: object
+            properties:
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                series_ref:
+                    type: string
+                    nullable: true
+                external_series_key:
+                    type: string
+                    nullable: true
+                quantity_uom:
+                    type: string
+                    nullable: true
+                current_length_m:
+                    type: number
+                    nullable: true
+                current_weight_kg:
+                    type: number
+                    nullable: true
+                is_semi_finished:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMaterialSeriesResultRow:
+            type: object
+            description: Обёртка ответа RPC getOrderExecutionMaterialSeries
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialSeriesResultItem"
+            additionalProperties: true
+
+        OrderExecutionMaterialSeriesResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialSeriesResultRow"
+
+        OrderExecutionActiveInputPrefillRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionActiveInputPrefillRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionActiveInputPrefillRequestItem"
+
+        OrderExecutionActiveInputRollItem:
+            type: object
+            description: Строка `active_input_rolls[]` в ответе getActiveInputPrefill (SCR-04)
+            properties:
+                material_roll_id:
+                    type: string
+                    nullable: true
+                roll_trace_context_id:
+                    type: string
+                    nullable: true
+                series_key:
+                    type: string
+                    nullable: true
+                    description: Штрихкод серии — пробелы значимы
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                current_length_m:
+                    type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionActiveInputPrefillResultItem:
+            type: object
+            description: Элемент `result` в ответе getActiveInputPrefill
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                has_active_input_roll:
+                    type: boolean
+                    nullable: true
+                should_prefill_scan:
+                    type: boolean
+                    nullable: true
+                active_input_rolls:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionActiveInputRollItem"
+            additionalProperties: true
+
+        OrderExecutionActiveInputPrefillResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionActiveInputPrefillResultItem"
+
+        OrderExecutionMaterialStageRegistryRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionMaterialStageRegistryRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialStageRegistryRequestItem"
+
+        OrderExecutionMaterialStageRegistryOperationLine:
+            type: object
+            properties:
+                operation_kind:
+                    type: string
+                    nullable: true
+                operation_kind_label:
+                    type: string
+                    nullable: true
+                quantity_primary:
+                    type: number
+                    nullable: true
+                uom_primary:
+                    type: string
+                    nullable: true
+                quantity_secondary:
+                    type: number
+                    nullable: true
+                uom_secondary:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMaterialStageRegistryRollRow:
+            type: object
+            description: Карточка рулона в `result` ответа getOrderExecutionMaterialStageRegistry
+            properties:
+                material_roll_id:
+                    type: string
+                    nullable: true
+                barcode:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                quantity_primary:
+                    type: number
+                    nullable: true
+                uom_primary:
+                    type: string
+                    nullable: true
+                quantity_secondary:
+                    type: number
+                    nullable: true
+                uom_secondary:
+                    type: string
+                    nullable: true
+                roll_status:
+                    type: string
+                    nullable: true
+                roll_status_label:
+                    type: string
+                    nullable: true
+                stage_input_card_status:
+                    type: string
+                    nullable: true
+                operation_lines:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialStageRegistryOperationLine"
+            additionalProperties: true
+
+        OrderExecutionMaterialStageRegistryResultRow:
+            type: object
+            description: Обёртка ответа RPC getOrderExecutionMaterialStageRegistry
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                work_area_id:
+                    type: string
+                    nullable: true
+                as_of:
+                    type: string
+                    nullable: true
+                    description: Время актуальности данных
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialStageRegistryRollRow"
+            additionalProperties: true
+
+        OrderExecutionMaterialStageRegistryResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialStageRegistryResultRow"
+
+        OrderExecutionMaterialReturnLabelRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                materialRollId:
+                    type: string
+                    description: Идентификатор рулона (`material_roll_id` из строки реестра этапа)
+            required:
+                - workAreaId
+                - materialRollId
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnLabelRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelRequestItem"
+
+        OrderExecutionMaterialReturnLabelResultItem:
+            type: object
+            description: Элемент `result` в ответе printOrderExecutionMaterialReturnLabel
+            properties:
+                report_presenter_template_id:
+                    type: string
+                    nullable: true
+                report_make_succeeded:
+                    type: boolean
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                label_payload_json:
+                    type: string
+                    nullable: true
+                physical_print_enabled:
+                    type: boolean
+                    nullable: true
+                current_length_m:
+                    type: string
+                    nullable: true
+                report_parameters_json:
+                    type: string
+                    nullable: true
+                report_make_message:
+                    type: string
+                    nullable: true
+                template_code:
+                    type: string
+                    nullable: true
+                print_preview_text:
+                    type: string
+                    nullable: true
+                job_bag_document_id:
+                    type: string
+                    nullable: true
+                report_preview_file_path:
+                    type: string
+                    nullable: true
+                    description: Путь к PDF для открытия в отдельном окне
+                report_path:
+                    type: string
+                    nullable: true
+                barcode:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnLabelResultRow:
+            type: object
+            description: Обёртка ответа RPC printOrderExecutionMaterialReturnLabel
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultItem"
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnLabelResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        TestGetListCylindersRequest:
+            type: array
+            description: Пустой массив `[]` — отчёт «Список цилиндров» без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        TestGetListCylindersResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        TestGetStageInfoRequest:
+            type: array
+            description: Пустой массив `[]` — отчёт «Информация по этапу» без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        TestGetStageInfoResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        TestMapParametersRequest:
+            type: array
+            description: Пустой массив `[]` — отчёт «Карта технологических параметров печати» без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        TestMapParametersResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        TestPaintsRecipeRequest:
+            type: array
+            description: Пустой массив `[]` — отчёт «Рецептура красок» без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        TestPaintsRecipeResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        TestGetLabelSectionRequest:
+            type: array
+            description: Пустой массив `[]` — отчёт «Этикетка на секцию» без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        TestGetLabelSectionResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        OrderExecutionMaterialWriteoffWeightRequestItem:
+            type: object
+            properties:
+                length:
+                    type: number
+                    description: Метраж, м (ввод оператора)
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - length
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionMaterialWriteoffWeightRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialWriteoffWeightRequestItem"
+
+        OrderExecutionMaterialWriteoffWeightResultItem:
+            type: object
+            description: Элемент `result` в ответе getOrderExecutionMaterialWriteoffWeight
+            properties:
+                weight_kg:
+                    type: number
+                    nullable: true
+                    description: Рассчитанный вес, кг
+            additionalProperties: true
+
+        OrderExecutionMaterialWriteoffWeightResultRow:
+            type: object
+            description: Обёртка ответа RPC getOrderExecutionMaterialWriteoffWeight
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialWriteoffWeightResultItem"
+            additionalProperties: true
+
+        OrderExecutionMaterialWriteoffWeightResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialWriteoffWeightResultRow"
+
+        OrderExecutionMaterialReturnRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                barcode:
+                    type: string
+                    description: Штрихкод серии материала
+                length:
+                    type: number
+                    description: Метраж, м
+                weight:
+                    type: number
+                    description: Вес, кг
+                warehouse:
+                    type: string
+                    description: Склад возврата
+            required:
+                - workAreaId
+                - barcode
+                - length
+                - weight
+                - warehouse
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnRequestItem"
+
+        OrderExecutionMaterialReturnResultItem:
+            type: object
+            description: Элемент `result` в ответе registerOrderExecutionMaterialReturn
+            properties:
+                stage_registry_refresh_hint:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnResultRow:
+            type: object
+            description: Обёртка ответа RPC registerOrderExecutionMaterialReturn
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialReturnResultItem"
+            additionalProperties: true
+
+        OrderExecutionMaterialReturnResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnResultRow"
+
+        OrderExecutionMaterialFullWriteoffRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                barcode:
+                    type: string
+                    description: Штрихкод серии материала
+                warehouse:
+                    type: string
+                    description: Склад
+            required:
+                - workAreaId
+                - barcode
+                - warehouse
+            additionalProperties: true
+
+        OrderExecutionMaterialFullWriteoffRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialFullWriteoffRequestItem"
+
+        OrderExecutionMaterialFullWriteoffResultItem:
+            type: object
+            description: Элемент `result` в ответе registerOrderExecutionMaterialFullWriteoff
+            properties:
+                stage_registry_refresh_hint:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMaterialFullWriteoffResultRow:
+            type: object
+            description: Обёртка ответа RPC registerOrderExecutionMaterialFullWriteoff
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMaterialFullWriteoffResultItem"
+            additionalProperties: true
+
+        OrderExecutionMaterialFullWriteoffResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialFullWriteoffResultRow"
+
+        OrderExecutionReleaseWorkAreaRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionReleaseWorkAreaRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionReleaseWorkAreaRequestItem"
+
+        OrderExecutionReleaseFormInitResultItem:
+            type: object
+            description: Элемент `result` в ответе getReleaseFormInit
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                next_roll_index:
+                    type: integer
+                    nullable: true
+                predicted_external_series_key:
+                    type: string
+                    nullable: true
+                series_base:
+                    type: string
+                    nullable: true
+                release_count_on_work_area:
+                    type: integer
+                    nullable: true
+                default_destination_warehouse_code:
+                    type: string
+                    nullable: true
+                destination_warehouses:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            warehouse_code:
+                                type: string
+                                nullable: true
+                            warehouse_label:
+                                type: string
+                                nullable: true
+                        additionalProperties: true
+            additionalProperties: true
+
+        OrderExecutionReleaseFormingBatchRow:
+            type: object
+            properties:
+                barcode:
+                    type: string
+                    nullable: true
+                external_series_key:
+                    type: string
+                    nullable: true
+                material_roll_id:
+                    type: string
+                    nullable: true
+                material_production_release_id:
+                    type: string
+                    nullable: true
+                roll_trace_context_id:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                quantity_primary:
+                    type: number
+                    nullable: true
+                uom_primary:
+                    type: string
+                    nullable: true
+                quantity_secondary:
+                    type: number
+                    nullable: true
+                uom_secondary:
+                    type: string
+                    nullable: true
+                roll_status:
+                    type: string
+                    nullable: true
+                roll_status_label:
+                    type: string
+                    nullable: true
+                blocked:
+                    type: boolean
+                    nullable: true
+                block_reason_code:
+                    type: string
+                    nullable: true
+                status_label:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionReleaseBatchReleasesResultItem:
+            type: object
+            description: Элемент `result` в ответе getBatchReleases
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                release_count_on_work_area:
+                    type: integer
+                    nullable: true
+                as_of:
+                    type: string
+                    nullable: true
+                batch_rows:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionReleaseFormingBatchRow"
+            additionalProperties: true
+
+        OrderExecutionReleaseInputRollRow:
+            type: object
+            properties:
+                barcode:
+                    type: string
+                    nullable: true
+                external_series_key:
+                    type: string
+                    nullable: true
+                material_roll_id:
+                    type: string
+                    nullable: true
+                roll_trace_context_id:
+                    type: string
+                    nullable: true
+                meter_card_id:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                quantity_primary:
+                    type: number
+                    nullable: true
+                uom_primary:
+                    type: string
+                    nullable: true
+                quantity_secondary:
+                    type: number
+                    nullable: true
+                uom_secondary:
+                    type: string
+                    nullable: true
+                stage_input_card_status:
+                    type: string
+                    nullable: true
+                roll_status:
+                    type: string
+                    nullable: true
+                roll_status_label:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionReleaseInputRollsResultItem:
+            type: object
+            description: Устаревший вложенный `result`; предпочтительно `input_rolls` на корне обёртки
+            properties:
+                input_rolls:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionReleaseInputRollRow"
+            additionalProperties: true
+
+        OrderExecutionReleaseRpcResultRow:
+            type: object
+            description: Обёртка ответа RPC блока «Выпуск»
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+            additionalProperties: true
+
+        OrderExecutionReleaseFormInitResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseFormInitResultItem"
+
+        OrderExecutionReleaseBatchReleasesResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseBatchReleasesResultItem"
+
+        OrderExecutionReleaseInputRollsResponse:
+            type: array
+            minItems: 1
+            items:
+                type: object
+                description: Обёртка ответа listStageInputRollsForWorkArea (домен traceability)
+                properties:
+                    error_code:
+                        type: string
+                        description: Пустая строка или `OK` — успех
+                    error_message:
+                        type: string
+                        nullable: true
+                    work_area_id:
+                        type: string
+                        nullable: true
+                    input_rolls:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/OrderExecutionReleaseInputRollRow"
+                    result:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/OrderExecutionReleaseInputRollsResultItem"
+                additionalProperties: true
+
+        OrderExecutionRegisterReleaseRequestItem:
+            type: object
+            description: Запрос registerRelease (UI-60 SCR-06)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                seriesKey:
+                    type: string
+                    description: Серия из `predicted_external_series_key` ответа getReleaseFormInit
+                length:
+                    type: number
+                    description: Метраж выпуска, м (`output_length_m` на BFF)
+                weight:
+                    type: number
+                    description: Вес выпуска, кг (`output_weight_kg` на BFF)
+                rewind:
+                    type: boolean
+                    description: Требуется перемотка (`requires_rewind` на BFF)
+                warehouseCode:
+                    type: string
+                    description: Код склада назначения из формы (`destination_warehouse_code` на BFF)
+            required:
+                - workAreaId
+                - seriesKey
+                - length
+                - weight
+                - rewind
+                - warehouseCode
+            additionalProperties: true
+
+        OrderExecutionRegisterReleaseRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionRegisterReleaseRequestItem"
+
+        OrderExecutionRegisterReleaseResultItem:
+            type: object
+            description: Элемент `result` в ответе registerRelease
+            properties:
+                release_status:
+                    type: string
+                    nullable: true
+                integration_1s_status:
+                    type: string
+                    nullable: true
+                batch_releases_refresh_hint:
+                    type: boolean
+                    nullable: true
+                external_series_key:
+                    type: string
+                    nullable: true
+                material_roll_id:
+                    type: string
+                    nullable: true
+                traceability_output_recorded:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionRegisterReleaseResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionRegisterReleaseResultItem"
+
+        OrderExecutionPrepareReleaseLabelRequestItem:
+            type: object
+            description: Запрос prepareReleaseLabel (UI-59 SCR-06)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                materialProductionReleaseId:
+                    type: string
+                    description: Идентификатор выпуска из таблицы «Выпуски партии»
+            required:
+                - workAreaId
+                - materialProductionReleaseId
+            additionalProperties: true
+
+        OrderExecutionPrepareReleaseLabelRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionPrepareReleaseLabelRequestItem"
+
+        OrderExecutionPrepareReleaseLabelResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+
+        OrderExecutionMonitoringLineMetersInputItem:
+            type: object
+            description: Строка `input` внутри `line_meters` (UI-00c)
+            properties:
+                input_total:
+                    type: number
+                    nullable: true
+                    description: Вход общий, м
+                input_roll:
+                    type: number
+                    nullable: true
+                    description: Вход ролик (ACTIVE входы), м
+            additionalProperties: true
+
+        OrderExecutionMonitoringLineMetersOutputItem:
+            type: object
+            description: Строка `output` внутри `line_meters` (UI-00c)
+            properties:
+                output_total:
+                    type: number
+                    nullable: true
+                    description: Выход общий, м
+                output_roll:
+                    type: number
+                    nullable: true
+                    description: Выход ролик (последний выход), м
+            additionalProperties: true
+
+        OrderExecutionMonitoringLineMetersItem:
+            type: object
+            description: Строка `line_meters` в ответе getArmExecutionMonitoringSummary (UI-00c)
+            properties:
+                input:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringLineMetersInputItem"
+                output:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringLineMetersOutputItem"
+            additionalProperties: true
+
+        OrderExecutionMonitoringSummaryResultItem:
+            type: object
+            description: Элемент `result` в ответе getArmExecutionMonitoringSummary
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                line_meters:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringLineMetersItem"
+            additionalProperties: true
+
+        OrderExecutionMonitoringSummaryResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionMonitoringSummaryResultItem"
+
+        OrderExecutionMonitoringRollTablesRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                previewLimit:
+                    type: string
+                    description: Лимит превью таблиц рулонов (по умолчанию `3`)
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionMonitoringRollTablesRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionMonitoringRollTablesRequestItem"
+
+        OrderExecutionMonitoringInputRollItem:
+            type: object
+            description: Строка `input_rolls` в ответе getArmExecutionMonitoringRollTables (UI-00d)
+            properties:
+                barcode:
+                    type: string
+                    nullable: true
+                length_m:
+                    type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMonitoringOutputRollItem:
+            type: object
+            description: Строка `output_rolls` в ответе getArmExecutionMonitoringRollTables (UI-00d)
+            properties:
+                barcode:
+                    type: string
+                    nullable: true
+                length_m:
+                    type: number
+                    nullable: true
+                composition:
+                    type: string
+                    nullable: true
+                blocked:
+                    type: boolean
+                    nullable: true
+                block_reason_label:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMonitoringRollTablesResultItem:
+            type: object
+            description: Элемент `result` в ответе getArmExecutionMonitoringRollTables
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                preview_limit:
+                    type: string
+                    nullable: true
+                input_rolls:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringInputRollItem"
+                output_rolls:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringOutputRollItem"
+            additionalProperties: true
+
+        OrderExecutionMonitoringRollTablesResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionMonitoringRollTablesResultItem"
+
+        OrderExecutionMonitoringStageEventRow:
+            type: object
+            description: Строка `event_summary_rows` в ответе getArmExecutionMonitoringStageEvents (UI-00e)
+            properties:
+                row_kind:
+                    type: string
+                    nullable: true
+                    description: DEFECT | DOWNTIME | SETUP
+                row_label:
+                    type: string
+                    nullable: true
+                    description: Подпись категории (Брак, Простои, Настройка)
+                quantity_uom:
+                    type: string
+                    nullable: true
+                    description: Единица измерения (м, ч)
+                quantity:
+                    type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMonitoringStageEventsResultItem:
+            type: object
+            description: Элемент `result` в ответе getArmExecutionMonitoringStageEvents
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                event_summary_rows:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMonitoringStageEventRow"
+            additionalProperties: true
+
+        OrderExecutionMonitoringStageEventsResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionMonitoringStageEventsResultItem"
+
+        MaterialOrderPlanStagesRequestItem:
+            type: object
+            properties:
+                resourceCode:
+                    type: string
+                    description: Код ресурса (машины), напр. PR120
+            required:
+                - resourceCode
+            additionalProperties: true
+
+        MaterialOrderPlanStagesRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderPlanStagesRequestItem"
+
+        MaterialOrderPlanStageResultItem:
+            type: object
+            description: Строка этапа APS в `result` ответа getMaterialOrderPlanStages
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                etap:
+                    type: string
+                    nullable: true
+                order_id:
+                    type: string
+                    nullable: true
+                client_name:
+                    type: string
+                    nullable: true
+                client_order_date:
+                    type: string
+                    nullable: true
+                produkt:
+                    type: string
+                    nullable: true
+                output_item_name:
+                    type: string
+                    nullable: true
+                output_quantity:
+                    type: number
+                    nullable: true
+                output_unit:
+                    type: string
+                    nullable: true
+                planned_start:
+                    type: string
+                    nullable: true
+                planned_finish:
+                    type: string
+                    nullable: true
+                resource_id:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        MaterialOrderPlanStagesResultRow:
+            type: object
+            description: Обёртка ответа RPC getMaterialOrderPlanStages (init workbench)
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                resource_id:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderPlanStageResultItem"
+            additionalProperties: true
+
+        MaterialOrderPlanStagesResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderPlanStagesResultRow"
+
+        MaterialOrderComposeRequestItem:
+            type: object
+            properties:
+                workAreaIds:
+                    type: string
+                    description: Идентификаторы `work_area_id` выбранных этапов через запятую (напр. `194` или `194,207`)
+            required:
+                - workAreaIds
+            additionalProperties: true
+
+        MaterialOrderComposeRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderComposeRequestItem"
+
+        MaterialOrderComposeLineResultItem:
+            type: object
+            description: Строка черновика заказа в `result` ответа composeMaterialOrderLines
+            properties:
+                delivery_kind:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                work_area_id:
+                    type: string
+                    nullable: true
+                requested_quantity:
+                    type: number
+                    nullable: true
+                quantity_uom:
+                    type: string
+                    nullable: true
+                line_no:
+                    type: integer
+                    nullable: true
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                semi_finished_pick_required:
+                    type: boolean
+                    nullable: true
+                material_roll_ids:
+                    type: array
+                    items:
+                        type: string
+                series_ref:
+                    type: string
+                    nullable: true
+                lot_refs:
+                    type: array
+                    items:
+                        type: string
+                line_id:
+                    type: string
+                    nullable: true
+                    description: Устаревший идентификатор строки; предпочтительно `line_no`
+                unit:
+                    type: string
+                    nullable: true
+                uom:
+                    type: string
+                    nullable: true
+                is_semi_finished:
+                    type: boolean
+                    nullable: true
+                is_film:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        MaterialOrderComposeResultRow:
+            type: object
+            description: Обёртка ответа RPC composeMaterialOrderLines
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                compose_session_id:
+                    type: string
+                    nullable: true
+                pick_toggle_enabled:
+                    type: boolean
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderComposeLineResultItem"
+            additionalProperties: true
+
+        MaterialOrderComposeResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderComposeResultRow"
+
+        MaterialOrderPickCandidatesRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор `work_area_id` этапа для подбора лотов
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        MaterialOrderPickCandidatesRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderPickCandidatesRequestItem"
+
+        MaterialOrderPickCandidateResultItem:
+            type: object
+            description: Кандидат лота в `result` ответа listMaterialOrderPickCandidates
+            properties:
+                lot_ref:
+                    type: string
+                    nullable: true
+                nomenclature_code:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                available_quantity:
+                    type: number
+                    nullable: true
+                    description: Доступное количество лота
+                quantity:
+                    type: number
+                    nullable: true
+                    description: Устаревший алиас; предпочтительно `available_quantity`
+                quantity_uom:
+                    type: string
+                    nullable: true
+                expires_at:
+                    type: string
+                    nullable: true
+                blocked:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        MaterialOrderPickCandidatesResultRow:
+            type: object
+            description: Обёртка ответа RPC listMaterialOrderPickCandidates
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderPickCandidateResultItem"
+            additionalProperties: true
+
+        MaterialOrderPickCandidatesResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderPickCandidatesResultRow"
+
+        MaterialOrderSubmitLineItem:
+            $ref: "#/components/schemas/MaterialOrderComposeLineResultItem"
+
+        MaterialOrderSubmitRequestItem:
+            type: object
+            properties:
+                workAreaIds:
+                    type: string
+                    description: Идентификаторы этапов через запятую (как при compose)
+                lines:
+                    type: array
+                    description: Строки заказа в том же виде, что в `result` ответа composeMaterialOrderLines
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderComposeLineResultItem"
+                timestamp:
+                    type: string
+                    description: «Ко времени» (`dd.MM.yyyy HH:mm:ss` или пустая строка)
+                comment:
+                    type: string
+                    description: Комментарий для склада
+                isMaterialChange:
+                    type: boolean
+                    description: Чекбокс «Смена материалов»
+            required:
+                - workAreaIds
+                - lines
+                - timestamp
+                - comment
+                - isMaterialChange
+            additionalProperties: true
+
+        MaterialOrderSubmitRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderSubmitRequestItem"
+
+        MaterialOrderSubmitOrderResultItem:
+            type: object
+            description: Элемент `order_result` в ответе submitMaterialOrderRequest
+            properties:
+                request_status:
+                    type: string
+                    nullable: true
+                error_message:
+                    type: string
+                    nullable: true
+                line_count:
+                    type: integer
+                    nullable: true
+                external_1s_document_ref:
+                    type: string
+                    nullable: true
+                error_code:
+                    type: string
+                    nullable: true
+                operator_message:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        MaterialOrderSubmitResultItem:
+            type: object
+            description: Элемент `result` в обёртке ответа submitMaterialOrderRequest
+            properties:
+                material_delivery_request_id:
+                    type: string
+                    nullable: true
+                submit_banner_visible:
+                    type: boolean
+                    nullable: true
+                submit_banner_title:
+                    type: string
+                    nullable: true
+                submit_banner_detail:
+                    type: string
+                    nullable: true
+                last_submit_at:
+                    type: string
+                    nullable: true
+                order_result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderSubmitOrderResultItem"
+                order_results:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderSubmitOrderResultItem"
+            additionalProperties: true
+
+        MaterialOrderSubmitResultRow:
+            type: object
+            description: Обёртка ответа RPC submitMaterialOrderRequest
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MaterialOrderSubmitResultItem"
+            additionalProperties: true
+
+        MaterialOrderSubmitResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MaterialOrderSubmitResultRow"
+
+        MachineMaterialLocationRequestItem:
+            type: object
+            description: Запрос getMachineMaterialLocation (правая колонка SCR-03, UI-23)
+            properties:
+                resourceIds:
+                    type: string
+                    description: Коды выбранных машин через запятую (`resource_ids` на BFF)
+                includeRawMaterial:
+                    type: boolean
+                    description: Чекбокс «Сырьё» (`include_raw_material`)
+                includeSemiFinished:
+                    type: boolean
+                    description: Чекбокс «Полуфабрикат» (`include_semi_finished`)
+                includePackaging:
+                    type: boolean
+                    description: Чекбокс «Упаковка» (`include_packaging`)
+                armProfile:
+                    type: string
+                    description: Профиль ARM; пустая строка — подстановка на BFF
+            required:
+                - resourceIds
+                - includeRawMaterial
+                - includeSemiFinished
+                - includePackaging
+            additionalProperties: true
+
+        MachineMaterialLocationRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MachineMaterialLocationRequestItem"
+
+        MachineMaterialLocationResultItem:
+            type: object
+            description: Строка локации в `result` ответа getMachineMaterialLocation
+            properties:
+                resource_id:
+                    type: string
+                nomenclature_name:
+                    type: string
+                nomenclature_kind_label:
+                    type: string
+                series_ref:
+                    type: string
+                quantity:
+                    type: number
+                quantity_uom:
+                    type: string
+                status_label:
+                    type: string
+                fr_code:
+                    type: string
+                blocked:
+                    type: boolean
+                block_reason_code:
+                    type: string
+                expiry_date:
+                    type: string
+                row_selectable:
+                    type: boolean
+            additionalProperties: true
+
+        MachineMaterialLocationResultRow:
+            type: object
+            description: Обёртка ответа RPC getMachineMaterialLocation
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/MachineMaterialLocationResultItem"
+                as_of:
+                    type: string
+                resource_ids:
+                    type: array
+                    items:
+                        type: string
+            additionalProperties: true
+
+        MachineMaterialLocationResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/MachineMaterialLocationResultRow"
+
+        ReprintRollLabelBySeriesRequestItem:
+            type: object
+            description: Запрос reprintRollLabelBySeries (UI-24a SCR-03)
+            properties:
+                seriesRef:
+                    type: string
+                    description: Серия выбранной строки локации (`series_ref` на BFF); пробелы внутри строки не обрезать
+            required:
+                - seriesRef
+            additionalProperties: true
+
+        ReprintRollLabelBySeriesRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ReprintRollLabelBySeriesRequestItem"
+
+        ReprintRollLabelBySeriesResultItem:
+            type: object
+            description: Элемент `result` в ответе reprintRollLabelBySeries
+            properties:
+                template_code:
+                    type: string
+                    nullable: true
+                report_path:
+                    type: string
+                    nullable: true
+                report_preview_file_path:
+                    type: string
+                    nullable: true
+                    description: Путь к PDF для открытия в отдельном окне
+                report_make_succeeded:
+                    type: boolean
+                    nullable: true
+                report_make_message:
+                    type: string
+                    nullable: true
+                nomenclature_name:
+                    type: string
+                    nullable: true
+                current_length_m:
+                    type: string
+                    nullable: true
+                barcode:
+                    type: string
+                    nullable: true
+                physical_print_enabled:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        ReprintRollLabelBySeriesResultRow:
+            type: object
+            description: Обёртка ответа RPC reprintRollLabelBySeries
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/ReprintRollLabelBySeriesResultItem"
+            additionalProperties: true
+
+        ReprintRollLabelBySeriesResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ReprintRollLabelBySeriesResultRow"
+
+        ListBlockReasonsRequest:
+            type: array
+            description: Пустой массив `[]` — словарь причин блокировки без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        ListBlockReasonsResultItem:
+            type: object
+            description: Элемент `result` в ответе listBlockReasons
+            properties:
+                reason_code:
+                    type: string
+                reason_label:
+                    type: string
+                source:
+                    type: string
+            additionalProperties: true
+
+        ListBlockReasonsResultRow:
+            type: object
+            description: Обёртка ответа RPC listBlockReasons
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/ListBlockReasonsResultItem"
+            additionalProperties: true
+
+        ListBlockReasonsResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ListBlockReasonsResultRow"
+
+        SubmitBlockRequestItem:
+            type: object
+            description: Запрос submitBlockRequest (UI-24b SCR-03)
+            properties:
+                seriesRefs:
+                    type: string
+                    description: Серии выбранных строк локации через запятую (`series_ref` на BFF)
+                reasonCode:
+                    type: string
+                    description: Код причины из listBlockReasons (`reason_code` на BFF)
+                comment:
+                    type: string
+                    description: Комментарий для склада
+            required:
+                - seriesRefs
+                - reasonCode
+            additionalProperties: true
+
+        SubmitBlockRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/SubmitBlockRequestItem"
+
+        SubmitBlockResultItem:
+            type: object
+            description: Элемент `result` в ответе submitBlockRequest
+            properties:
+                request_status:
+                    type: string
+                external_1s_ref:
+                    type: string
+                display_message:
+                    type: string
+            additionalProperties: true
+
+        SubmitBlockResultRow:
+            type: object
+            description: Обёртка ответа RPC submitBlockRequest
+            properties:
+                error_code:
+                    type: string
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/SubmitBlockResultItem"
+            additionalProperties: true
+
+        SubmitBlockResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/SubmitBlockResultRow"
+
+        ProductionPlanRequestItem:
+            type: object
+            properties:
+                dateFrom:
+                    type: string
+                    description: Начало периода (YYYY-MM-DD)
+                dateTo:
+                    type: string
+                    description: Конец периода (YYYY-MM-DD)
+                resourceCode:
+                    type: string
+                    nullable: true
+                    description: Код ресурса (`resourceCode` из getProductionPlanMachines); null — все машины
+            additionalProperties: true
+
+        ProductionPlanRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ProductionPlanRequestItem"
+
+        ProductionPlanMachinesRequest:
+            type: array
+            description: Пустой массив `[]` — список машин без параметров
+            items:
+                type: object
+                additionalProperties: true
+
+        ProductionPlanMachineRow:
+            type: object
+            properties:
+                machine:
+                    type: string
+                    description: Наименование машины для отображения; если нет — используется resourceCode
+                resourceCode:
+                    type: string
+                    description: Код ресурса (уходит в resourceCode запроса getProductionPlan)
+            additionalProperties: true
+
+        ProductionPlanMachinesResponse:
+            type: array
+            items:
+                $ref: "#/components/schemas/ProductionPlanMachineRow"
+
+        ProductionPlanStartStageRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (в ответе getProductionPlan — `work_area_id`)
+                startedBy:
+                    type: string
+                    description: ФИО оператора (`fio` из mesUserProfile)
+            required:
+                - workAreaId
+                - startedBy
+            additionalProperties: true
+
+        ProductionPlanStartStageRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ProductionPlanStartStageRequestItem"
+
+        ProductionPlanContinueStageRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ProductionPlanStartStageRequestItem"
+
+        ProductionPlanPauseStageRequestItem:
+            type: object
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (в ответе getProductionPlan — `work_area_id`)
+                startedBy:
+                    type: string
+                    description: ФИО оператора (`fio` из mesUserProfile)
+                comment:
+                    type: string
+                    description: Комментарий к приостановке этапа
+            required:
+                - workAreaId
+                - startedBy
+                - comment
+            additionalProperties: true
+
+        ProductionPlanPauseStageRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ProductionPlanPauseStageRequestItem"
+
+        ProductionPlanStageActionResultItem:
+            type: object
+            description: Элемент массива `result` в ответе start/pause/continueProductionPlanStage
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                status_code:
+                    type: string
+                    nullable: true
+                warnings:
+                    type: array
+                    items:
+                        type: string
+                    nullable: true
+                job_bag_id:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        ProductionPlanStageActionResultRow:
+            type: object
+            description: Обёртка результата RPC start/pause/continueProductionPlanStage
+            properties:
+                error_code:
+                    type: string
+                    description: Код результата; `OK` — успех, иначе ошибка
+                error_message:
+                    type: string
+                    nullable: true
+                    description: Текст ошибки для пользователя при error_code !== OK
+                result:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/ProductionPlanStageActionResultItem"
+            additionalProperties: true
+
+        ProductionPlanStageActionResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/ProductionPlanStageActionResultRow"
+
+        # Универсальный ответ бэка: массив узлов с примитивами и вложенным `table` (рекурсия без ограничения глубины).
+        ServerDataRow:
+            type: object
+            description: >
+                Узел дерева: произвольные поля + опционально `table` — вложенные строки того же формата.
+                Примеры полей: str, int, float (nullable по договорённости бэка).
+            properties:
+                str:
+                    type: string
+                    nullable: true
+                int:
+                    type: integer
+                    nullable: true
+                float:
+                    type: number
+                    format: float
+                    nullable: true
+                table:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/ServerDataRow"
+                    nullable: true
+            additionalProperties: true
+
+        ServerDataPayload:
+            type: array
+            description: Корневой массив ответа RPC (повсеместный формат данных с бэка).
+            items:
+                $ref: "#/components/schemas/ServerDataRow"

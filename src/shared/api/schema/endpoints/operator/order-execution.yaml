@@ -1,0 +1,482 @@
+postGetOrderExecution:
+    summary: Контекст исполнения заказа по машине
+    description: Вызывается при выборе машины на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionRequest"
+    responses:
+        "200":
+            description: Контекст исполнения заказа по машине
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetOrderExecutionMaterialSeries:
+    summary: Данные серии материала для списания/возврата
+    description: Кнопка «Найти» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialSeriesRequest"
+    responses:
+        "200":
+            description: Данные по серии (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialSeriesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetActiveInputPrefill:
+    summary: Предзаполнение поля скана ACTIVE входа (SCR-04 UI-30)
+    description: Init блока «Материалы. Списание/возврат» — CL-MAT-53
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionActiveInputPrefillRequest"
+    responses:
+        "200":
+            description: Снимок ACTIVE входа (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionActiveInputPrefillResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetOrderExecutionMaterialStageRegistry:
+    summary: Списания и возвраты материалов на этапе
+    description: Таблица «Списания и возвраты на этапе» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialStageRegistryRequest"
+    responses:
+        "200":
+            description: Список операций списания/возврата на этапе (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialStageRegistryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postPrintOrderExecutionMaterialReturnLabel:
+    summary: Печать возвратной этикетки рулона
+    description: Кнопка «Печать этикетки» в таблице «Списания и возвраты на этапе»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnLabelRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF этикетки (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnLabelResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetOrderExecutionMaterialWriteoffWeight:
+    summary: Расчёт веса для списания/возврата по метражу
+    description: Поле «Вес, кг» в блоке «Материалы. Списание/возврат» (только чтение)
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialWriteoffWeightRequest"
+    responses:
+        "200":
+            description: Рассчитанный вес (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialWriteoffWeightResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postRegisterOrderExecutionMaterialReturn:
+    summary: Отразить возврат материала
+    description: Кнопка «Отразить возврат» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnRequest"
+    responses:
+        "200":
+            description: Результат регистрации возврата (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postRegisterOrderExecutionMaterialFullWriteoff:
+    summary: Списать материал полностью
+    description: Кнопка «Списать полностью» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialFullWriteoffRequest"
+    responses:
+        "200":
+            description: Результат полного списания (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialFullWriteoffResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetReleaseFormInit:
+    summary: Init формы выпуска по этапу
+    description: Раскрытие блока «Выпуск» — данные по серии и склады назначения
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Init формы выпуска (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseFormInitResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetBatchReleases:
+    summary: Выпуски партии на этапе
+    description: Раскрытие блока «Выпуск» — таблица выпусков партии
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Список выпусков партии (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseBatchReleasesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postListStageInputRollsForWorkArea:
+    summary: Входные рулоны этапа для блокировки
+    description: Раскрытие блока «Выпуск» — таблица входных рулонов
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Входные рулоны этапа (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseInputRollsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postTestGetListCylinders:
+    summary: Отчёт «Список цилиндров» (JB)
+    description: Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetListCylindersRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetListCylindersResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postTestGetStageInfo:
+    summary: Отчёт «Информация по этапу» (JB)
+    description: Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetStageInfoRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetStageInfoResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postTestMapParameters:
+    summary: Отчёт «Карта технологических параметров печати» (JB)
+    description: Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/TestMapParametersRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/TestMapParametersResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postTestPaintsRecipe:
+    summary: Отчёт «Рецептура красок» (JB)
+    description: Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/TestPaintsRecipeRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/TestPaintsRecipeResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postTestGetLabelSection:
+    summary: Отчёт «Этикетка на секцию» (JB)
+    description: Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetLabelSectionRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetLabelSectionResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postRegisterRelease:
+    summary: Зарегистрировать выпуск рулона
+    description: Кнопка «Зарегистрировать выпуск» в блоке «Выпуск» (SCR-06 UI-60)
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionRegisterReleaseRequest"
+    responses:
+        "200":
+            description: Результат регистрации выпуска (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionRegisterReleaseResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postPrepareReleaseLabel:
+    summary: Печать этикетки выпуска
+    description: Кнопка «Печать этикетки» в таблице «Выпуски партии» (SCR-06 UI-59)
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionPrepareReleaseLabelRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF этикетки (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionPrepareReleaseLabelResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetArmExecutionMonitoringSummary:
+    summary: Метраж вход/выход на линии (мониторинг SCR-00 UI-00c)
+    description: Блоки «Вход на линию» и «Выход с линии» в левой колонке «Мониторинг»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Сводка метража (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMonitoringSummaryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetArmExecutionMonitoringRollTables:
+    summary: Таблицы входных/выходных рулонов (мониторинг SCR-00 UI-00d)
+    description: Блоки «Входные рулоны» и «Выходные рулоны» в левой колонке «Мониторинг»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMonitoringRollTablesRequest"
+    responses:
+        "200":
+            description: Таблицы рулонов (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMonitoringRollTablesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetArmExecutionMonitoringStageEvents:
+    summary: События по этапу — сводка (мониторинг SCR-00 UI-00e)
+    description: Таблица «События по этапу» (брак, простои, настройка) в левой колонке «Мониторинг»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Сводка событий по этапу (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMonitoringStageEventsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

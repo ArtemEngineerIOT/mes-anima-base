@@ -1,0 +1,11 @@
+---
+description: Типографика подписи поля над комбобоксом, нативным select и аналогами выбора
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Подписи полей выбора (комбобокс, select)
+
+- Подпись над **`MultiSelectCombobox`**, другими комбобоксами в kit и над **нативным `<select>`** (пара **`Label` + `htmlFor` / `id`**) оформляем одинаково: **`comboboxFieldLabelClassName`** / **`cnComboboxFieldLabel(...)`** из **`@/shared/ui/kit/styles/combobox-field-label`**: Inter (`font-sans`), **12px**, **400** (`font-normal`), **line-height 150%** (`leading-[1.5]`), **`tracking-normal`**, цвет текста как в токене (`text-muted-foreground` и т. п. по актуальному классу в модуле), `align-middle`.
+- Пример нативного select: **`src/features/operator/material-move/ui/material-move-filters.tsx`** («Склад источник» / «Склад приёмник»).
+- Не использовать для этих подписей **`sectionBlockTitleClassName`** (там 700 и uppercase — только секционные заголовки блоков).

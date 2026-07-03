@@ -1,0 +1,37 @@
+---
+description: UI фич — только компоненты и стили из @/shared/ui/kit
+alwaysApply: true
+---
+
+# UI kit (`src/shared/ui/kit`)
+
+Интерфейс оператора и страниц фич собираем из **ui kit**, а не из произвольных `div` с кастомными палитрами Tailwind.
+
+## Обязательно
+
+1. Перед новой разметкой — посмотреть **`src/shared/ui/kit/**`** и похожий экран в `src/features/**`.
+2. Импортировать примитивы через alias **`@/shared/ui/kit/...`** (или стили из **`@/shared/ui/kit/styles/...`**).
+3. Не дублировать визуал kit-компонентов своими обёртками, если хватает пропсов kit + `className`.
+
+## Примитивы (частые)
+
+| Задача | Kit |
+|--------|-----|
+| Кнопки, поля, подписи | `button`, `input`, `label`, `switch`, `form` |
+| Карточки, иконки | `card`, `icon` |
+| Таблицы | `table` + `styles/data-table-stack` — viewport **10 строк** + скролл (см. **table-uikit**) |
+| Диалоги | `dialog` (модалки фичи — **modals-ui-folder**) |
+| Плашки, статусы | `informer`, `informer-pill` (см. **informer-informational-blocks**) |
+| Заголовок + таблица в панели | `informer-table-panel` |
+| Комбобокс | `multi-select-combobox` |
+| Заголовки блоков | `styles/section-block-title` (см. **section-block-titles**) |
+| Подписи select / комбобокса | `styles/combobox-field-label` (см. **combobox-field-labels**) |
+
+## Примеры
+
+- **Данные с машины** (таблица характеристик): `InformerTablePanel` + `Table` — как в `order-execution-release.tsx`, `order-execution-materials-writeoff.tsx`, `event-registration-machine-data-panel.tsx`.
+- **Не делать**: отдельная «плашка» с `bg-muted/30` и сеткой цифр, если по макету уже есть `InformerTablePanel`.
+
+## Детальные правила
+
+Таблицы, модалки, Informer, заголовки и подписи полей — см. отдельные `.mdc` в `.cursor/rules/`; они уточняют kit, а не заменяют его.

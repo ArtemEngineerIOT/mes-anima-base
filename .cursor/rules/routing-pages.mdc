@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+# Роутинг и страницы
+
+- Используем React Router **data router** (`createBrowserRouter`), маршруты лежат в `src/app/router.tsx`.
+- Для страниц используем **code splitting**: `lazy: () => import("@/features/.../*.page")`.
+- Модуль страницы обязан экспортировать `Component`:
+
+```tsx
+function SomePage() {
+  return <div />;
+}
+export const Component = SomePage;
+```
+
+- Пути роутов держим централизованно в `src/shared/model/routes.ts` (или отдельном shared config модуле).
+- Роутер не должен импортировать “внутренности” фичи: маршрут ссылается только на entrypoint страницы.

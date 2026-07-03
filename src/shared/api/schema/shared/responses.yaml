@@ -1,0 +1,44 @@
+components:
+    schemas:
+        UnauthorizedError:
+            type: object
+            required:
+                - code
+                - type
+                - token
+            properties:
+                code:
+                    type: string
+                message:
+                    type: string
+                token:
+                    type: string
+
+        Error:
+            type: object
+            properties:
+                error:
+                    type: string
+                message:
+                    type: string
+                path:
+                    type: string
+                status:
+                    type: integer
+                timestamp:
+                    type: string
+
+    responses:
+        UnauthorizedError:
+            description: Неавторизованный доступ
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/UnauthorizedError"
+
+        Error:
+            description: Неверный запрос (Ошибка запроса)
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"

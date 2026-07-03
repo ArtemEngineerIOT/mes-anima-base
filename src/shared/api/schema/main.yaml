@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+    title: System Monitoring API
+    description: API для экранов системы мониторинга инженерных систем
+    version: 1.0.0
+
+paths:
+    /auth:
+        post:
+            $ref: "./endpoints/auth.yaml#/login"
+
+    /auth/login:
+        post:
+            $ref: "./endpoints/auth.yaml#/login"
+
+    # /auth/register:
+    #     post:
+    #         $ref: "./endpoints/auth.yaml#/register"
+
+    # Те же пути, что в esms-arena-app: baseUrl заканчивается на `/rest`, итог вида .../rest/v1/contexts/...
+    /v1/contexts/users.admin.models.rest/functions/getSummaryData:
+        post:
+            $ref: "./endpoints/summary/summary.yaml#/getSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/getProductionPlan:
+        post:
+            $ref: "./endpoints/operator/production-plan.yaml#/postGetProductionPlan"
+
+    /v1/contexts/users.admin.models.rest/functions/getProductionPlanMachines:
+        post:
+            $ref: "./endpoints/operator/production-plan.yaml#/postGetProductionPlanMachines"
+
+    /v1/contexts/users.admin.models.rest/functions/getMaterialOrderPlanStages:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postGetMaterialOrderPlanStages"
+
+    /v1/contexts/users.admin.models.rest/functions/composeMaterialOrderLines:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postComposeMaterialOrderLines"
+
+    /v1/contexts/users.admin.models.rest/functions/listMaterialOrderPickCandidates:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postListMaterialOrderPickCandidates"
+
+    /v1/contexts/users.admin.models.rest/functions/submitMaterialOrderRequest:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postSubmitMaterialOrderRequest"
+
+    /v1/contexts/users.admin.models.rest/functions/getMachineMaterialLocation:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postGetMachineMaterialLocation"
+
+    /v1/contexts/users.admin.models.rest/functions/reprintRollLabelBySeries:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postReprintRollLabelBySeries"
+
+    /v1/contexts/users.admin.models.rest/functions/listBlockReasons:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postListBlockReasons"
+
+    /v1/contexts/users.admin.models.rest/functions/submitBlockRequest:
+        post:
+            $ref: "./endpoints/operator/material-order.yaml#/postSubmitBlockRequest"
+
+    /v1/contexts/users.admin.models.rest/functions/startProductionPlanStage:
+        post:
+            $ref: "./endpoints/operator/production-plan.yaml#/postStartProductionPlanStage"
+
+    /v1/contexts/users.admin.models.rest/functions/pauseProductionPlanStage:
+        post:
+            $ref: "./endpoints/operator/production-plan.yaml#/postPauseProductionPlanStage"
+
+    /v1/contexts/users.admin.models.rest/functions/continueProductionPlanStage:
+        post:
+            $ref: "./endpoints/operator/production-plan.yaml#/postContinueProductionPlanStage"
+
+    /v1/contexts/users.admin.models.rest/functions/mesUserProfile:
+        post:
+            $ref: "./endpoints/auth/mes-user-profile-function.yaml#/postMesUserProfile"
+
+    /v1/contexts/users.admin.models.rest/functions/getOrderExecution:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecution"
+
+    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialSeries:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialSeries"
+
+    /v1/contexts/users.admin.models.rest/functions/getActiveInputPrefill:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetActiveInputPrefill"
+
+    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialStageRegistry:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialStageRegistry"
+
+    /v1/contexts/users.admin.models.rest/functions/printOrderExecutionMaterialReturnLabel:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postPrintOrderExecutionMaterialReturnLabel"
+
+    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialWriteoffWeight:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialWriteoffWeight"
+
+    /v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialReturn:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterOrderExecutionMaterialReturn"
+
+    /v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialFullWriteoff:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterOrderExecutionMaterialFullWriteoff"
+
+    /v1/contexts/users.admin.models.rest/functions/getReleaseFormInit:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetReleaseFormInit"
+
+    /v1/contexts/users.admin.models.rest/functions/getBatchReleases:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetBatchReleases"
+
+    /v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postListStageInputRollsForWorkArea"
+
+    /v1/contexts/users.admin.models.rest/functions/testGetListCylinders:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetListCylinders"
+
+    /v1/contexts/users.admin.models.rest/functions/testGetStageInfo:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetStageInfo"
+
+    /v1/contexts/users.admin.models.rest/functions/testMapParameters:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postTestMapParameters"
+
+    /v1/contexts/users.admin.models.rest/functions/testPaintsRecipe:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postTestPaintsRecipe"
+
+    /v1/contexts/users.admin.models.rest/functions/testGetLabelSection:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetLabelSection"
+
+    /v1/contexts/users.admin.models.rest/functions/registerRelease:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterRelease"
+
+    /v1/contexts/users.admin.models.rest/functions/prepareReleaseLabel:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postPrepareReleaseLabel"
+
+    /v1/contexts/users.admin.models.rest/functions/getArmExecutionMonitoringSummary:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetArmExecutionMonitoringSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/getArmExecutionMonitoringRollTables:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetArmExecutionMonitoringRollTables"
+
+    /v1/contexts/users.admin.models.rest/functions/getArmExecutionMonitoringStageEvents:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetArmExecutionMonitoringStageEvents"
+
+    # /task:
+    #     $ref: "./endpoints/summary/task.yaml#/createTask"
+
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        $ref: "./shared/schemas.yaml#/components/schemas"
+    responses:
+        $ref: "./shared/responses.yaml#/components/responses"

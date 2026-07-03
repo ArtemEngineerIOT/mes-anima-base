@@ -1,0 +1,183 @@
+postGetMaterialOrderPlanStages:
+    summary: Этапы APS для экрана «Заказ материалов»
+    description: Вызов при открытии левой колонки (init workbench); payload — resourceCode машины
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderPlanStagesRequest"
+    responses:
+        "200":
+            description: Этапы производственного плана для машины
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderPlanStagesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postListMaterialOrderPickCandidates:
+    summary: Кандидаты лотов для подбора рулонов/серий
+    description: Тогл «Заказать конкретные рулоны/серии» в ON — payload `workAreaId`
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderPickCandidatesRequest"
+    responses:
+        "200":
+            description: Список доступных лотов для выбора
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderPickCandidatesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postComposeMaterialOrderLines:
+    summary: Сформировать строки заказа материалов
+    description: Кнопка «Сформировать заказ» — compose по выбранным этапам (`workAreaIds`)
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderComposeRequest"
+    responses:
+        "200":
+            description: Черновик строк заказа и compose_session_id
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderComposeResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postSubmitMaterialOrderRequest:
+    summary: Отправить заявку на материалы
+    description: Кнопка «Отправить заявку» — workAreaIds, lines, timestamp, comment, isMaterialChange
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderSubmitRequest"
+    responses:
+        "200":
+            description: Результат отправки заявки
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MaterialOrderSubmitResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetMachineMaterialLocation:
+    summary: Локация материалов у машины
+    description: Кнопка «Обновить» в правой колонке SCR-03 — resourceIds и флаги include_*
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/MachineMaterialLocationRequest"
+    responses:
+        "200":
+            description: Строки локации у выбранных машин
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/MachineMaterialLocationResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postReprintRollLabelBySeries:
+    summary: Печать этикетки рулона по серии (локация у машины)
+    description: Иконка «Печать» в строке таблицы локации SCR-03 — payload `seriesRef`
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ReprintRollLabelBySeriesRequest"
+    responses:
+        "200":
+            description: PDF preview этикетки локации
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ReprintRollLabelBySeriesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postListBlockReasons:
+    summary: Словарь причин блокировки материалов у машины
+    description: Загрузка при открытии блока UI-24b SCR-03; тело запроса — пустой массив `[]`
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ListBlockReasonsRequest"
+    responses:
+        "200":
+            description: Список причин для select «Причина блокировки»
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ListBlockReasonsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postSubmitBlockRequest:
+    summary: Передать блокировку материалов у машины
+    description: Кнопка «Передать блокировку» UI-24b — seriesRefs, reasonCode, comment
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/SubmitBlockRequest"
+    responses:
+        "200":
+            description: Результат передачи блокировки в 1S
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/SubmitBlockResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

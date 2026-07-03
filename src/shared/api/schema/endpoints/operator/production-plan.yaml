@@ -1,0 +1,114 @@
+postGetProductionPlan:
+    summary: Производственный план (этапы по периоду и машине)
+    description: Вызывается по кнопке «Обновить» на экране «Производственный план»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanRequest"
+    responses:
+        "200":
+            description: Этапы плана (ServerDataPayload)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ServerDataPayload"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetProductionPlanMachines:
+    summary: Список машин для фильтра «Производственный план»
+    description: Вызывается при открытии экрана для заполнения комбобокса «Машина»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanMachinesRequest"
+    responses:
+        "200":
+            description: Список машин для фильтра
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanMachinesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postStartProductionPlanStage:
+    summary: Взять этап в работу
+    description: Кнопка «В работу» на экране «Производственный план»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanStartStageRequest"
+    responses:
+        "200":
+            description: Результат операции (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanStageActionResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postPauseProductionPlanStage:
+    summary: Приостановить этап
+    description: Кнопка «Стоп» на экране «Производственный план»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanPauseStageRequest"
+    responses:
+        "200":
+            description: Результат операции (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanStageActionResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postContinueProductionPlanStage:
+    summary: Продолжить приостановленный этап
+    description: Кнопка «Продолжить» на экране «Производственный план»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanContinueStageRequest"
+    responses:
+        "200":
+            description: Результат операции (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ProductionPlanStageActionResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

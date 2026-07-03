@@ -1,0 +1,100 @@
+login:
+    summary: Аутентификация пользователя
+    description: Вход в систему с использованием username и password
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../shared/schemas.yaml#/components/schemas/User"
+    responses:
+        "200":
+            description: Успешная аутентификация
+            content:
+                application/json:
+                    schema:
+                        $ref: "../shared/schemas.yaml#/components/schemas/LoginResponse"
+        "400":
+            $ref: "../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+# components:
+schemas:
+    LoginRequest:
+        type: object
+        required:
+            - username
+            - password
+        properties:
+            username:
+                type: string
+            password:
+                type: string
+
+    LoginResponse:
+        type: object
+        properties:
+            code:
+                type: string
+            message:
+                type: string
+            token:
+                type: string
+
+    RegisterRequest:
+        type: object
+        required:
+            - username
+            - password
+            - email
+        properties:
+            username:
+                type: string
+            password:
+                type: string
+            email:
+                type: string
+
+    RegisterResponse:
+        type: object
+        properties:
+            code:
+                type: string
+            message:
+                type: string
+            token:
+                type: string
+
+    ConflictError:
+        type: object
+        properties:
+            code:
+                type: string
+            message:
+                type: string
+# register:
+#   post:
+#     summary: Регистрация нового пользователя
+#     description: Создание новой учетной записи пользователя
+#     requestBody:
+#       required: true
+#       content:
+#         application/json:
+#           schema:
+#             $ref: '#/components/schemas/RegisterRequest'
+#     responses:
+#       '200':
+#         description: Успешная регистрация
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/RegisterResponse'
+#       '400':
+#         $ref: '../shared/responses.yaml#/components/responses/Error'
+#       '409':
+#         description: Пользователь уже существует
+#         content:
+#           application/json:
+#             schema:
+#               $ref: '#/components/schemas/ConflictError'
