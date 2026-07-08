@@ -25,15 +25,21 @@ const pr120Snapshot: EventRegistrationSnapshot = {
     unprocessedEvents: [
         {
             id: "ue-1",
-            detectedAt: "11-06-2026 10:15:00",
-            signalType: "stop",
-            description: "Остановка машины",
+            detectedAt: "03-11-2028 10:15:00",
+            endedAt: "03-11-2028 10:15:12",
+            signalType: "knife",
+            description: "Удар ножа",
+            meterFrom: "1240",
+            meterTo: "1245",
         },
         {
             id: "ue-2",
-            detectedAt: "11-06-2026 09:42:00",
+            detectedAt: "03-11-2028 10:10:00",
+            endedAt: "03-11-2028 10:10:08",
             signalType: "knife",
             description: "Удар ножа",
+            meterFrom: "1180",
+            meterTo: "1185",
         },
     ],
     initialJournal: [

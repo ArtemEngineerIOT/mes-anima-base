@@ -1,11 +1,14 @@
 import { memo } from "react";
 import { cn } from "@/shared/lib/css";
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
-    dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
+    dataTableHeadCellClassName,
+    dataTableInsetShellClassName,
+    dataTableSplitScrollBodyClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -22,33 +25,55 @@ type ProductionPlanTableProps = {
     onSelect: (stageId: string | null) => void;
 };
 
+const COLUMN_COUNT = 13;
+const selectionColumnClassName = "w-10";
+
 export const ProductionPlanTable = memo(function ProductionPlanTable({
     stages,
     selectedId,
     onSelect,
 }: ProductionPlanTableProps) {
+    const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(stages);
+
     return (
-        <div className={dataTableScrollViewportClassName}>
-            <Table className={cn(dataTableShellClassName, "border-separate border-spacing-0 text-[12px]")}>
+        <DataTableViewport
+            layout="fill"
+            footer={
+                <DataTablePaginationFooter
+                    totalCount={pagination.totalCount}
+                    rangeStart={pagination.rangeStart}
+                    rangeEnd={pagination.rangeEnd}
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                />
+            }
+        >
+            <Table className={cn(dataTableInsetShellClassName, "border-separate border-spacing-0 text-[12px]")}>
                 <TableHeader>
                     <TableRow className="hover:!bg-transparent">
-                        <TableHead className={dataTableStickyHeadCellClassName} aria-label="select" />
-                        <TableHead className={dataTableStickyHeadCellClassName}>Статус этапа</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Дата заказа</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Клиент</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Номер клиента</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>ID этапа</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Этап</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Продукт</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Количество</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Ед. измерения</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Машина</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Старт</TableHead>
-                        <TableHead className={dataTableStickyHeadCellClassName}>Завершение</TableHead>
+                        <TableHead
+                            className={cn(dataTableHeadCellClassName, "bg-muted/40", selectionColumnClassName)}
+                            aria-label="select"
+                        />
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Статус этапа</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Дата заказа</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Клиент</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Номер клиента</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>ID этапа</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Этап</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Продукт</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40 text-right")}>Количество</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. измерения</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Машина</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Старт</TableHead>
+                        <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Завершение</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
-                    {stages.map((stage) => (
+                <TableBody className={dataTableSplitScrollBodyClassName}>
+                    {pageItems.map((stage) => (
                         <TableRow
                             key={stage.stageId}
                             className={cn(
@@ -57,7 +82,7 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                             )}
                             onClick={() => onSelect(stage.stageId)}
                         >
-                            <TableCell className={dataTableBodyCellClassName}>
+                            <TableCell className={cn(dataTableBodyCellClassName, selectionColumnClassName)}>
                                 <input
                                     type="checkbox"
                                     checked={selectedId === stage.stageId}
@@ -84,10 +109,8 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                                 {stage.orderDate ?? "—"}
                             </TableCell>
                             <TableCell className={dataTableBodyCellClassName}>{stage.client ?? "—"}</TableCell>
-                            <TableCell className={dataTableBodyCellClassName}>
-                                {stage.clientNumber ?? "—"}
-                            </TableCell>
-                            <TableCell className={dataTableBodyCellClassName}>{stage.stageId}</TableCell>
+                            <TableCell className={cn(dataTableBodyCellClassName)}>{stage.clientNumber ?? "—"}</TableCell>
+                            <TableCell className={cn(dataTableBodyCellClassName)}>{stage.stageId}</TableCell>
                             <TableCell className={dataTableBodyCellClassName}>{stage.stageName}</TableCell>
                             <TableCell
                                 className={cn(dataTableBodyCellClassName, "max-w-[340px] truncate")}
@@ -111,7 +134,7 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                                     dataTableBodyCellClassName,
                                     "py-8 text-center text-muted-foreground",
                                 )}
-                                colSpan={13}
+                                colSpan={COLUMN_COUNT}
                             >
                                 Ничего не найдено
                             </TableCell>
@@ -119,6 +142,6 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                     )}
                 </TableBody>
             </Table>
-        </div>
+        </DataTableViewport>
     );
 });

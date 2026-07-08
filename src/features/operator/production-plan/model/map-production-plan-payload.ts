@@ -13,6 +13,16 @@ function pickString(row: Record<string, unknown>, key: string): string | undefin
     return undefined;
 }
 
+function pickFirstString(row: Record<string, unknown>, ...keys: string[]): string | undefined {
+    for (const key of keys) {
+        const value = pickString(row, key);
+        if (value) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
 function pickNumber(row: Record<string, unknown>, key: string): number | undefined {
     const value = row[key];
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -69,10 +79,10 @@ function parseAllowedActions(raw: unknown): ProductionPlanAction[] | undefined {
 }
 
 function mapRow(row: Record<string, unknown>): ProductionStage | null {
-    const stageId = pickString(row, "id_operacii");
+    const stageId = pickFirstString(row, "operation_number", "id_operacii");
     const workAreaId = pickString(row, "work_area_id");
     const orderId = pickString(row, "order_id");
-    const stageName = pickString(row, "etap");
+    const stageName = pickFirstString(row, "operation_name", "etap");
 
     if (!stageId || !workAreaId || !orderId || !stageName) {
         return null;
@@ -86,7 +96,7 @@ function mapRow(row: Record<string, unknown>): ProductionStage | null {
         orderId,
         client: pickString(row, "client_name"),
         clientNumber: pickString(row, "client_number"),
-        product: pickString(row, "produkt") ?? pickString(row, "output_item_name"),
+        product: pickFirstString(row, "output_item_name", "produkt", "stage_name"),
         operationNo: stageId,
         stageName,
         area: pickString(row, "area_name") ?? "—",
@@ -94,10 +104,10 @@ function mapRow(row: Record<string, unknown>): ProductionStage | null {
         quantity: pickNumber(row, "output_quantity"),
         unit: pickString(row, "output_unit"),
         orderDate: pickString(row, "client_order_date"),
-        startAt: pickString(row, "planned_start") ?? pickString(row, "actual_start"),
-        endAt: pickString(row, "planned_finish") ?? pickString(row, "actual_end"),
+        startAt: pickFirstString(row, "planned_start", "actual_start"),
+        endAt: pickFirstString(row, "planned_finish", "actual_end"),
         status,
-        statusDisplayLabel: pickString(row, "status"),
+        statusDisplayLabel: pickFirstString(row, "status_label", "status"),
         allowedActions: parseAllowedActions(row.allowed_actions),
         hasPrevUnfinished: row.has_prev_unfinished === true,
     };

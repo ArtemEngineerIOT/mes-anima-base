@@ -86,6 +86,7 @@
     /* Таблицы: высота строки и viewport на 10 строк тела (см. data-table-stack) */
     --data-table-row-height: 2.5rem;
     --data-table-header-height: 2.5rem;
+    --data-table-footer-height: 2.75rem;
     --data-table-visible-body-rows: 10;
 }
 
@@ -134,6 +135,86 @@
     max-height: calc(
         var(--data-table-header-height) + var(--data-table-row-height) * var(--data-table-visible-body-rows)
     );
+}
+
+.data-table-scroll-viewport--with-footer {
+    max-height: calc(
+        var(--data-table-header-height) + var(--data-table-row-height) * var(--data-table-visible-body-rows) +
+            var(--data-table-footer-height)
+    );
+}
+
+/* DataTableViewport: шапка и футер фиксированы, скролл только у tbody */
+.data-table-viewport-shell--fixed {
+    max-height: calc(
+        var(--data-table-header-height) + var(--data-table-row-height) * var(--data-table-visible-body-rows)
+    );
+}
+
+.data-table-viewport-shell--fixed.data-table-viewport-shell--with-footer {
+    max-height: calc(
+        var(--data-table-header-height) + var(--data-table-row-height) * var(--data-table-visible-body-rows) +
+            var(--data-table-footer-height)
+    );
+}
+
+.data-table-viewport-shell--fill {
+    max-height: none;
+    height: 100%;
+}
+
+.data-table-split-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.data-table-split-scroll > table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.data-table-split-scroll > table > thead,
+.data-table-split-scroll > table > tbody {
+    display: block;
+}
+
+.data-table-viewport-shell--fixed .data-table-split-scroll > table > tbody {
+    overflow-y: auto;
+    max-height: calc(var(--data-table-row-height) * var(--data-table-visible-body-rows));
+}
+
+.data-table-viewport-shell--fill .data-table-split-scroll {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.data-table-viewport-shell--fill .data-table-split-scroll > table {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+}
+
+.data-table-viewport-shell--fill .data-table-split-scroll > table > thead {
+    flex-shrink: 0;
+}
+
+.data-table-viewport-shell--fill .data-table-split-scroll > table > tbody {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
+
+.data-table-split-scroll > table > thead > tr,
+.data-table-split-scroll > table > tbody > tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
 }
 
 /* Custom scrollbar (Chrome/Edge/Safari) */
