@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useOrderExecutionMachineStompSnapshot } from "../machine-stomp/order-execution-machine-stomp-context";
 import type { MachineId } from "../types";
 import {
+    canProceedEventRegistrationStep1,
+    canProceedEventRegistrationStep2,
     createEmptyDraft,
     draftToJournalDetails,
     findEventCode,
     getScrapRemovalMode,
 } from "./field-rules";
 import { getEventRegistrationSnapshot } from "./mock-event-registration";
+import {
+    buildStep2SensorPrefill,
+    mergeStep2SensorPrefill,
+    resolveRemoveScrapDefault,
+} from "./prefill-event-registration-draft";
 import type {
     EventRegistrationDraft,
     EventRegistrationStep,
@@ -30,15 +38,31 @@ function makeJournalId(): string {
     return `j-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function buildDraftForActiveSignal(
+    snapshot: ReturnType<typeof getEventRegistrationSnapshot>,
+    signal: UnprocessedMachineEvent | null,
+): EventRegistrationDraft {
+    const immediate = resolveRemoveScrapDefault(signal);
+    return {
+        ...createEmptyDraft(snapshot),
+        removeScrapImmediately: immediate,
+        roll: immediate ? snapshot.scrapRollDefault : snapshot.activeRollDefault,
+    };
+}
+
 export function useEventRegistration(machineId: MachineId) {
     const snapshot = useMemo(() => getEventRegistrationSnapshot(machineId), [machineId]);
+    const machineSnapshot = useOrderExecutionMachineStompSnapshot();
 
     const [step, setStep] = useState<EventRegistrationStep>(1);
     const [draft, setDraft] = useState<EventRegistrationDraft>(() => createEmptyDraft(snapshot));
     const [journal, setJournal] = useState<ProcessJournalEntry[]>(() => snapshot.initialJournal);
     const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>(() => snapshot.unprocessedEvents);
     const [selectedUnprocessedId, setSelectedUnprocessedId] = useState<string | null>(null);
+    const [discardSelectedIds, setDiscardSelectedIds] = useState<string[]>([]);
     const [deleteComment, setDeleteComment] = useState("");
+
+    const lastAppliedSignalIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         setStep(1);
@@ -46,8 +70,38 @@ export function useEventRegistration(machineId: MachineId) {
         setJournal(snapshot.initialJournal);
         setUnprocessed(snapshot.unprocessedEvents);
         setSelectedUnprocessedId(null);
+        setDiscardSelectedIds([]);
         setDeleteComment("");
+        lastAppliedSignalIdRef.current = null;
     }, [machineId, snapshot]);
+
+    useEffect(() => {
+        setSelectedUnprocessedId((current) => {
+            if (unprocessed.length === 0) {
+                return null;
+            }
+            if (current && unprocessed.some((event) => event.id === current)) {
+                return current;
+            }
+            return unprocessed[0].id;
+        });
+    }, [unprocessed]);
+
+    const selectedUnprocessed = useMemo(
+        () => unprocessed.find((event) => event.id === selectedUnprocessedId) ?? null,
+        [selectedUnprocessedId, unprocessed],
+    );
+
+    useEffect(() => {
+        const signalKey = selectedUnprocessedId ?? "__on_the_fly__";
+        if (lastAppliedSignalIdRef.current === signalKey) {
+            return;
+        }
+
+        lastAppliedSignalIdRef.current = signalKey;
+        setDraft(buildDraftForActiveSignal(snapshot, selectedUnprocessed));
+        setStep(1);
+    }, [selectedUnprocessed, selectedUnprocessedId, snapshot]);
 
     const selectedCode = useMemo(
         () => findEventCode(snapshot.eventCodes, draft.eventCode),
@@ -62,13 +116,12 @@ export function useEventRegistration(machineId: MachineId) {
 
     const onEventCodeChange = useCallback(
         (code: number) => {
-            const def = findEventCode(snapshot.eventCodes, code);
             patchDraft({
                 eventCode: code,
-                subCode: def?.subCodes?.[0] ?? "",
+                subCode: "",
             });
         },
-        [patchDraft, snapshot.eventCodes],
+        [patchDraft],
     );
 
     const onRemoveScrapChange = useCallback(
@@ -94,15 +147,47 @@ export function useEventRegistration(machineId: MachineId) {
         [patchDraft],
     );
 
-    const canProceedStep1 = draft.eventCode != null && draft.removeScrapImmediately != null;
+    const applyStep2SensorPrefill = useCallback(() => {
+        const prefill = buildStep2SensorPrefill({
+            signal: selectedUnprocessed,
+            sensorFields: machineSnapshot.fields,
+        });
 
-    const goToStep = useCallback((target: EventRegistrationStep) => {
-        setStep(target);
-    }, []);
+        setDraft((prev) => {
+            const withSubCode =
+                selectedCode?.subCodes && !prev.subCode
+                    ? { ...prev, subCode: selectedCode.subCodes[0] }
+                    : prev;
+
+            return mergeStep2SensorPrefill(withSubCode, prefill);
+        });
+    }, [machineSnapshot.fields, selectedCode, selectedUnprocessed]);
+
+    const canProceedStep1 = canProceedEventRegistrationStep1(draft);
+    const canProceedStep2 = canProceedEventRegistrationStep2(draft, selectedCode);
+
+    const goToStep = useCallback(
+        (target: EventRegistrationStep) => {
+            if (target === 2 && step === 1) {
+                applyStep2SensorPrefill();
+            }
+            setStep(target);
+        },
+        [applyStep2SensorPrefill, step],
+    );
 
     const goNext = useCallback(() => {
-        setStep((s) => (s < 3 ? ((s + 1) as EventRegistrationStep) : s));
-    }, []);
+        setStep((current) => {
+            if (current === 1) {
+                applyStep2SensorPrefill();
+                return 2;
+            }
+            if (current < 3) {
+                return (current + 1) as EventRegistrationStep;
+            }
+            return current;
+        });
+    }, [applyStep2SensorPrefill]);
 
     const goBack = useCallback(() => {
         setStep((s) => (s > 1 ? ((s - 1) as EventRegistrationStep) : s));
@@ -110,10 +195,8 @@ export function useEventRegistration(machineId: MachineId) {
 
     const resetWizard = useCallback(() => {
         setStep(1);
-        setDraft(createEmptyDraft(snapshot));
-        setSelectedUnprocessedId(null);
-        setDeleteComment("");
-    }, [snapshot]);
+        setDraft(buildDraftForActiveSignal(snapshot, selectedUnprocessed));
+    }, [selectedUnprocessed, snapshot]);
 
     const registerEvent = useCallback(() => {
         if (!selectedCode || scrapMode == null) return;
@@ -145,27 +228,31 @@ export function useEventRegistration(machineId: MachineId) {
         resetWizard();
     }, [draft, resetWizard, scrapMode, selectedCode, selectedUnprocessedId]);
 
-    const selectUnprocessed = useCallback(
+    const selectSignalForRegistration = useCallback(
         (event: UnprocessedMachineEvent) => {
+            lastAppliedSignalIdRef.current = event.id;
             setSelectedUnprocessedId(event.id);
-            patchDraft({
-                removeScrapImmediately: event.signalType === "stop",
-            });
+            setDraft(buildDraftForActiveSignal(snapshot, event));
+            setStep(1);
         },
-        [patchDraft],
+        [snapshot],
     );
 
-    const deleteUnprocessed = useCallback(
-        (id: string) => {
-            if (!deleteComment.trim()) return;
-            setUnprocessed((prev) => prev.filter((e) => e.id !== id));
-            if (selectedUnprocessedId === id) {
-                setSelectedUnprocessedId(null);
-            }
-            setDeleteComment("");
-        },
-        [deleteComment, selectedUnprocessedId],
-    );
+    const toggleDiscardSelection = useCallback((id: string) => {
+        setDiscardSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+        );
+    }, []);
+
+    const deleteSelectedSignals = useCallback(() => {
+        if (!deleteComment.trim() || discardSelectedIds.length === 0) return;
+
+        setUnprocessed((prev) => prev.filter((event) => !discardSelectedIds.includes(event.id)));
+        setDiscardSelectedIds([]);
+        setDeleteComment("");
+    }, [deleteComment, discardSelectedIds]);
+
+    const canDeleteSelectedSignals = deleteComment.trim().length > 0 && discardSelectedIds.length > 0;
 
     const unprocessedCount = unprocessed.length;
 
@@ -177,7 +264,9 @@ export function useEventRegistration(machineId: MachineId) {
         scrapMode,
         journal,
         unprocessed,
+        selectedUnprocessed,
         selectedUnprocessedId,
+        discardSelectedIds,
         deleteComment,
         unprocessedCount,
         patchDraft,
@@ -185,13 +274,15 @@ export function useEventRegistration(machineId: MachineId) {
         onRemoveScrapChange,
         onWholeStageChange,
         canProceedStep1,
+        canProceedStep2,
+        canDeleteSelectedSignals,
         goToStep,
         goNext,
         goBack,
         registerEvent,
-        selectUnprocessed,
-        deleteUnprocessed,
+        selectSignalForRegistration,
+        toggleDiscardSelection,
+        deleteSelectedSignals,
         setDeleteComment,
-        setSelectedUnprocessedId,
     };
 }

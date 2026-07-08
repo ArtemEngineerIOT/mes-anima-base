@@ -39,8 +39,13 @@ export type EventRegistrationDraft = {
 export type UnprocessedMachineEvent = {
     id: string;
     detectedAt: string;
+    endedAt: string;
     signalType: "stop" | "knife" | "other";
     description: string;
+    /** Метраж на начало сигнала (с датчика), если известен */
+    meterFrom?: string;
+    /** Метраж на завершение сигнала (с датчика), если известен */
+    meterTo?: string;
 };
 
 /** Запись журнала процесса этапа */

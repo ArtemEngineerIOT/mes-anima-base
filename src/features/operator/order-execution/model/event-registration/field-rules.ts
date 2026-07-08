@@ -28,6 +28,39 @@ export function isFieldRequired(
     }
 }
 
+function hasText(value: string): boolean {
+    return value.trim().length > 0;
+}
+
+export function canProceedEventRegistrationStep1(draft: EventRegistrationDraft): boolean {
+    return draft.eventCode != null && draft.removeScrapImmediately != null;
+}
+
+export function canProceedEventRegistrationStep2(
+    draft: EventRegistrationDraft,
+    code: EventCodeDefinition | null,
+): boolean {
+    const mode = getScrapRemovalMode(draft);
+    if (!code || mode == null) return false;
+
+    if (!hasText(draft.roll)) return false;
+
+    if (isFieldRequired(code, "comment", draft) && !hasText(draft.comment)) {
+        return false;
+    }
+
+    if (!draft.wholeStage || mode === "deferred") {
+        if (isFieldRequired(code, "meterage", draft)) {
+            if (!hasText(draft.meterFrom) || !hasText(draft.meterTo)) return false;
+        }
+        if (isFieldRequired(code, "time", draft)) {
+            if (!hasText(draft.timeFrom) || !hasText(draft.timeTo)) return false;
+        }
+    }
+
+    return true;
+}
+
 export function createEmptyDraft(snapshot: {
     scrapRollDefault: string;
     activeRollDefault: string;

@@ -27,8 +27,6 @@ type ProductionPlanTableProps = {
 
 const COLUMN_COUNT = 13;
 const selectionColumnClassName = "w-10";
-/** Минимальная ширина по контенту при `table-layout: fixed` (split-scroll). */
-const contentWidthColumnClassName = "w-[1%] whitespace-nowrap";
 
 export const ProductionPlanTable = memo(function ProductionPlanTable({
     stages,

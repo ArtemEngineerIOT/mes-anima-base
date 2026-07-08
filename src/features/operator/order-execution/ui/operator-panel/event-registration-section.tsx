@@ -4,17 +4,28 @@ import { hasOrderExecutionMachineStompData } from "../../model/machine-stomp/ord
 import { mapEventRegistrationMachineDataRows } from "../../model/event-registration/map-event-registration-machine-data-rows";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
+import { EventRegistrationSignalHeader } from "./event-registration/event-registration-signal-header";
 import { EventRegistrationStepper } from "./event-registration/event-registration-stepper";
 import {
     EventRegistrationStep1,
     EventRegistrationStep2,
     EventRegistrationStep3,
 } from "./event-registration/event-registration-steps";
+import { EventRegistrationUnprocessedPanel } from "./event-registration/event-registration-unprocessed-panel";
 
 export function OrderExecutionEventRegistrationSection() {
     const registration = useEventRegistrationContext();
     const machineData = useOrderExecutionMachineStompSnapshot();
-    const { step, unprocessedCount, goToStep, goNext, goBack, registerEvent, snapshot } = registration;
+    const {
+        step,
+        unprocessedCount,
+        selectedUnprocessed,
+        goToStep,
+        goNext,
+        goBack,
+        registerEvent,
+        snapshot,
+    } = registration;
 
     const headerTone = unprocessedCount > 0 ? "warning" : undefined;
     const machineDataRows = hasOrderExecutionMachineStompData(machineData)
@@ -23,7 +34,7 @@ export function OrderExecutionEventRegistrationSection() {
 
     return (
         <OrderExecutionCollapsibleSection
-            title="Регистрация событий"
+            title="Регистрация события"
             defaultOpen={false}
             tone={headerTone}
             count={unprocessedCount > 0 ? unprocessedCount : undefined}
@@ -34,15 +45,25 @@ export function OrderExecutionEventRegistrationSection() {
                     updatedAt={hasOrderExecutionMachineStompData(machineData) ? machineData.updatedAt : null}
                 />
 
-                <EventRegistrationStepper currentStep={step} onStepClick={goToStep} />
+                <EventRegistrationUnprocessedPanel registration={registration} />
 
-                {step === 1 ? <EventRegistrationStep1 registration={registration} onNext={goNext} /> : null}
-                {step === 2 ? (
-                    <EventRegistrationStep2 registration={registration} onBack={goBack} onNext={goNext} />
-                ) : null}
-                {step === 3 ? (
-                    <EventRegistrationStep3 registration={registration} onBack={goBack} onRegister={registerEvent} />
-                ) : null}
+                <div className="grid gap-4 border-t border-border pt-4">
+                    <EventRegistrationSignalHeader signalLabel={selectedUnprocessed?.description ?? null} />
+
+                    <EventRegistrationStepper currentStep={step} onStepClick={goToStep} />
+
+                    {step === 1 ? <EventRegistrationStep1 registration={registration} onNext={goNext} /> : null}
+                    {step === 2 ? (
+                        <EventRegistrationStep2 registration={registration} onBack={goBack} onNext={goNext} />
+                    ) : null}
+                    {step === 3 ? (
+                        <EventRegistrationStep3
+                            registration={registration}
+                            onBack={goBack}
+                            onRegister={registerEvent}
+                        />
+                    ) : null}
+                </div>
             </div>
         </OrderExecutionCollapsibleSection>
     );
