@@ -1,6 +1,20 @@
 import type { EventRegistrationDraft, UnprocessedMachineEvent } from "./types";
 
-/** «03-11-2028 10:15:00» → значение для `datetime-local` */
+/** «03-11-2028 10:15:00» / «2026-07-06 11:42:50» → `HH:MM:SS` */
+export function parseSignalDateToTime(signalDate: string): string {
+    const match = signalDate.match(/(?:\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!match) {
+        const timeOnly = signalDate.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (!timeOnly) return "";
+        const [, hh, mi, ss] = timeOnly;
+        return `${hh}:${mi}:${ss ?? "00"}`;
+    }
+
+    const [, hh, mi, ss] = match;
+    return `${hh}:${mi}:${ss ?? "00"}`;
+}
+
+/** @deprecated Используйте `parseSignalDateToTime` для шага 2 */
 export function parseSignalDateToDatetimeLocal(signalDate: string): string {
     const match = signalDate.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})/);
     if (!match) return "";
@@ -34,8 +48,8 @@ export function buildStep2SensorPrefill(params: {
     const patch: Partial<Pick<EventRegistrationDraft, "meterFrom" | "meterTo" | "timeFrom" | "timeTo">> = {};
 
     if (params.signal) {
-        const timeFrom = parseSignalDateToDatetimeLocal(params.signal.detectedAt);
-        const timeTo = parseSignalDateToDatetimeLocal(params.signal.endedAt);
+        const timeFrom = parseSignalDateToTime(params.signal.detectedAt);
+        const timeTo = parseSignalDateToTime(params.signal.endedAt);
         if (timeFrom) patch.timeFrom = timeFrom;
         if (timeTo) patch.timeTo = timeTo;
         if (params.signal.meterFrom) patch.meterFrom = params.signal.meterFrom;

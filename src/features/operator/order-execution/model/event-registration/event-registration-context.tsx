@@ -9,12 +9,18 @@ const EventRegistrationContext = createContext<EventRegistrationContextValue | n
 
 export function EventRegistrationProvider({
     machineId,
+    workAreaId,
+    enabled,
+    journalEnabled,
     children,
 }: {
     machineId: MachineId;
+    workAreaId?: string;
+    enabled: boolean;
+    journalEnabled: boolean;
     children: ReactNode;
 }) {
-    const value = useEventRegistration(machineId);
+    const value = useEventRegistration({ machineId, workAreaId, enabled, journalEnabled });
     return <EventRegistrationContext.Provider value={value}>{children}</EventRegistrationContext.Provider>;
 }
 

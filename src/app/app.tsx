@@ -16,7 +16,9 @@ export function App() {
     const [notificationsOpen, setNotificationsOpen] = useState(false);
 
     const isAuthPage = location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.REGISTER;
-    const showAppChrome = !isAuthPage && Boolean(session) && !isBootstrapLoading;
+    const isOrderExecutionMonitoringPage = location.pathname === ROUTES.OPERATOR.ORDER_EXECUTION_MONITORING;
+    const isChromelessPage = isAuthPage || isOrderExecutionMonitoringPage;
+    const showAppChrome = !isChromelessPage && Boolean(session) && !isBootstrapLoading;
     const isOrderExecutionPage = location.pathname === ROUTES.OPERATOR.ORDER_EXECUTION;
     const isMaterialOrderPage = location.pathname === ROUTES.OPERATOR.MATERIAL_ORDER;
     const isMaterialMovePage = location.pathname === ROUTES.OPERATOR.MATERIAL_MOVE;
@@ -29,7 +31,7 @@ export function App() {
 
     return (
         <div className="box-border h-screen overflow-hidden bg-muted p-3">
-            <div className={cn("h-full min-h-0 min-w-0", isAuthPage ? "flex" : "flex gap-3")}>
+            <div className={cn("h-full min-h-0 min-w-0", isChromelessPage ? "flex" : "flex gap-3")}>
                 {showAppChrome && (
                     <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} role={role} />
                 )}
@@ -38,7 +40,11 @@ export function App() {
                     {showAppChrome && (
                         <AppHeader onOpenNotifications={() => setNotificationsOpen(true)} />
                     )}
-                    {isProductionPlanPage ? (
+                    {isOrderExecutionMonitoringPage ? (
+                        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                            <Outlet />
+                        </main>
+                    ) : isProductionPlanPage ? (
                         <div className={productionPlanShellClassName}>
                             <Outlet />
                         </div>

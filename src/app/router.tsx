@@ -53,6 +53,10 @@ export const router = createBrowserRouter([
                                 lazy: () => import("@/features/operator/order-execution.page"),
                             },
                             {
+                                path: ROUTES.OPERATOR.ORDER_EXECUTION_MONITORING,
+                                lazy: () => import("@/features/operator/order-execution-monitoring.page"),
+                            },
+                            {
                                 path: ROUTES.OPERATOR.MATERIAL_ORDER,
                                 lazy: () => import("@/features/operator/material-order.page"),
                             },

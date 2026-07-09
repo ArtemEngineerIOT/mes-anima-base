@@ -6,10 +6,13 @@ import {
     canProceedEventRegistrationStep1,
     canProceedEventRegistrationStep2,
     createEmptyDraft,
-    draftToJournalDetails,
     findEventCode,
     getScrapRemovalMode,
 } from "./field-rules";
+import { mapEventRegistrationDiscardSignalsPayload } from "./map-event-registration-discard-signals-payload";
+import { mapEventRegistrationInitWizardPayload } from "./map-event-registration-init-wizard-payload";
+import { mapEventRegistrationProcessJournalPayload } from "./map-event-registration-process-journal-payload";
+import { mapEventRegistrationRegisterEventPayload } from "./map-event-registration-register-event-payload";
 import { getEventRegistrationSnapshot } from "./mock-event-registration";
 import {
     buildStep2SensorPrefill,
@@ -18,28 +21,25 @@ import {
 } from "./prefill-event-registration-draft";
 import type {
     EventRegistrationDraft,
+    EventRegistrationSnapshot,
     EventRegistrationStep,
     ProcessJournalEntry,
     UnprocessedMachineEvent,
 } from "./types";
+import { useEventRegistrationDiscardSignals } from "./use-event-registration-discard-signals";
+import { useEventRegistrationInitWizard } from "./use-event-registration-init-wizard";
+import { useEventRegistrationProcessJournal } from "./use-event-registration-process-journal";
+import { useEventRegistrationRegisterEvent } from "./use-event-registration-register-event";
 
-function formatRegisteredAt(): string {
-    const d = new Date();
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    return `${dd}-${mm}-${yyyy} ${hh}:${mi}:${ss}`;
-}
-
-function makeJournalId(): string {
-    return `j-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
+type UseEventRegistrationOptions = {
+    machineId: MachineId;
+    workAreaId?: string;
+    enabled: boolean;
+    journalEnabled: boolean;
+};
 
 function buildDraftForActiveSignal(
-    snapshot: ReturnType<typeof getEventRegistrationSnapshot>,
+    snapshot: EventRegistrationSnapshot,
     signal: UnprocessedMachineEvent | null,
 ): EventRegistrationDraft {
     const immediate = resolveRemoveScrapDefault(signal);
@@ -47,43 +47,156 @@ function buildDraftForActiveSignal(
         ...createEmptyDraft(snapshot),
         removeScrapImmediately: immediate,
         roll: immediate ? snapshot.scrapRollDefault : snapshot.activeRollDefault,
+        side: immediate ? "" : snapshot.sideDefault,
     };
 }
 
-export function useEventRegistration(machineId: MachineId) {
-    const snapshot = useMemo(() => getEventRegistrationSnapshot(machineId), [machineId]);
+export function useEventRegistration({
+    machineId,
+    workAreaId,
+    enabled,
+    journalEnabled,
+}: UseEventRegistrationOptions) {
+    const fallbackSnapshot = useMemo(() => getEventRegistrationSnapshot(machineId), [machineId]);
     const machineSnapshot = useOrderExecutionMachineStompSnapshot();
+    const { initWizard } = useEventRegistrationInitWizard();
+    const { discardSignals, isDiscardSignalsPending } = useEventRegistrationDiscardSignals();
+    const { loadProcessJournal } = useEventRegistrationProcessJournal();
+    const { registerEvent: registerProductionEvent, isRegisterEventPending } =
+        useEventRegistrationRegisterEvent();
+
+    const [snapshot, setSnapshot] = useState<EventRegistrationSnapshot>(fallbackSnapshot);
+    const [wizardSessionId, setWizardSessionId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     const [step, setStep] = useState<EventRegistrationStep>(1);
-    const [draft, setDraft] = useState<EventRegistrationDraft>(() => createEmptyDraft(snapshot));
-    const [journal, setJournal] = useState<ProcessJournalEntry[]>(() => snapshot.initialJournal);
-    const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>(() => snapshot.unprocessedEvents);
+    const [draft, setDraft] = useState<EventRegistrationDraft>(() => createEmptyDraft(fallbackSnapshot));
+    const [journal, setJournal] = useState<ProcessJournalEntry[]>(() => fallbackSnapshot.initialJournal);
+    const [totalLengthM, setTotalLengthM] = useState<number | null>(null);
+    const [isJournalLoading, setIsJournalLoading] = useState(false);
+    const [journalLoadError, setJournalLoadError] = useState<string | null>(null);
+    const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>(
+        () => fallbackSnapshot.unprocessedEvents,
+    );
     const [selectedUnprocessedId, setSelectedUnprocessedId] = useState<string | null>(null);
-    const [discardSelectedIds, setDiscardSelectedIds] = useState<string[]>([]);
     const [deleteComment, setDeleteComment] = useState("");
+    const [discardError, setDiscardError] = useState<string | null>(null);
+    const [registerError, setRegisterError] = useState<string | null>(null);
 
     const lastAppliedSignalIdRef = useRef<string | null>(null);
+    const initWizardRef = useRef(initWizard);
+    initWizardRef.current = initWizard;
+    const discardSignalsRef = useRef(discardSignals);
+    discardSignalsRef.current = discardSignals;
+    const loadProcessJournalRef = useRef(loadProcessJournal);
+    loadProcessJournalRef.current = loadProcessJournal;
+    const registerProductionEventRef = useRef(registerProductionEvent);
+    registerProductionEventRef.current = registerProductionEvent;
+    const journalFallbackRef = useRef(fallbackSnapshot.initialJournal);
+    journalFallbackRef.current = fallbackSnapshot.initialJournal;
+
+    const resetToFallbackSnapshot = useCallback(() => {
+        setSnapshot(fallbackSnapshot);
+        setWizardSessionId(null);
+    }, [fallbackSnapshot]);
+
+    const load = useCallback(async () => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            resetToFallbackSnapshot();
+            setLoadError("Не удалось определить workAreaId этапа");
+            return;
+        }
+
+        setIsLoading(true);
+        setLoadError(null);
+
+        try {
+            const payload = await initWizardRef.current({ workAreaId: trimmedWorkAreaId });
+            const mapped = mapEventRegistrationInitWizardPayload(payload, fallbackSnapshot);
+            setWizardSessionId(mapped.wizardSessionId || null);
+            setSnapshot(mapped.snapshot);
+        } catch (error) {
+            resetToFallbackSnapshot();
+            setLoadError(
+                error instanceof Error ? error.message : "Не удалось загрузить данные регистрации события",
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }, [fallbackSnapshot, resetToFallbackSnapshot, workAreaId]);
+
+    const loadJournal = useCallback(async () => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            setJournal(journalFallbackRef.current);
+            setTotalLengthM(null);
+            setJournalLoadError("Не удалось определить workAreaId этапа");
+            return;
+        }
+
+        setIsJournalLoading(true);
+        setJournalLoadError(null);
+
+        try {
+            const payload = await loadProcessJournalRef.current({ workAreaId: trimmedWorkAreaId });
+            const mapped = mapEventRegistrationProcessJournalPayload(payload, journalFallbackRef.current);
+            setJournal(mapped.journal);
+            setTotalLengthM(mapped.totalLengthM);
+        } catch (error) {
+            setJournal(journalFallbackRef.current);
+            setTotalLengthM(null);
+            setJournalLoadError(
+                error instanceof Error ? error.message : "Не удалось загрузить журнал процесса",
+            );
+        } finally {
+            setIsJournalLoading(false);
+        }
+    }, [workAreaId]);
+
+    useEffect(() => {
+        if (!enabled) {
+            setIsLoading(false);
+            return;
+        }
+
+        void load();
+    }, [enabled, load]);
+
+    useEffect(() => {
+        if (!journalEnabled) {
+            setIsJournalLoading(false);
+            return;
+        }
+
+        void loadJournal();
+    }, [journalEnabled, loadJournal]);
+
+    useEffect(() => {
+        resetToFallbackSnapshot();
+        setJournal(journalFallbackRef.current);
+        setTotalLengthM(null);
+        setJournalLoadError(null);
+    }, [machineId, resetToFallbackSnapshot]);
 
     useEffect(() => {
         setStep(1);
         setDraft(createEmptyDraft(snapshot));
-        setJournal(snapshot.initialJournal);
         setUnprocessed(snapshot.unprocessedEvents);
         setSelectedUnprocessedId(null);
-        setDiscardSelectedIds([]);
         setDeleteComment("");
+        setDiscardError(null);
+        setRegisterError(null);
         lastAppliedSignalIdRef.current = null;
-    }, [machineId, snapshot]);
+    }, [snapshot]);
 
     useEffect(() => {
         setSelectedUnprocessedId((current) => {
-            if (unprocessed.length === 0) {
+            if (!current) {
                 return null;
             }
-            if (current && unprocessed.some((event) => event.id === current)) {
-                return current;
-            }
-            return unprocessed[0].id;
+            return unprocessed.some((event) => event.id === current) ? current : null;
         });
     }, [unprocessed]);
 
@@ -118,7 +231,7 @@ export function useEventRegistration(machineId: MachineId) {
         (code: number) => {
             patchDraft({
                 eventCode: code,
-                subCode: "",
+                setupRuns: [],
             });
         },
         [patchDraft],
@@ -130,9 +243,10 @@ export function useEventRegistration(machineId: MachineId) {
                 removeScrapImmediately: immediate,
                 roll: immediate ? snapshot.scrapRollDefault : snapshot.activeRollDefault,
                 wholeStage: immediate ? draft.wholeStage : false,
+                side: immediate ? "" : snapshot.sideDefault,
             });
         },
-        [draft.wholeStage, patchDraft, snapshot.activeRollDefault, snapshot.scrapRollDefault],
+        [draft.wholeStage, patchDraft, snapshot.activeRollDefault, snapshot.scrapRollDefault, snapshot.sideDefault],
     );
 
     const onWholeStageChange = useCallback(
@@ -153,30 +267,30 @@ export function useEventRegistration(machineId: MachineId) {
             sensorFields: machineSnapshot.fields,
         });
 
-        setDraft((prev) => {
-            const withSubCode =
-                selectedCode?.subCodes && !prev.subCode
-                    ? { ...prev, subCode: selectedCode.subCodes[0] }
-                    : prev;
-
-            return mergeStep2SensorPrefill(withSubCode, prefill);
-        });
-    }, [machineSnapshot.fields, selectedCode, selectedUnprocessed]);
+        setDraft((prev) => mergeStep2SensorPrefill(prev, prefill));
+    }, [machineSnapshot.fields, selectedUnprocessed]);
 
     const canProceedStep1 = canProceedEventRegistrationStep1(draft);
     const canProceedStep2 = canProceedEventRegistrationStep2(draft, selectedCode);
+    const isWizardDisabled = isLoading || Boolean(loadError) || isRegisterEventPending;
 
     const goToStep = useCallback(
         (target: EventRegistrationStep) => {
+            if (isWizardDisabled) {
+                return;
+            }
             if (target === 2 && step === 1) {
                 applyStep2SensorPrefill();
             }
             setStep(target);
         },
-        [applyStep2SensorPrefill, step],
+        [applyStep2SensorPrefill, isWizardDisabled, step],
     );
 
     const goNext = useCallback(() => {
+        if (isWizardDisabled) {
+            return;
+        }
         setStep((current) => {
             if (current === 1) {
                 applyStep2SensorPrefill();
@@ -187,87 +301,151 @@ export function useEventRegistration(machineId: MachineId) {
             }
             return current;
         });
-    }, [applyStep2SensorPrefill]);
+    }, [applyStep2SensorPrefill, isWizardDisabled]);
 
     const goBack = useCallback(() => {
+        if (isWizardDisabled) {
+            return;
+        }
         setStep((s) => (s > 1 ? ((s - 1) as EventRegistrationStep) : s));
-    }, []);
+    }, [isWizardDisabled]);
 
     const resetWizard = useCallback(() => {
         setStep(1);
         setDraft(buildDraftForActiveSignal(snapshot, selectedUnprocessed));
     }, [selectedUnprocessed, snapshot]);
 
-    const registerEvent = useCallback(() => {
-        if (!selectedCode || scrapMode == null) return;
+    const registerEvent = useCallback(async () => {
+        if (!selectedCode || scrapMode == null || isWizardDisabled) return;
 
-        const details = draftToJournalDetails(draft, selectedCode, scrapMode);
-        const meterageSummary = draft.wholeStage
-            ? "Весь этап"
-            : [draft.meterFrom, draft.meterTo].filter(Boolean).join(" — ") || "—";
-
-        const entry: ProcessJournalEntry = {
-            id: makeJournalId(),
-            registeredAt: formatRegisteredAt(),
-            eventCode: selectedCode.code,
-            eventCodeLabel: `${selectedCode.code} — ${selectedCode.label}`,
-            subCode: draft.subCode || undefined,
-            removeScrapImmediately: scrapMode === "immediate",
-            startSummary: draft.wholeStage ? "Начало этапа" : draft.timeFrom || draft.meterFrom || "—",
-            endSummary: draft.wholeStage ? "Конец этапа" : draft.timeTo || draft.meterTo || "—",
-            meterageSummary,
-            details,
-        };
-
-        setJournal((prev) => [entry, ...prev]);
-
-        if (selectedUnprocessedId) {
-            setUnprocessed((prev) => prev.filter((e) => e.id !== selectedUnprocessedId));
+        const trimmedWorkAreaId = workAreaId?.trim();
+        const trimmedWizardSessionId = wizardSessionId?.trim();
+        if (!trimmedWorkAreaId) {
+            setRegisterError("Не удалось определить workAreaId этапа");
+            return;
+        }
+        if (!trimmedWizardSessionId) {
+            setRegisterError("Не удалось определить сессию мастера регистрации события");
+            return;
         }
 
-        resetWizard();
-    }, [draft, resetWizard, scrapMode, selectedCode, selectedUnprocessedId]);
+        setRegisterError(null);
 
-    const selectSignalForRegistration = useCallback(
-        (event: UnprocessedMachineEvent) => {
-            lastAppliedSignalIdRef.current = event.id;
-            setSelectedUnprocessedId(event.id);
-            setDraft(buildDraftForActiveSignal(snapshot, event));
-            setStep(1);
+        try {
+            const payload = await registerProductionEventRef.current({
+                wizardSessionId: trimmedWizardSessionId,
+                workAreaId: trimmedWorkAreaId,
+                draft,
+                scrapMode,
+                selectedSignal: selectedUnprocessed,
+                snapshot,
+            });
+            const mapped = mapEventRegistrationRegisterEventPayload(payload);
+
+            if (selectedUnprocessedId) {
+                setUnprocessed((prev) => prev.filter((event) => event.id !== selectedUnprocessedId));
+                setSelectedUnprocessedId(null);
+                lastAppliedSignalIdRef.current = null;
+            }
+
+            resetWizard();
+
+            if (mapped.processJournalRefreshHint) {
+                void loadJournal();
+            }
+        } catch (error) {
+            setRegisterError(
+                error instanceof Error ? error.message : "Не удалось зарегистрировать событие",
+            );
+        }
+    }, [
+        draft,
+        isWizardDisabled,
+        loadJournal,
+        resetWizard,
+        scrapMode,
+        selectedCode,
+        selectedUnprocessed,
+        selectedUnprocessedId,
+        snapshot,
+        wizardSessionId,
+        workAreaId,
+    ]);
+
+    const toggleUnprocessedSelection = useCallback(
+        (id: string) => {
+            if (isWizardDisabled) {
+                return;
+            }
+            setSelectedUnprocessedId((current) => (current === id ? null : id));
         },
-        [snapshot],
+        [isWizardDisabled],
     );
 
-    const toggleDiscardSelection = useCallback((id: string) => {
-        setDiscardSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-        );
-    }, []);
+    const deleteSelectedSignals = useCallback(async () => {
+        const trimmedComment = deleteComment.trim();
+        const signalId = selectedUnprocessedId;
+        if (!trimmedComment || !signalId) {
+            return;
+        }
 
-    const deleteSelectedSignals = useCallback(() => {
-        if (!deleteComment.trim() || discardSelectedIds.length === 0) return;
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            setDiscardError("Не удалось определить workAreaId этапа");
+            return;
+        }
 
-        setUnprocessed((prev) => prev.filter((event) => !discardSelectedIds.includes(event.id)));
-        setDiscardSelectedIds([]);
-        setDeleteComment("");
-    }, [deleteComment, discardSelectedIds]);
+        setDiscardError(null);
 
-    const canDeleteSelectedSignals = deleteComment.trim().length > 0 && discardSelectedIds.length > 0;
+        try {
+            const payload = await discardSignalsRef.current({
+                workAreaId: trimmedWorkAreaId,
+                signalIds: [signalId],
+                comment: trimmedComment,
+            });
+            const mapped = mapEventRegistrationDiscardSignalsPayload(payload, unprocessed);
+            setUnprocessed(mapped.unprocessedEvents);
+            setSelectedUnprocessedId(null);
+            setDeleteComment("");
+            lastAppliedSignalIdRef.current = null;
+        } catch (error) {
+            setDiscardError(
+                error instanceof Error ? error.message : "Не удалось удалить необработанные сигналы",
+            );
+        }
+    }, [deleteComment, selectedUnprocessedId, unprocessed, workAreaId]);
+
+    const canDeleteSelectedSignals =
+        deleteComment.trim().length > 0 && Boolean(selectedUnprocessedId) && !isDiscardSignalsPending;
+    const isDiscardDisabled = isWizardDisabled || isDiscardSignalsPending;
 
     const unprocessedCount = unprocessed.length;
 
     return {
         snapshot,
+        wizardSessionId,
+        isLoading,
+        loadError,
+        reload: load,
+        isWizardDisabled,
         step,
         draft,
         selectedCode,
         scrapMode,
         journal,
+        totalLengthM,
+        isJournalLoading,
+        journalLoadError,
+        reloadJournal: loadJournal,
         unprocessed,
         selectedUnprocessed,
         selectedUnprocessedId,
-        discardSelectedIds,
         deleteComment,
+        discardError,
+        registerError,
+        isDiscardSignalsPending,
+        isRegisterEventPending,
+        isDiscardDisabled,
         unprocessedCount,
         patchDraft,
         onEventCodeChange,
@@ -280,8 +458,7 @@ export function useEventRegistration(machineId: MachineId) {
         goNext,
         goBack,
         registerEvent,
-        selectSignalForRegistration,
-        toggleDiscardSelection,
+        toggleUnprocessedSelection,
         deleteSelectedSignals,
         setDeleteComment,
     };

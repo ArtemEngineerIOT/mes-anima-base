@@ -1712,6 +1712,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/initProductionEventWizard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Init мастера регистрации события (SCR-07 / UC-25)
+         * @description Раскрытие блока «Регистрация события» — коды, необработанные сигналы, справочники
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionProductionEventWizardInitRequest"];
+                };
+            };
+            responses: {
+                /** @description Init мастера (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionProductionEventWizardInitResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/discardProductionEventSignals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Удаление необработанных сигналов (SCR-07 / UC-25)
+         * @description Оператор удаляет выбранные необработанные сигналы машины с обязательным комментарием
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionProductionEventWizardDiscardSignalsRequest"];
+                };
+            };
+            responses: {
+                /** @description Сигналы удалены (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionProductionEventWizardDiscardSignalsResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getProductionEventProcessJournal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Журнал процесса этапа (SCR-07 / UC-25)
+         * @description Таблица зарегистрированных событий с деталями и итоговым метражом
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionProductionEventProcessJournalRequest"];
+                };
+            };
+            responses: {
+                /** @description Журнал процесса (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionProductionEventProcessJournalResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/registerProductionEvent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Регистрация производственного события (SCR-07 / UC-25)
+         * @description Подтверждение мастера — сохранение события в MES
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionProductionEventRegisterRequest"];
+                };
+            };
+            responses: {
+                /** @description Событие зарегистрировано (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionProductionEventRegisterResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2708,6 +2888,96 @@ export interface components {
         OrderExecutionMonitoringStageEventsResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionMonitoringStageEventsResultItem"][];
         })[];
+        /** @description Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события */
+        OrderExecutionProductionEventWizardInitRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventWizardInitRequest: components["schemas"]["OrderExecutionProductionEventWizardInitRequestItem"][];
+        /** @description Обёртка ответа RPC мастера регистрации события (initWizard и др.) */
+        OrderExecutionProductionEventWizardRpcResultRow: {
+            /** @description OK — успех */
+            error_code?: string;
+            error_message?: string | null;
+            /** @description Полезная нагрузка метода; формат уточняется по контракту BFF */
+            result?: {
+                [key: string]: unknown;
+            }[];
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventWizardInitResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
+        /** @description Запрос discardSignals (SCR-07 / UC-25) — удаление необработанных сигналов */
+        OrderExecutionProductionEventWizardDiscardSignalsRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Идентификаторы сигналов для удаления через запятую (`signal_ids`, CSV) */
+            signalIds: string;
+            /** @description Комментарий оператора (обязателен) */
+            comment: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventWizardDiscardSignalsRequest: components["schemas"]["OrderExecutionProductionEventWizardDiscardSignalsRequestItem"][];
+        OrderExecutionProductionEventWizardDiscardSignalsResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
+        /** @description Запрос getProcessJournal (SCR-07 / UC-25) — журнал процесса этапа */
+        OrderExecutionProductionEventProcessJournalRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventProcessJournalRequest: components["schemas"]["OrderExecutionProductionEventProcessJournalRequestItem"][];
+        OrderExecutionProductionEventProcessJournalResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
+        /** @description Запрос registerEvent (SCR-07 / UC-25) — регистрация производственного события */
+        OrderExecutionProductionEventRegisterRequestItem: {
+            /** @description Идентификатор сессии мастера (`wizard_session_id` из initWizard) */
+            wizardSessionId: string;
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`, из сессии) */
+            operatorRef?: string;
+            /** @description Код события (`event_code`) */
+            eventCode: string;
+            /** @description Удалять брак сразу (`remove_immediately`, главная развилка REMOVED / REGISTERED) */
+            removeImmediately: boolean;
+            /** @description Идентификаторы необработанных сигналов (`signal_ids`, CSV; пустая строка при ручном вводе) */
+            signalIds: string;
+            /** @description Заезды на настройку (`setup_run_tags`, CSV; пустая строка, если не код 120) */
+            setupRunTags: string;
+            /** @description Весь этап (`whole_stage`; `false`, если не REMOVED) */
+            wholeStage: boolean;
+            /** @description Ссылка на рулон (`material_roll_ref`, ref из rolls pipeline) */
+            materialRollRef?: string;
+            /** @description Метраж начала (`length_start_m`) */
+            lengthStartM?: number;
+            /** @description Метраж конца (`length_end_m`) */
+            lengthEndM?: number;
+            /** @description Время начала (`time_start`, `yyyy-MM-dd HH:mm:ss`) */
+            timeStart?: string;
+            /** @description Время конца (`time_end`, `yyyy-MM-dd HH:mm:ss`) */
+            timeEnd?: string;
+            /** @description Сторона (`side`, PM / PASSER; только REGISTERED) */
+            side?: string;
+            /** @description Выбор рядов (`line_selection`, ALL или CSV; только REGISTERED) */
+            lineSelection?: string;
+            /** @description Карточка начала (`card_start`; только REGISTERED) */
+            cardStart?: string;
+            /** @description Карточка конца (`card_end`; только REGISTERED) */
+            cardEnd?: string;
+            /** @description Причина склейки (`splice_reason_code`; пустая строка, если не код 174) */
+            spliceReasonCode: string;
+            /** @description Комментарий оператора */
+            comment?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventRegisterRequest: components["schemas"]["OrderExecutionProductionEventRegisterRequestItem"][];
+        OrderExecutionProductionEventRegisterResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
         MaterialOrderSubmitLineItem: components["schemas"]["MaterialOrderComposeLineResultItem"];
     };
     responses: {

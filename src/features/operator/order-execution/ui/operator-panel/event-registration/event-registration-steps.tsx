@@ -2,11 +2,26 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/shared/ui/kit/button";
 import { Icon } from "@/shared/ui/kit/icon";
+import { Informer } from "@/shared/ui/kit/informer";
 import { Label } from "@/shared/ui/kit/label";
+import { MultiSelectCombobox } from "@/shared/ui/kit/multi-select-combobox";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
+import { cn } from "@/shared/lib/css";
 
 import type { useEventRegistration } from "../../../model/event-registration/use-event-registration";
-import { isFieldRequired } from "../../../model/event-registration/field-rules";
+import {
+    areStep2MeterFieldsRequired,
+    areStep2TimeFieldsRequired,
+    formatEventCodeOptionLabel,
+    formatSetupRunLabels,
+    getMeterFieldError,
+    sanitizeMeterInput,
+} from "../../../model/event-registration/field-rules";
+import {
+    buildLineNumberOptions,
+    formatSelectedLinesSummary,
+    toggleSelectedLine,
+} from "../../../model/event-registration/line-number-options";
 
 const selectClass =
     "h-9 w-full rounded-sm border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
@@ -43,61 +58,83 @@ function NextButton({ disabled, onClick }: { disabled?: boolean; onClick: () => 
 export function EventRegistrationStep1({
     registration,
     onNext,
+    disabled,
 }: {
     registration: Registration;
     onNext: () => void;
+    disabled?: boolean;
 }) {
-    const { snapshot, draft, onEventCodeChange, onRemoveScrapChange, canProceedStep1 } = registration;
+    const { snapshot, draft, selectedCode, onEventCodeChange, onRemoveScrapChange, patchDraft, canProceedStep1 } =
+        registration;
+    const showSetupRuns = Boolean(selectedCode?.requiresSetupRuns && snapshot.setupRunTags.length > 0);
 
     return (
         <div className="grid gap-4">
-            <div className="grid gap-3 sm:max-w-md">
-                <div className="grid gap-2">
-                    <FieldLabel htmlFor="event-code" required>
-                        Код события
-                    </FieldLabel>
-                    <select
-                        id="event-code"
-                        value={draft.eventCode ?? ""}
-                        onChange={(e) => onEventCodeChange(Number(e.target.value))}
-                        className={selectClass}
-                    >
-                        <option value="" disabled>
-                            Укажите код события
-                        </option>
-                        {snapshot.eventCodes.map((c) => (
-                            <option key={c.code} value={c.code}>
-                                {c.code} — {c.label}
+            <div className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid min-w-0 gap-2">
+                        <FieldLabel htmlFor="event-code" required>
+                            Код события
+                        </FieldLabel>
+                        <select
+                            id="event-code"
+                            value={draft.eventCode ?? ""}
+                            disabled={disabled}
+                            onChange={(e) => onEventCodeChange(Number(e.target.value))}
+                            className={selectClass}
+                        >
+                            <option value="" disabled>
+                                Укажите код события
                             </option>
-                        ))}
-                    </select>
+                            {snapshot.eventCodes.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                    {formatEventCodeOptionLabel(c.code, c.label)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {showSetupRuns ? (
+                        <div className={cn("min-w-0", disabled && "pointer-events-none opacity-50")}>
+                            <MultiSelectCombobox
+                                fieldLabel="Заезды на настройку"
+                                options={snapshot.setupRunTags.map((tag) => ({
+                                    value: tag.tag,
+                                    label: tag.label,
+                                }))}
+                                selected={draft.setupRuns}
+                                onToggle={(tag) => {
+                                    const next = draft.setupRuns.includes(tag)
+                                        ? draft.setupRuns.filter((item) => item !== tag)
+                                        : [...draft.setupRuns, tag];
+                                    patchDraft({ setupRuns: next });
+                                }}
+                                onClear={() => patchDraft({ setupRuns: [] })}
+                                clearAriaLabel="Снять выбор заездов на настройку"
+                                placeholder="Не выбрано"
+                            />
+                        </div>
+                    ) : null}
                 </div>
 
-                <div className="grid gap-2">
-                    <FieldLabel required>Удалять брак сразу?</FieldLabel>
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant={draft.removeScrapImmediately === true ? "default" : "outline"}
-                            onClick={() => onRemoveScrapChange(true)}
-                        >
-                            Да
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant={draft.removeScrapImmediately === false ? "default" : "outline"}
-                            onClick={() => onRemoveScrapChange(false)}
-                        >
-                            Нет
-                        </Button>
-                    </div>
-                </div>
+                <label
+                    htmlFor="remove-scrap-immediately"
+                    className="flex items-center gap-2 text-[12px] text-foreground"
+                >
+                    <input
+                        id="remove-scrap-immediately"
+                        type="checkbox"
+                        checked={draft.removeScrapImmediately === true}
+                        disabled={disabled}
+                        onChange={(e) => onRemoveScrapChange(e.target.checked)}
+                        className="size-4 rounded border-input"
+                    />
+                    Удалять брак сразу?
+                </label>
             </div>
 
             <div className="flex justify-end">
-                <NextButton disabled={!canProceedStep1} onClick={onNext} />
+                <NextButton disabled={disabled || !canProceedStep1} onClick={onNext} />
             </div>
         </div>
     );
@@ -107,271 +144,343 @@ export function EventRegistrationStep2({
     registration,
     onBack,
     onNext,
+    disabled,
 }: {
     registration: Registration;
     onBack: () => void;
     onNext: () => void;
+    disabled?: boolean;
 }) {
     const {
         snapshot,
         draft,
-        selectedCode,
         scrapMode,
         patchDraft,
         onWholeStageChange,
         canProceedStep2,
     } = registration;
     const immediate = scrapMode === "immediate";
+    const lineOptions = buildLineNumberOptions(snapshot);
+    const fieldsDisabled = Boolean(disabled);
+    const meterFieldsDisabled = fieldsDisabled || (immediate && draft.wholeStage);
+    const timeFieldsDisabled = meterFieldsDisabled;
+    const metersRequired = scrapMode ? areStep2MeterFieldsRequired(draft, scrapMode) : false;
+    const timesRequired = scrapMode ? areStep2TimeFieldsRequired(draft, scrapMode) : false;
+
+    if (draft.removeScrapImmediately == null) {
+        return null;
+    }
 
     return (
         <div className="grid gap-4">
-            {selectedCode?.subCodes ? (
-                <div className="grid gap-2 sm:max-w-md">
-                    <FieldLabel htmlFor="event-subcode">Подкод (зеропулы)</FieldLabel>
-                    <select
-                        id="event-subcode"
-                        value={draft.subCode}
-                        onChange={(e) => patchDraft({ subCode: e.target.value })}
-                        className={selectClass}
-                    >
-                        {selectedCode.subCodes.map((sc) => (
-                            <option key={sc} value={sc}>
-                                {sc}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            ) : null}
+            {immediate ? (
+                <>
+                    <EventRegistrationRollField
+                        snapshot={snapshot}
+                        value={draft.roll}
+                        disabled={fieldsDisabled}
+                        onChange={(roll) => patchDraft({ roll })}
+                    />
 
-            {draft.removeScrapImmediately != null ? (
-                immediate ? (
-                    <>
-                        <label className="flex items-center gap-2 text-[12px] text-foreground">
-                            <input
-                                type="checkbox"
-                                checked={draft.wholeStage}
-                                onChange={(e) => onWholeStageChange(e.target.checked)}
-                                className="size-4 rounded border-input"
+                    <label className="flex items-center gap-2 text-[12px] text-foreground">
+                        <input
+                            type="checkbox"
+                            checked={draft.wholeStage}
+                            disabled={fieldsDisabled}
+                            onChange={(e) => onWholeStageChange(e.target.checked)}
+                            className="size-4 rounded border-input"
+                        />
+                        Весь этап
+                    </label>
+
+                    <EventRegistrationMeterRow
+                        draft={draft}
+                        disabled={meterFieldsDisabled}
+                        required={metersRequired}
+                        onPatch={patchDraft}
+                    />
+
+                    <EventRegistrationTimeRow
+                        draft={draft}
+                        disabled={timeFieldsDisabled}
+                        required={timesRequired}
+                        onPatch={patchDraft}
+                    />
+                </>
+            ) : (
+                <>
+                    <div className="grid gap-3 sm:grid-cols-4">
+                        <div className="sm:col-span-2">
+                            <EventRegistrationRollField
+                                snapshot={snapshot}
+                                value={draft.roll}
+                                disabled={fieldsDisabled}
+                                onChange={(roll) => patchDraft({ roll })}
                             />
-                            Весь этап
-                        </label>
-
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <FieldLabel
-                                    htmlFor="meter-from"
-                                    required={isFieldRequired(selectedCode, "meterage", draft) && !draft.wholeStage}
-                                >
-                                    Начало (м)
-                                </FieldLabel>
-                                <input
-                                    id="meter-from"
-                                    value={draft.meterFrom}
-                                    disabled={draft.wholeStage}
-                                    onChange={(e) => patchDraft({ meterFrom: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <FieldLabel
-                                    htmlFor="meter-to"
-                                    required={isFieldRequired(selectedCode, "meterage", draft) && !draft.wholeStage}
-                                >
-                                    Конец (м)
-                                </FieldLabel>
-                                <input
-                                    id="meter-to"
-                                    value={draft.meterTo}
-                                    disabled={draft.wholeStage}
-                                    onChange={(e) => patchDraft({ meterTo: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <FieldLabel
-                                    htmlFor="time-from"
-                                    required={isFieldRequired(selectedCode, "time", draft) && !draft.wholeStage}
-                                >
-                                    Начало (время)
-                                </FieldLabel>
-                                <input
-                                    id="time-from"
-                                    type="datetime-local"
-                                    value={draft.timeFrom}
-                                    disabled={draft.wholeStage}
-                                    onChange={(e) => patchDraft({ timeFrom: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <FieldLabel
-                                    htmlFor="time-to"
-                                    required={isFieldRequired(selectedCode, "time", draft) && !draft.wholeStage}
-                                >
-                                    Конец (время)
-                                </FieldLabel>
-                                <input
-                                    id="time-to"
-                                    type="datetime-local"
-                                    value={draft.timeTo}
-                                    disabled={draft.wholeStage}
-                                    onChange={(e) => patchDraft({ timeTo: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </div>
                         </div>
-                    </>
-                ) : (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="side">Сторона</FieldLabel>
+
+                        <div className="grid min-w-0 gap-2">
+                            <FieldLabel htmlFor="side" required>
+                                Сторона
+                            </FieldLabel>
                             <select
                                 id="side"
                                 value={draft.side}
+                                disabled={fieldsDisabled}
                                 onChange={(e) => patchDraft({ side: e.target.value as "" | "PM" | "Passer" })}
                                 className={selectClass}
                             >
-                                <option value="">Выберите сторону</option>
-                                {snapshot.sideOptions.map((s) => (
-                                    <option key={s} value={s}>
-                                        {s}
+                                <option value="">Не выбрано</option>
+                                {snapshot.sideOptions.map((side) => (
+                                    <option key={side} value={side}>
+                                        {side}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="lines">Ряд (линии)</FieldLabel>
-                            <input
-                                id="lines"
-                                value={draft.lineNumbers}
-                                placeholder={`1, 3, 5-7 или все (${snapshot.lineCount})`}
-                                onChange={(e) => patchDraft({ lineNumbers: e.target.value })}
-                                className={inputClass}
+
+                        <div className={cn("min-w-0", fieldsDisabled && "pointer-events-none opacity-50")}>
+                            <MultiSelectCombobox
+                                fieldLabel="Ряд *"
+                                options={lineOptions}
+                                selected={draft.selectedLines}
+                                onToggle={(lineNumber) => {
+                                    patchDraft({
+                                        selectedLines: toggleSelectedLine(draft.selectedLines, lineNumber),
+                                    });
+                                }}
+                                onClear={() => patchDraft({ selectedLines: [] })}
+                                clearAriaLabel="Снять выбор рядов"
+                                placeholder="Не выбрано"
                             />
                         </div>
+                    </div>
+
+                    <EventRegistrationMeterRow
+                        draft={draft}
+                        disabled={fieldsDisabled}
+                        required={metersRequired}
+                        onPatch={patchDraft}
+                    />
+
+                    <EventRegistrationTimeRow
+                        draft={draft}
+                        disabled={fieldsDisabled}
+                        required={timesRequired}
+                        onPatch={patchDraft}
+                    />
+
+                    <div className="grid gap-3 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <FieldLabel htmlFor="meter-from-def" required={isFieldRequired(selectedCode, "meterage", draft)}>
-                                Начало (м)
+                            <FieldLabel htmlFor="start-card" required>
+                                Карточка 1
                             </FieldLabel>
-                            <input
-                                id="meter-from-def"
-                                value={draft.meterFrom}
-                                onChange={(e) => patchDraft({ meterFrom: e.target.value })}
-                                className={inputClass}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="meter-to-def" required={isFieldRequired(selectedCode, "meterage", draft)}>
-                                Конец (м)
-                            </FieldLabel>
-                            <input
-                                id="meter-to-def"
-                                value={draft.meterTo}
-                                onChange={(e) => patchDraft({ meterTo: e.target.value })}
-                                className={inputClass}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="start-card">Карточка начала</FieldLabel>
                             <select
                                 id="start-card"
                                 value={draft.startCard}
+                                disabled={fieldsDisabled}
                                 onChange={(e) => patchDraft({ startCard: e.target.value })}
                                 className={selectClass}
                             >
-                                <option value="">—</option>
-                                {snapshot.cardColorOptions.map((c) => (
-                                    <option key={c} value={c}>
-                                        {c}
+                                <option value="">Не выбрано</option>
+                                {snapshot.cardColorOptions.map((card) => (
+                                    <option key={card} value={card}>
+                                        {card}
                                     </option>
                                 ))}
                             </select>
                         </div>
                         <div className="grid gap-2">
-                            <FieldLabel htmlFor="end-card">Карточка конца</FieldLabel>
+                            <FieldLabel htmlFor="end-card" required>
+                                Карточка 2
+                            </FieldLabel>
                             <select
                                 id="end-card"
                                 value={draft.endCard}
+                                disabled={fieldsDisabled}
                                 onChange={(e) => patchDraft({ endCard: e.target.value })}
                                 className={selectClass}
                             >
-                                <option value="">—</option>
-                                {snapshot.cardColorOptions.map((c) => (
-                                    <option key={c} value={c}>
-                                        {c}
+                                <option value="">Не выбрано</option>
+                                {snapshot.cardColorOptions.map((card) => (
+                                    <option key={card} value={card}>
+                                        {card}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="time-from-def" required={isFieldRequired(selectedCode, "time", draft)}>
-                                Начало (время)
-                            </FieldLabel>
-                            <input
-                                id="time-from-def"
-                                type="datetime-local"
-                                value={draft.timeFrom}
-                                onChange={(e) => patchDraft({ timeFrom: e.target.value })}
-                                className={inputClass}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <FieldLabel htmlFor="time-to-def" required={isFieldRequired(selectedCode, "time", draft)}>
-                                Конец (время)
-                            </FieldLabel>
-                            <input
-                                id="time-to-def"
-                                type="datetime-local"
-                                value={draft.timeTo}
-                                onChange={(e) => patchDraft({ timeTo: e.target.value })}
-                                className={inputClass}
-                            />
-                        </div>
-                    </div>
-                )
-            ) : null}
-
-            {draft.removeScrapImmediately != null ? (
-                <>
-                    <div className="grid gap-2">
-                        <FieldLabel htmlFor="roll" required>
-                            Рулон
-                        </FieldLabel>
-                        <select
-                            id="roll"
-                            value={draft.roll}
-                            onChange={(e) => patchDraft({ roll: e.target.value })}
-                            className={selectClass}
-                        >
-                            {snapshot.rollOptions.map((r) => (
-                                <option key={r} value={r}>
-                                    {r}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="grid gap-2">
-                        <FieldLabel htmlFor="comment" required={isFieldRequired(selectedCode, "comment", draft)}>
-                            Комментарий
-                        </FieldLabel>
-                        <textarea
-                            id="comment"
-                            value={draft.comment}
-                            onChange={(e) => patchDraft({ comment: e.target.value })}
-                            rows={3}
-                            className={textareaClass}
-                        />
                     </div>
                 </>
-            ) : null}
+            )}
+
+            <EventRegistrationCommentField
+                draft={draft}
+                disabled={fieldsDisabled}
+                onChange={(comment) => patchDraft({ comment })}
+            />
 
             <div className="flex justify-between gap-2">
-                <Button type="button" variant="outline" onClick={onBack}>
+                <Button type="button" variant="outline" disabled={disabled} onClick={onBack}>
                     Назад
                 </Button>
-                <NextButton disabled={!canProceedStep2} onClick={onNext} />
+                <NextButton disabled={disabled || !canProceedStep2} onClick={onNext} />
             </div>
+        </div>
+    );
+}
+
+function EventRegistrationRollField({
+    snapshot,
+    value,
+    disabled,
+    onChange,
+}: {
+    snapshot: Registration["snapshot"];
+    value: string;
+    disabled?: boolean;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="grid gap-2">
+            <FieldLabel htmlFor="roll" required>
+                Рулон
+            </FieldLabel>
+            <select
+                id="roll"
+                value={value}
+                disabled={disabled}
+                onChange={(e) => onChange(e.target.value)}
+                className={selectClass}
+            >
+                {snapshot.rollOptions.map((roll) => (
+                    <option key={roll} value={roll}>
+                        {roll}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+function EventRegistrationMeterRow({
+    draft,
+    disabled,
+    required,
+    onPatch,
+}: {
+    draft: Registration["draft"];
+    disabled?: boolean;
+    required: boolean;
+    onPatch: Registration["patchDraft"];
+}) {
+    const meterFromError = getMeterFieldError(draft.meterFrom, required);
+    const meterToError = getMeterFieldError(draft.meterTo, required);
+
+    return (
+        <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2">
+                <FieldLabel htmlFor="meter-from" required={required}>
+                    Начало, м
+                </FieldLabel>
+                <input
+                    id="meter-from"
+                    inputMode="decimal"
+                    value={draft.meterFrom}
+                    disabled={disabled}
+                    aria-invalid={Boolean(meterFromError)}
+                    onChange={(e) => onPatch({ meterFrom: sanitizeMeterInput(e.target.value) })}
+                    className={cn(inputClass, meterFromError && "border-destructive")}
+                />
+                {meterFromError ? (
+                    <span className="text-[11px] text-destructive">{meterFromError}</span>
+                ) : null}
+            </div>
+            <div className="grid gap-2">
+                <FieldLabel htmlFor="meter-to" required={required}>
+                    Конец, м
+                </FieldLabel>
+                <input
+                    id="meter-to"
+                    inputMode="decimal"
+                    value={draft.meterTo}
+                    disabled={disabled}
+                    aria-invalid={Boolean(meterToError)}
+                    onChange={(e) => onPatch({ meterTo: sanitizeMeterInput(e.target.value) })}
+                    className={cn(inputClass, meterToError && "border-destructive")}
+                />
+                {meterToError ? <span className="text-[11px] text-destructive">{meterToError}</span> : null}
+            </div>
+        </div>
+    );
+}
+
+function EventRegistrationTimeRow({
+    draft,
+    disabled,
+    required,
+    onPatch,
+}: {
+    draft: Registration["draft"];
+    disabled?: boolean;
+    required: boolean;
+    onPatch: Registration["patchDraft"];
+}) {
+    return (
+        <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2">
+                <FieldLabel htmlFor="time-from" required={required}>
+                    Начало, мин
+                </FieldLabel>
+                <input
+                    id="time-from"
+                    type="time"
+                    step={1}
+                    value={draft.timeFrom}
+                    disabled={disabled}
+                    onChange={(e) => onPatch({ timeFrom: e.target.value })}
+                    className={inputClass}
+                />
+            </div>
+            <div className="grid gap-2">
+                <FieldLabel htmlFor="time-to" required={required}>
+                    Конец, мин
+                </FieldLabel>
+                <input
+                    id="time-to"
+                    type="time"
+                    step={1}
+                    value={draft.timeTo}
+                    disabled={disabled}
+                    onChange={(e) => onPatch({ timeTo: e.target.value })}
+                    className={inputClass}
+                />
+            </div>
+        </div>
+    );
+}
+
+function EventRegistrationCommentField({
+    draft,
+    disabled,
+    onChange,
+}: {
+    draft: Registration["draft"];
+    disabled?: boolean;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="grid gap-2">
+            <FieldLabel htmlFor="comment" required>
+                Комментарий
+            </FieldLabel>
+            <textarea
+                id="comment"
+                value={draft.comment}
+                disabled={disabled}
+                onChange={(e) => onChange(e.target.value)}
+                rows={3}
+                className={textareaClass}
+            />
         </div>
     );
 }
@@ -380,18 +489,25 @@ export function EventRegistrationStep3({
     registration,
     onBack,
     onRegister,
+    disabled,
 }: {
     registration: Registration;
     onBack: () => void;
     onRegister: () => void;
+    disabled?: boolean;
 }) {
-    const { draft, selectedCode, scrapMode } = registration;
+    const { draft, selectedCode, scrapMode, snapshot, registerError, isRegisterEventPending } = registration;
 
     if (!selectedCode || scrapMode == null) return null;
 
+    const setupRunsSummary =
+        draft.setupRuns.length > 0
+            ? formatSetupRunLabels(snapshot.setupRunTags, draft.setupRuns)
+            : "";
+
     const summary = [
         { label: "Код события", value: `${selectedCode.code} — ${selectedCode.label}` },
-        ...(draft.subCode ? [{ label: "Подкод", value: draft.subCode }] : []),
+        ...(setupRunsSummary ? [{ label: "Заезды на настройку", value: setupRunsSummary }] : []),
         { label: "Удалять брак сразу", value: scrapMode === "immediate" ? "Да" : "Нет" },
         ...(draft.wholeStage ? [{ label: "Весь этап", value: "Да" }] : []),
         ...(!draft.wholeStage && (draft.meterFrom || draft.meterTo)
@@ -402,16 +518,16 @@ export function EventRegistrationStep3({
             : []),
         { label: "Рулон", value: draft.roll || "—" },
         ...(draft.side ? [{ label: "Сторона", value: draft.side }] : []),
-        ...(draft.lineNumbers ? [{ label: "Ряд", value: draft.lineNumbers }] : []),
-        ...(draft.startCard ? [{ label: "Карточка начала", value: draft.startCard }] : []),
-        ...(draft.endCard ? [{ label: "Карточка конца", value: draft.endCard }] : []),
+        ...(draft.selectedLines.length > 0
+            ? [{ label: "Ряд", value: formatSelectedLinesSummary(draft.selectedLines) }]
+            : []),
+        ...(draft.startCard ? [{ label: "Карточка 1", value: draft.startCard }] : []),
+        ...(draft.endCard ? [{ label: "Карточка 2", value: draft.endCard }] : []),
         ...(draft.comment ? [{ label: "Комментарий", value: draft.comment }] : []),
     ];
 
     return (
         <div className="grid gap-4">
-            <InformerWarning />
-
             <dl className="grid gap-2 rounded-sm border border-border bg-muted/20 p-3">
                 {summary.map((row) => (
                     <div key={row.label} className="grid gap-0.5 sm:grid-cols-[160px_1fr]">
@@ -421,23 +537,26 @@ export function EventRegistrationStep3({
                 ))}
             </dl>
 
+            <Informer
+                tone="warning"
+                variant="bordered"
+                size="s"
+                title="Внимание"
+                description="Записи о событии будут добавлены в систему. Убедитесь, что введённые данные верны."
+            />
+
+            {registerError ? (
+                <Informer tone="alert" variant="bordered" size="s" title="Ошибка регистрации" description={registerError} />
+            ) : null}
+
             <div className="flex justify-between gap-2">
-                <Button type="button" variant="outline" onClick={onBack}>
+                <Button type="button" variant="outline" disabled={disabled} onClick={onBack}>
                     Назад
                 </Button>
-                <Button type="button" onClick={onRegister}>
-                    Зарегистрировать
+                <Button type="button" disabled={disabled} onClick={() => void onRegister()}>
+                    {isRegisterEventPending ? "Регистрация…" : "Зарегистрировать"}
                 </Button>
             </div>
-        </div>
-    );
-}
-
-function InformerWarning() {
-    return (
-        <div className="rounded-sm border border-border bg-card px-3 py-2 text-[12px] text-muted-foreground">
-            <span className="font-medium text-foreground">Внимание.</span> Записи о событии будут добавлены в систему.
-            Убедитесь, что введённые данные верны.
         </div>
     );
 }

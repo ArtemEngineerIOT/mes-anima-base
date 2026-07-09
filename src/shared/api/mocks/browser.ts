@@ -11,6 +11,7 @@ import { orderExecutionMaterialReturnHandlers } from "./handlers/order-execution
 import { orderExecutionMaterialFullWriteoffHandlers } from "./handlers/order-execution-material-full-writeoff";
 import { orderExecutionReleaseHandlers } from "./handlers/order-execution-release";
 import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-monitoring";
+import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
 import { orderExecutionListCylindersReportHandlers } from "./handlers/order-execution-list-cylinders-report";
 import { orderExecutionStageInfoReportHandlers } from "./handlers/order-execution-stage-info-report";
 import { orderExecutionMapParametersReportHandlers } from "./handlers/order-execution-map-parameters-report";
@@ -50,6 +51,7 @@ export const worker = setupWorker(
     ...orderExecutionMaterialFullWriteoffHandlers,
     ...orderExecutionReleaseHandlers,
     ...orderExecutionMonitoringHandlers,
+    ...orderExecutionProductionEventWizardHandlers,
     ...orderExecutionListCylindersReportHandlers,
     ...orderExecutionStageInfoReportHandlers,
     ...orderExecutionMapParametersReportHandlers,

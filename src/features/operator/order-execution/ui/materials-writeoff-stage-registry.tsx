@@ -17,6 +17,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 
 type MaterialsWriteoffStageRegistryProps = {
+    showWriteoffForm?: boolean;
+    selectedNomenclature?: string | null;
     writeoffForm: MaterialsWriteoffFormState;
     warehouseOptions: string[];
     isWriteoffWeightLoading?: boolean;
@@ -45,6 +47,8 @@ type MaterialsWriteoffStageRegistryProps = {
 };
 
 export function MaterialsWriteoffStageRegistry({
+    showWriteoffForm = true,
+    selectedNomenclature = null,
     writeoffForm,
     warehouseOptions,
     isWriteoffWeightLoading = false,
@@ -73,86 +77,85 @@ export function MaterialsWriteoffStageRegistry({
 }: MaterialsWriteoffStageRegistryProps) {
     return (
         <div className="space-y-3">
-            <div className={cnSectionBlockTitle()}>Данные для списания и/или последующего возврата</div>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
+            {showWriteoffForm ? (
+                <>
+                    <div className={cnSectionBlockTitle()}>Данные для списания и последующего возврата</div>
                     <div>
-                        <div className={comboboxFieldLabelClassName}>Метраж, м</div>
-                        <Input
-                            value={writeoffForm.meters}
-                            inputMode="decimal"
-                            onChange={(e) => onWriteoffFormChange({ meters: e.target.value })}
-                            className="mt-1"
-                        />
+                        <div className={comboboxFieldLabelClassName}>Списываемая номенклатура</div>
+                        <Input value={selectedNomenclature ?? "—"} readOnly disabled className="mt-1" />
                     </div>
-                    <div>
-                        <div className={comboboxFieldLabelClassName}>Вес, кг</div>
-                        <Input
-                            value={isWriteoffWeightLoading ? "…" : writeoffForm.weight}
-                            readOnly
-                            disabled
-                            placeholder="—"
-                            className="mt-1"
-                        />
-                        {writeoffWeightError ? (
-                            <div className="mt-1 text-[11px] text-destructive">{writeoffWeightError}</div>
-                        ) : null}
-                    </div>
-                    <div>
-                        <div className={comboboxFieldLabelClassName}>Отправить на склад</div>
-                        <select
-                            className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                            value={writeoffForm.warehouse}
-                            onChange={(e) => onWriteoffFormChange({ warehouse: e.target.value })}
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                        <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
+                            <div>
+                                <div className={comboboxFieldLabelClassName}>Метраж, м</div>
+                                <Input
+                                    value={writeoffForm.meters}
+                                    inputMode="decimal"
+                                    onChange={(e) => onWriteoffFormChange({ meters: e.target.value })}
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <div className={comboboxFieldLabelClassName}>Вес, кг</div>
+                                <Input
+                                    value={isWriteoffWeightLoading ? "…" : writeoffForm.weight}
+                                    inputMode="decimal"
+                                    onChange={(e) => onWriteoffFormChange({ weight: e.target.value })}
+                                    className="mt-1"
+                                />
+                                {writeoffWeightError ? (
+                                    <div className="mt-1 text-[11px] text-destructive">{writeoffWeightError}</div>
+                                ) : null}
+                            </div>
+                            <div>
+                                <div className={comboboxFieldLabelClassName}>Отправить на склад</div>
+                                <select
+                                    className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                    value={writeoffForm.warehouse}
+                                    onChange={(e) => onWriteoffFormChange({ warehouse: e.target.value })}
+                                >
+                                    <option value="">Выберите склад</option>
+                                    {warehouseOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                            Склад {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            className="shrink-0"
+                            disabled={!canCalculateWeight || isWriteoffWeightLoading}
+                            onClick={onCalculateWriteoffWeight}
                         >
-                            <option value="">Выберите склад</option>
-                            {warehouseOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
+                            {isWriteoffWeightLoading ? "Расчёт…" : "Рассчитать"}
+                        </Button>
                     </div>
-                </div>
-                <Button
-                    size="sm"
-                    className="shrink-0"
-                    disabled={!canCalculateWeight || isWriteoffWeightLoading}
-                    onClick={onCalculateWriteoffWeight}
-                >
-                    {isWriteoffWeightLoading ? "Расчёт…" : "Рассчитать"}
-                </Button>
-            </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                {reflectReturnError ? (
-                    <div className="w-full text-right text-[12px] text-destructive">{reflectReturnError}</div>
-                ) : null}
-                {writeOffFullyError ? (
-                    <div className="w-full text-right text-[12px] text-destructive">{writeOffFullyError}</div>
-                ) : null}
-                <Button
-                    size="sm"
-                    disabled={!isReflectReturnEnabled}
-                    onClick={onReflectMaterialReturn}
-                >
-                    {isReflectingReturn ? "Отражение…" : "Отразить возврат"}
-                </Button>
-                <Button
-                    size="sm"
-                    disabled={!isFullWriteoffEnabled}
-                    onClick={onWriteOffMaterialFully}
-                >
-                    {isWritingOffFully ? "Списание…" : "Списать полностью"}
-                </Button>
-                <Button size="sm" disabled={!isWriteoffActionsEnabled}>
-                    Отразить списание по этапу
-                </Button>
-            </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        {reflectReturnError ? (
+                            <div className="w-full text-right text-[12px] text-destructive">{reflectReturnError}</div>
+                        ) : null}
+                        {writeOffFullyError ? (
+                            <div className="w-full text-right text-[12px] text-destructive">{writeOffFullyError}</div>
+                        ) : null}
+                        <Button size="sm" disabled={!isReflectReturnEnabled} onClick={onReflectMaterialReturn}>
+                            {isReflectingReturn ? "Отражение…" : "Отразить возврат"}
+                        </Button>
+                        <Button size="sm" disabled={!isFullWriteoffEnabled} onClick={onWriteOffMaterialFully}>
+                            {isWritingOffFully ? "Списание…" : "Списать полностью"}
+                        </Button>
+                        <Button size="sm" disabled={!isWriteoffActionsEnabled}>
+                            Отразить списание по этапу
+                        </Button>
+                    </div>
+                </>
+            ) : null}
 
             <div className="space-y-2">
                 <div className="flex min-w-0 items-center justify-between gap-3 pb-2">
-                    <div className={cnSectionBlockTitle()}>Списания и возвраты на этапе</div>
+                    <div className={cnSectionBlockTitle()}>Выполненные операции на этапе</div>
                     {stageRegistryAsOf ? (
                         <span className="shrink-0 text-[11px] text-muted-foreground">
                             Обновлено: {stageRegistryAsOf}

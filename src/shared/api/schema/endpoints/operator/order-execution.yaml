@@ -480,3 +480,95 @@ postGetArmExecutionMonitoringStageEvents:
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postInitProductionEventWizard:
+    summary: Init мастера регистрации события (SCR-07 / UC-25)
+    description: Раскрытие блока «Регистрация события» — коды, необработанные сигналы, справочники
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventWizardInitRequest"
+    responses:
+        "200":
+            description: Init мастера (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventWizardInitResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postDiscardProductionEventSignals:
+    summary: Удаление необработанных сигналов (SCR-07 / UC-25)
+    description: Оператор удаляет выбранные необработанные сигналы машины с обязательным комментарием
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventWizardDiscardSignalsRequest"
+    responses:
+        "200":
+            description: Сигналы удалены (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventWizardDiscardSignalsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetProductionEventProcessJournal:
+    summary: Журнал процесса этапа (SCR-07 / UC-25)
+    description: Таблица зарегистрированных событий с деталями и итоговым метражом
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventProcessJournalRequest"
+    responses:
+        "200":
+            description: Журнал процесса (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventProcessJournalResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postRegisterProductionEvent:
+    summary: Регистрация производственного события (SCR-07 / UC-25)
+    description: Подтверждение мастера — сохранение события в MES
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventRegisterRequest"
+    responses:
+        "200":
+            description: Событие зарегистрировано (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventRegisterResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

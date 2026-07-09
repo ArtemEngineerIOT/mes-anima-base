@@ -1,27 +1,61 @@
 import type { MachineId } from "../types";
-import type { EventRegistrationSnapshot } from "./types";
+import type { EventRegistrationSnapshot, SetupRunTag } from "./types";
+
+const SETUP_RUN_TAGS: SetupRunTag[] = [
+    { tag: "Zerropull", label: "0 — Zerropull" },
+    { tag: "A", label: "A" },
+    { tag: "B", label: "B" },
+    { tag: "C", label: "C" },
+    { tag: "D", label: "D" },
+    { tag: "E", label: "E" },
+];
 
 const EVENT_CODES: EventRegistrationSnapshot["eventCodes"] = [
     { code: 117, label: "Устранение розлива", requiresTime: true, requiresMeterage: false, requiresComment: true },
-    { code: 120, label: "Настройка", requiresTime: true, requiresMeterage: true, requiresComment: false, subCodes: ["A", "B", "C", "D", "E"] },
+    {
+        code: 120,
+        label: "Настройка",
+        requiresTime: true,
+        requiresMeterage: true,
+        requiresComment: false,
+        requiresSetupRuns: true,
+    },
     { code: 121, label: "Тонирование", requiresTime: true, requiresMeterage: true, requiresComment: true },
     { code: 141, label: "Брызги краски", requiresTime: true, requiresMeterage: true, requiresComment: false },
     { code: 113, label: "Плановое ТО", requiresTime: true, requiresMeterage: false, requiresComment: false },
 ];
 
-const baseSnapshot: Omit<EventRegistrationSnapshot, "telemetry" | "unprocessedEvents" | "initialJournal"> = {
+const baseRollCatalog: EventRegistrationSnapshot["rollCatalog"] = [
+    { ref: "0", label: "0 — рулон для брака" },
+    { ref: "PR1", label: "PR1" },
+    { ref: "PR2", label: "PR2" },
+    { ref: "PR3", label: "PR3" },
+];
+
+const baseCardColorCatalog: EventRegistrationSnapshot["cardColorCatalog"] = [
+    { code: "BLUE", label: "Синяя" },
+    { code: "YELLOW", label: "Жёлтая" },
+    { code: "GREEN", label: "Зелёная" },
+    { code: "RED", label: "Красная" },
+];
+
+const baseSnapshot: Omit<EventRegistrationSnapshot, "unprocessedEvents" | "initialJournal"> = {
     eventCodes: EVENT_CODES,
-    rollOptions: ["0 — рулон для брака", "PR1", "PR2", "PR3"],
+    setupRunTags: SETUP_RUN_TAGS,
+    rollOptions: baseRollCatalog.map((item) => item.label),
+    rollCatalog: baseRollCatalog,
     scrapRollDefault: "0 — рулон для брака",
     activeRollDefault: "PR1",
     lineCount: 12,
+    lineNumberOptions: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
     sideOptions: ["PM", "Passer"],
-    cardColorOptions: ["Синяя", "Жёлтая", "Зелёная", "Красная"],
+    sideDefault: "PM",
+    cardColorOptions: baseCardColorCatalog.map((item) => item.label),
+    cardColorCatalog: baseCardColorCatalog,
 };
 
 const pr120Snapshot: EventRegistrationSnapshot = {
     ...baseSnapshot,
-    telemetry: { stopsCount: 3, knifeHitsCount: 12, speedValue: "300", speedUnit: "м / мин." },
     unprocessedEvents: [
         {
             id: "ue-1",
@@ -45,33 +79,28 @@ const pr120Snapshot: EventRegistrationSnapshot = {
     initialJournal: [
         {
             id: "j-1",
-            registeredAt: "11-06-2026 08:30:00",
-            eventCode: 120,
             eventCodeLabel: "120 — Настройка",
-            subCode: "A",
-            removeScrapImmediately: true,
-            startSummary: "0 м",
-            endSummary: "500 м",
-            meterageSummary: "0 — 500",
-            details: {
-                "Время": "08:00 — 08:25",
-                "Рулон": "0 — рулон для брака",
-                "Комментарий": "Первый заезд",
-            },
+            timeStart: "08:00:00",
+            timeEnd: "08:25:00",
+            lengthM: "500",
+            details: [
+                { parameter: "Заезды на настройку", value: "0 — Zerropull, A" },
+                { parameter: "Рулон", value: "0 — рулон для брака" },
+                { parameter: "Комментарий", value: "Первый заезд" },
+                { parameter: "Статус", value: "Удален" },
+            ],
         },
     ],
 };
 
 const lm230Snapshot: EventRegistrationSnapshot = {
     ...baseSnapshot,
-    telemetry: { stopsCount: 1, knifeHitsCount: 4, speedValue: "180", speedUnit: "м / мин." },
     unprocessedEvents: [],
     initialJournal: [],
 };
 
 const pr110Snapshot: EventRegistrationSnapshot = {
     ...pr120Snapshot,
-    telemetry: { stopsCount: 0, knifeHitsCount: 2, speedValue: "250", speedUnit: "м / мин." },
     unprocessedEvents: [],
 };
 
