@@ -46,6 +46,23 @@ export type MaterialsStageRegistrySnapshot = {
     workAreaId: string | null;
 };
 
+export type MaterialsPresenceStatus = "WAITING" | "ON_UNWIND";
+
+export type MaterialsPresenceRow = {
+    id: string;
+    materialRollId: string;
+    barcode: string;
+    nomenclatureName: string;
+    nomenclatureCode: string;
+    scannedAt: string;
+    status: MaterialsPresenceStatus;
+    quantityUom: string;
+    currentLengthM: number;
+    currentWeightKg: number;
+    canMoveToUnwind: boolean;
+    writeOffAllowed: boolean;
+};
+
 export type MaterialsWriteoffData = {
     stageSpecStatus: string;
     stageSpecBannerVisible: boolean;

@@ -48,7 +48,6 @@ function OrderExecutionPage() {
                             <OrderExecutionMonitoring
                                 machineId={current.machineId}
                                 workAreaId={current.workAreaId}
-                                monitoring={current.monitoring}
                             />
                         </div>
                         <OrderExecutionOperatorPanel

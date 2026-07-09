@@ -162,6 +162,22 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetArmExecutionMonitoringStageEvents"
 
+    /v1/contexts/users.admin.models.rest/functions/initProductionEventWizard:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postInitProductionEventWizard"
+
+    /v1/contexts/users.admin.models.rest/functions/discardProductionEventSignals:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postDiscardProductionEventSignals"
+
+    /v1/contexts/users.admin.models.rest/functions/getProductionEventProcessJournal:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetProductionEventProcessJournal"
+
+    /v1/contexts/users.admin.models.rest/functions/registerProductionEvent:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterProductionEvent"
+
     # /task:
     #     $ref: "./endpoints/summary/task.yaml#/createTask"
 

@@ -15,6 +15,7 @@ export const ROUTES = {
     OPERATOR: {
         PRODUCTION_PLAN: "/operator/production-plan",
         ORDER_EXECUTION: "/operator/order-execution",
+        ORDER_EXECUTION_MONITORING: "/operator/order-execution/monitoring",
         MATERIAL_ORDER: "/operator/material-order",
         MATERIAL_MOVE: "/operator/material-move",
         DEFECT_WEIGHING: "/operator/defect-weighing",

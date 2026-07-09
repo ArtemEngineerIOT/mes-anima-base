@@ -40,6 +40,10 @@ export const REST_FUNCTION_PATHS = {
     getArmExecutionMonitoringSummary: `${REST_FUNCTIONS_BASE}/getArmExecutionMonitoringSummary`,
     getArmExecutionMonitoringRollTables: `${REST_FUNCTIONS_BASE}/getArmExecutionMonitoringRollTables`,
     getArmExecutionMonitoringStageEvents: `${REST_FUNCTIONS_BASE}/getArmExecutionMonitoringStageEvents`,
+    initProductionEventWizard: `${REST_FUNCTIONS_BASE}/initProductionEventWizard`,
+    discardProductionEventSignals: `${REST_FUNCTIONS_BASE}/discardProductionEventSignals`,
+    getProductionEventProcessJournal: `${REST_FUNCTIONS_BASE}/getProductionEventProcessJournal`,
+    registerProductionEvent: `${REST_FUNCTIONS_BASE}/registerProductionEvent`,
     /** MES-профиль и роли после POST /auth (Bearer обязателен). */
     mesUserProfile: `${REST_FUNCTIONS_BASE}/mesUserProfile`,
 } as const;

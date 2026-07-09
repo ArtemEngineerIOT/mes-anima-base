@@ -1,5 +1,17 @@
 export const MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS = ["100", "200"];
 
+export type MaterialsInstallationPlace = "WAITING" | "ON_UNWIND";
+
+export const MATERIALS_INSTALLATION_PLACE_OPTIONS: ReadonlyArray<{
+    value: MaterialsInstallationPlace;
+    label: string;
+}> = [
+    { value: "WAITING", label: "Ожидание" },
+    { value: "ON_UNWIND", label: "Размотка" },
+];
+
+export const DEFAULT_MATERIALS_INSTALLATION_PLACE: MaterialsInstallationPlace = "WAITING";
+
 export type MaterialsWriteoffFormState = {
     meters: string;
     weight: string;

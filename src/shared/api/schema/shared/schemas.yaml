@@ -2170,6 +2170,189 @@ components:
             items:
                 $ref: "#/components/schemas/ProductionPlanStageActionResultRow"
 
+        OrderExecutionProductionEventWizardInitRequestItem:
+            type: object
+            description: Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                operatorRef:
+                    type: string
+                    description: Ссылка на оператора в MES (`operator_ref`)
+            required:
+                - workAreaId
+                - operatorRef
+            additionalProperties: true
+
+        OrderExecutionProductionEventWizardInitRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardInitRequestItem"
+
+        OrderExecutionProductionEventWizardRpcResultRow:
+            type: object
+            description: Обёртка ответа RPC мастера регистрации события (initWizard и др.)
+            properties:
+                error_code:
+                    type: string
+                    description: "OK — успех"
+                error_message:
+                    type: string
+                    nullable: true
+                result:
+                    type: array
+                    description: Полезная нагрузка метода; формат уточняется по контракту BFF
+                    items:
+                        type: object
+                        additionalProperties: true
+            additionalProperties: true
+
+        OrderExecutionProductionEventWizardInitResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+
+        OrderExecutionProductionEventWizardDiscardSignalsRequestItem:
+            type: object
+            description: Запрос discardSignals (SCR-07 / UC-25) — удаление необработанных сигналов
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                signalIds:
+                    type: string
+                    description: Идентификаторы сигналов для удаления через запятую (`signal_ids`, CSV)
+                comment:
+                    type: string
+                    description: Комментарий оператора (обязателен)
+            required:
+                - workAreaId
+                - signalIds
+                - comment
+            additionalProperties: true
+
+        OrderExecutionProductionEventWizardDiscardSignalsRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardDiscardSignalsRequestItem"
+
+        OrderExecutionProductionEventWizardDiscardSignalsResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+
+        OrderExecutionProductionEventProcessJournalRequestItem:
+            type: object
+            description: Запрос getProcessJournal (SCR-07 / UC-25) — журнал процесса этапа
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+            required:
+                - workAreaId
+            additionalProperties: true
+
+        OrderExecutionProductionEventProcessJournalRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventProcessJournalRequestItem"
+
+        OrderExecutionProductionEventProcessJournalResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+
+        OrderExecutionProductionEventRegisterRequestItem:
+            type: object
+            description: Запрос registerEvent (SCR-07 / UC-25) — регистрация производственного события
+            properties:
+                wizardSessionId:
+                    type: string
+                    description: Идентификатор сессии мастера (`wizard_session_id` из initWizard)
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                operatorRef:
+                    type: string
+                    description: Ссылка на оператора в MES (`operator_ref`, из сессии)
+                eventCode:
+                    type: string
+                    description: Код события (`event_code`)
+                removeImmediately:
+                    type: boolean
+                    description: Удалять брак сразу (`remove_immediately`, главная развилка REMOVED / REGISTERED)
+                signalIds:
+                    type: string
+                    description: Идентификаторы необработанных сигналов (`signal_ids`, CSV; пустая строка при ручном вводе)
+                setupRunTags:
+                    type: string
+                    description: Заезды на настройку (`setup_run_tags`, CSV; пустая строка, если не код 120)
+                wholeStage:
+                    type: boolean
+                    description: Весь этап (`whole_stage`; `false`, если не REMOVED)
+                materialRollRef:
+                    type: string
+                    description: Ссылка на рулон (`material_roll_ref`, ref из rolls pipeline)
+                lengthStartM:
+                    type: number
+                    description: Метраж начала (`length_start_m`)
+                lengthEndM:
+                    type: number
+                    description: Метраж конца (`length_end_m`)
+                timeStart:
+                    type: string
+                    description: Время начала (`time_start`, `yyyy-MM-dd HH:mm:ss`)
+                timeEnd:
+                    type: string
+                    description: Время конца (`time_end`, `yyyy-MM-dd HH:mm:ss`)
+                side:
+                    type: string
+                    description: Сторона (`side`, PM / PASSER; только REGISTERED)
+                lineSelection:
+                    type: string
+                    description: Выбор рядов (`line_selection`, ALL или CSV; только REGISTERED)
+                cardStart:
+                    type: string
+                    description: Карточка начала (`card_start`; только REGISTERED)
+                cardEnd:
+                    type: string
+                    description: Карточка конца (`card_end`; только REGISTERED)
+                spliceReasonCode:
+                    type: string
+                    description: Причина склейки (`splice_reason_code`; пустая строка, если не код 174)
+                comment:
+                    type: string
+                    description: Комментарий оператора
+            required:
+                - wizardSessionId
+                - workAreaId
+                - eventCode
+                - removeImmediately
+                - signalIds
+                - setupRunTags
+                - wholeStage
+                - spliceReasonCode
+            additionalProperties: true
+
+        OrderExecutionProductionEventRegisterRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventRegisterRequestItem"
+
+        OrderExecutionProductionEventRegisterResponse:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+
         # Универсальный ответ бэка: массив узлов с примитивами и вложенным `table` (рекурсия без ограничения глубины).
         ServerDataRow:
             type: object

@@ -3,43 +3,72 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
-import {
-    buildPrefillSeriesDraft,
-    mapActiveInputPrefillPayload,
-} from "./map-active-input-prefill-payload";
+import { buildPresenceRowFromScan } from "./build-presence-row-from-scan";
 import { mapMaterialsWriteoffPayload } from "./map-materials-writeoff-payload";
 import { mapRegisterMaterialFullWriteoffPayload } from "./map-register-material-full-writeoff-payload";
 import { mapRegisterMaterialReturnPayload } from "./map-register-material-return-payload";
 import {
+    canInstallAtUnwind,
+    movePresenceRowToUnwind,
+    removePresenceRow,
+    resolveDefaultInstallationPlace,
+    upsertPresenceRow,
+} from "./materials-presence-rules";
+import {
     canCalculateWriteoffWeight,
+    DEFAULT_MATERIALS_INSTALLATION_PLACE,
     EMPTY_MATERIALS_WRITEOFF_FORM,
     isMaterialFullWriteoffReady,
     isMaterialsWriteoffFormReady,
+    MATERIALS_INSTALLATION_PLACE_OPTIONS,
     MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS,
     parseWriteoffLength,
     parseWriteoffWeight,
     sanitizeWriteoffMetersInput,
+    type MaterialsInstallationPlace,
 } from "./materials-writeoff-form";
 import type { MaterialsWriteoffFormState } from "./materials-writeoff-form";
 import { useMaterialsWriteoffStageRegistry } from "./use-materials-writeoff-stage-registry";
 import { useMaterialsWriteoffWeight } from "./use-materials-writeoff-weight";
-import type { MaterialsWriteoffData } from "./types";
+import type { MaterialsPresenceRow, MaterialsWriteoffData } from "./types";
 
-export type MaterialsWriteoffPrefillHint = "active" | "empty" | null;
+type ScanBannerState = Pick<
+    MaterialsWriteoffData,
+    "stageSpecBannerVisible" | "stageSpecBannerTitle" | "stageSpecBannerDetail"
+>;
 
 type UseMaterialsWriteoffOptions = {
     workAreaId?: string;
     enabled?: boolean;
 };
 
+function buildWriteoffFormFromSelection(
+    _row: MaterialsPresenceRow,
+    defaults: MaterialsWriteoffData["writeoffDefaults"],
+): MaterialsWriteoffFormState {
+    const warehouseOptions =
+        defaults?.warehouseOptions && defaults.warehouseOptions.length > 0
+            ? defaults.warehouseOptions
+            : MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS;
+
+    return {
+        meters: defaults?.meters ?? "",
+        weight: defaults?.weight ?? "",
+        warehouse: defaults?.warehouse ?? warehouseOptions[0] ?? "",
+    };
+}
+
 export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterialsWriteoffOptions) {
     const [barcode, setBarcode] = useState("");
-    const [data, setData] = useState<MaterialsWriteoffData | null>(null);
+    const [installationPlace, setInstallationPlace] = useState<MaterialsInstallationPlace>(
+        DEFAULT_MATERIALS_INSTALLATION_PLACE,
+    );
+    const [presenceRows, setPresenceRows] = useState<MaterialsPresenceRow[]>([]);
+    const [expandedPresenceRowId, setExpandedPresenceRowId] = useState<string | null>(null);
+    const [selectedWriteoffRoll, setSelectedWriteoffRoll] = useState<MaterialsPresenceRow | null>(null);
+    const [scanBanner, setScanBanner] = useState<ScanBannerState | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
-    const [prefillError, setPrefillError] = useState<string | null>(null);
-    const [prefillHint, setPrefillHint] = useState<MaterialsWriteoffPrefillHint>(null);
-    const [isPrefillLoading, setIsPrefillLoading] = useState(false);
     const [expandedOpId, setExpandedOpId] = useState<string | null>(null);
     const [stageRegistryRefreshKey, setStageRegistryRefreshKey] = useState(0);
     const [writeoffForm, setWriteoffForm] = useState<MaterialsWriteoffFormState>(EMPTY_MATERIALS_WRITEOFF_FORM);
@@ -56,15 +85,6 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
 
     const fetchMaterialSeriesRef = useRef(fetchMaterialSeries);
     fetchMaterialSeriesRef.current = fetchMaterialSeries;
-
-    const { mutateAsync: fetchActiveInputPrefill } = rqClient.useMutation(
-        "post",
-        REST_FUNCTION_PATHS.getActiveInputPrefill,
-        {},
-    );
-
-    const fetchActiveInputPrefillRef = useRef(fetchActiveInputPrefill);
-    fetchActiveInputPrefillRef.current = fetchActiveInputPrefill;
 
     const { mutateAsync: registerMaterialReturn } = rqClient.useMutation(
         "post",
@@ -84,17 +104,28 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
     const registerMaterialFullWriteoffRef = useRef(registerMaterialFullWriteoff);
     registerMaterialFullWriteoffRef.current = registerMaterialFullWriteoff;
 
-    const showWriteoffFlow = Boolean(data && !data.stageSpecBannerVisible);
+    const showWriteoffFlow = selectedWriteoffRoll !== null;
 
     const { calculate, reset, isLoading: isWriteoffWeightLoading, error: writeoffWeightError } =
         useMaterialsWriteoffWeight({ workAreaId });
 
-    const resetSearchState = useCallback(() => {
-        setData(null);
-        setExpandedOpId(null);
+    const resetWriteoffSelection = useCallback(() => {
+        setSelectedWriteoffRoll(null);
         setWriteoffForm(EMPTY_MATERIALS_WRITEOFF_FORM);
         reset();
     }, [reset]);
+
+    useEffect(() => {
+        if (!enabled) {
+            setPresenceRows([]);
+            setExpandedPresenceRowId(null);
+            resetWriteoffSelection();
+            setScanBanner(null);
+            setBarcode("");
+            setSearchError(null);
+            setInstallationPlace(DEFAULT_MATERIALS_INSTALLATION_PLACE);
+        }
+    }, [enabled, resetWriteoffSelection, workAreaId]);
 
     const searchByBarcode = useCallback(
         async (barcodeValue: string) => {
@@ -111,104 +142,98 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
 
             setIsSearching(true);
             setSearchError(null);
-            setPrefillHint(null);
+            setScanBanner(null);
 
             try {
                 const payload = await fetchMaterialSeriesRef.current({
-                    body: [{ barcode: barcodeValue, workAreaId: trimmedWorkAreaId }],
+                    body: [
+                        {
+                            barcode: barcodeValue,
+                            workAreaId: trimmedWorkAreaId,
+                            installationPlace,
+                        },
+                    ],
                 });
                 const mapped = mapMaterialsWriteoffPayload(payload);
-                setData(mapped);
-                setExpandedOpId(null);
+
+                if (mapped.stageSpecBannerVisible) {
+                    setScanBanner({
+                        stageSpecBannerVisible: true,
+                        stageSpecBannerTitle: mapped.stageSpecBannerTitle,
+                        stageSpecBannerDetail: mapped.stageSpecBannerDetail,
+                    });
+                    return;
+                }
+
+                const nextRow = buildPresenceRowFromScan({
+                    barcode: barcodeValue,
+                    installationPlace,
+                    data: mapped,
+                });
+
+                if (!nextRow) {
+                    setSearchError("Не удалось получить данные по серии");
+                    return;
+                }
+
+                if (
+                    installationPlace === "ON_UNWIND" &&
+                    !canInstallAtUnwind(presenceRows, nextRow.nomenclatureCode, installationPlace)
+                ) {
+                    setSearchError("На размотке уже есть рулон этой номенклатуры. Выберите «Ожидание».");
+                    return;
+                }
+
+                setPresenceRows((prev) => {
+                    const nextRows = upsertPresenceRow(prev, nextRow);
+                    setInstallationPlace(resolveDefaultInstallationPlace(nextRows));
+                    return nextRows;
+                });
+
+                setBarcode("");
+                setExpandedPresenceRowId(nextRow.id);
+
                 if (mapped.stageRegistryRefreshHint) {
                     setStageRegistryRefreshKey((prev) => prev + 1);
                 }
-                setWriteoffForm(EMPTY_MATERIALS_WRITEOFF_FORM);
-                reset();
             } catch (error) {
-                resetSearchState();
-                setSearchError(error instanceof Error ? error.message : "Не удалось найти серию");
+                setSearchError(error instanceof Error ? error.message : "Не удалось зарегистрировать серию");
             } finally {
                 setIsSearching(false);
             }
         },
-        [reset, resetSearchState, workAreaId],
+        [installationPlace, presenceRows, workAreaId],
     );
 
     const search = useCallback(async () => {
         await searchByBarcode(barcode);
     }, [barcode, searchByBarcode]);
 
-    const loadActiveInputPrefill = useCallback(async () => {
-        const trimmedWorkAreaId = workAreaId?.trim();
-        if (!trimmedWorkAreaId) {
-            setBarcode("");
-            resetSearchState();
-            setPrefillError("Не удалось определить workAreaId этапа");
-            return;
-        }
-
-        setIsPrefillLoading(true);
-        setPrefillError(null);
-        setPrefillHint(null);
-        setSearchError(null);
-        setBarcode("");
-        resetSearchState();
-
-        try {
-            const payload = await fetchActiveInputPrefillRef.current({
-                body: [{ workAreaId: trimmedWorkAreaId }],
-            });
-            const mapped = mapActiveInputPrefillPayload(payload);
-
-            if (mapped.shouldPrefillScan && mapped.activeInputRoll) {
-                const { seriesKey } = mapped.activeInputRoll;
-                setBarcode(seriesKey);
-                setData(buildPrefillSeriesDraft(mapped.activeInputRoll));
-                setPrefillHint("active");
-                setStageRegistryRefreshKey((prev) => prev + 1);
-                return;
-            }
-
-            setBarcode("");
-            resetSearchState();
-            setPrefillHint("empty");
-        } catch (error) {
-            setBarcode("");
-            resetSearchState();
-            setPrefillHint(null);
-            setPrefillError(
-                error instanceof Error ? error.message : "Не удалось загрузить предзаполнение поля скана",
-            );
-        } finally {
-            setIsPrefillLoading(false);
-        }
-    }, [resetSearchState, workAreaId]);
-
-    useEffect(() => {
-        if (!enabled) {
-            return;
-        }
-
-        void loadActiveInputPrefill();
-    }, [enabled, loadActiveInputPrefill]);
-
     const stageRegistry = useMaterialsWriteoffStageRegistry({
         workAreaId,
-        enabled: showWriteoffFlow,
+        enabled,
         refreshKey: stageRegistryRefreshKey,
     });
 
+    const moveToUnwind = useCallback((rowId: string) => {
+        setPresenceRows((prev) => movePresenceRowToUnwind(prev, rowId));
+    }, []);
+
+    const selectForWriteoff = useCallback((row: MaterialsPresenceRow) => {
+        setSelectedWriteoffRoll(row);
+        setWriteoffForm(buildWriteoffFormFromSelection(row, null));
+        reset();
+    }, [reset]);
+
     const updateWriteoffForm = useCallback(
         (patch: Partial<MaterialsWriteoffFormState>) => {
-            if ("weight" in patch) {
-                return;
-            }
-
             setWriteoffForm((prev) => {
                 const normalizedPatch = { ...patch };
                 if ("meters" in normalizedPatch && typeof normalizedPatch.meters === "string") {
                     normalizedPatch.meters = sanitizeWriteoffMetersInput(normalizedPatch.meters);
+                }
+                if ("weight" in normalizedPatch && typeof normalizedPatch.weight === "string") {
+                    normalizedPatch.weight = sanitizeWriteoffMetersInput(normalizedPatch.weight);
                 }
 
                 const next = { ...prev, ...normalizedPatch };
@@ -238,14 +263,15 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         const length = parseWriteoffLength(writeoffForm.meters);
         const weight = parseWriteoffWeight(writeoffForm.weight);
         const warehouse = writeoffForm.warehouse.trim();
+        const activeRoll = selectedWriteoffRoll;
 
         if (!trimmedWorkAreaId) {
             setReflectReturnError("Не удалось определить workAreaId этапа");
             return;
         }
 
-        if (!barcode.trim()) {
-            setReflectReturnError("Не удалось определить штрихкод серии");
+        if (!activeRoll?.barcode.trim()) {
+            setReflectReturnError("Выберите рулон кнопкой «Списать»");
             return;
         }
 
@@ -262,7 +288,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
                 body: [
                     {
                         workAreaId: trimmedWorkAreaId,
-                        barcode,
+                        barcode: activeRoll.barcode,
                         length,
                         weight,
                         warehouse,
@@ -273,26 +299,27 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             if (result.stageRegistryRefreshHint) {
                 setStageRegistryRefreshKey((prev) => prev + 1);
             }
-            setWriteoffForm(EMPTY_MATERIALS_WRITEOFF_FORM);
-            reset();
+            setPresenceRows((prev) => removePresenceRow(prev, activeRoll.id));
+            resetWriteoffSelection();
         } catch (error) {
             setReflectReturnError(error instanceof Error ? error.message : "Не удалось отразить возврат");
         } finally {
             setIsReflectingReturn(false);
         }
-    }, [barcode, reset, workAreaId, writeoffForm.meters, writeoffForm.weight, writeoffForm.warehouse]);
+    }, [resetWriteoffSelection, selectedWriteoffRoll, workAreaId, writeoffForm.meters, writeoffForm.weight, writeoffForm.warehouse]);
 
     const writeOffMaterialFully = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
         const warehouse = writeoffForm.warehouse.trim();
+        const activeRoll = selectedWriteoffRoll;
 
         if (!trimmedWorkAreaId) {
             setWriteOffFullyError("Не удалось определить workAreaId этапа");
             return;
         }
 
-        if (!barcode.trim()) {
-            setWriteOffFullyError("Не удалось определить штрихкод серии");
+        if (!activeRoll?.barcode.trim()) {
+            setWriteOffFullyError("Выберите рулон кнопкой «Списать»");
             return;
         }
 
@@ -309,7 +336,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
                 body: [
                     {
                         workAreaId: trimmedWorkAreaId,
-                        barcode,
+                        barcode: activeRoll.barcode,
                         warehouse,
                     },
                 ],
@@ -318,32 +345,39 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             if (result.stageRegistryRefreshHint) {
                 setStageRegistryRefreshKey((prev) => prev + 1);
             }
-            setWriteoffForm(EMPTY_MATERIALS_WRITEOFF_FORM);
-            reset();
-            await loadActiveInputPrefill();
+            setPresenceRows((prev) => removePresenceRow(prev, activeRoll.id));
+            resetWriteoffSelection();
         } catch (error) {
             setWriteOffFullyError(error instanceof Error ? error.message : "Не удалось списать материал полностью");
         } finally {
             setIsWritingOffFully(false);
         }
-    }, [barcode, loadActiveInputPrefill, reset, workAreaId, writeoffForm.warehouse]);
+    }, [resetWriteoffSelection, selectedWriteoffRoll, workAreaId, writeoffForm.warehouse]);
 
     const canCalculateWeight = canCalculateWriteoffWeight(writeoffForm.meters);
     const isWriteoffActionInProgress = isReflectingReturn || isWritingOffFully;
     const isReflectReturnEnabled = isMaterialsWriteoffFormReady(writeoffForm) && !isWriteoffActionInProgress;
     const isFullWriteoffEnabled = isMaterialFullWriteoffReady(writeoffForm) && !isWriteoffActionInProgress;
     const isWriteoffActionsEnabled = isMaterialsWriteoffFormReady(writeoffForm) && !isWriteoffActionInProgress;
-    const isScanFieldBusy = isPrefillLoading || isSearching;
 
     return {
         barcode,
         setBarcode,
-        data,
+        installationPlace,
+        setInstallationPlace,
+        installationPlaceOptions: MATERIALS_INSTALLATION_PLACE_OPTIONS,
+        presenceRows,
+        expandedPresenceRowId,
+        setExpandedPresenceRowId,
+        selectedWriteoffRoll,
+        scanBanner,
         writeoffForm,
         updateWriteoffForm,
         calculateWriteoffWeight,
         reflectMaterialReturn,
         writeOffMaterialFully,
+        moveToUnwind,
+        selectForWriteoff,
         canCalculateWeight,
         isReflectReturnEnabled,
         isFullWriteoffEnabled,
@@ -358,14 +392,10 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         showWriteoffFlow,
         stageRegistry,
         isSearching,
-        isPrefillLoading,
-        prefillError,
-        prefillHint,
         searchError,
         expandedOpId,
         setExpandedOpId,
         search,
-        canSearch: Boolean(workAreaId?.trim()) && !isScanFieldBusy,
-        isScanFieldBusy,
+        canSearch: Boolean(workAreaId?.trim()) && !isSearching,
     };
 }

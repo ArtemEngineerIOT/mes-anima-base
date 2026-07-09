@@ -1,5 +1,11 @@
 import type { MachineId } from "../types";
 
+/** Тег заезда на настройку (зеропул) */
+export type SetupRunTag = {
+    tag: string;
+    label: string;
+};
+
 /** Справочник кодов событий (время / метраж / комментарий — обязательность) */
 export type EventCodeDefinition = {
     code: number;
@@ -7,8 +13,8 @@ export type EventCodeDefinition = {
     requiresTime: boolean;
     requiresMeterage: boolean;
     requiresComment: boolean;
-    /** Подкоды (зеропулы), например код 120 */
-    subCodes?: string[];
+    /** Код 120 и др.: на шаге 2 показывать «Заезды на настройку» */
+    requiresSetupRuns?: boolean;
 };
 
 export type EventRegistrationStep = 1 | 2 | 3;
@@ -17,10 +23,20 @@ export type ScrapRemovalMode = "immediate" | "deferred";
 
 export type EventSide = "PM" | "Passer";
 
+export type EventRollCatalogItem = {
+    ref: string;
+    label: string;
+};
+
+export type EventCardColorCatalogItem = {
+    code: string;
+    label: string;
+};
+
 /** Черновик пошаговой формы регистрации события */
 export type EventRegistrationDraft = {
     eventCode: number | null;
-    subCode: string;
+    setupRuns: string[];
     removeScrapImmediately: boolean | null;
     meterFrom: string;
     meterTo: string;
@@ -30,7 +46,7 @@ export type EventRegistrationDraft = {
     roll: string;
     comment: string;
     side: EventSide | "";
-    lineNumbers: string;
+    selectedLines: string[];
     startCard: string;
     endCard: string;
 };
@@ -48,37 +64,37 @@ export type UnprocessedMachineEvent = {
     meterTo?: string;
 };
 
+/** Детальная строка раскрытия записи журнала процесса */
+export type ProcessJournalDetailRow = {
+    parameter: string;
+    value: string;
+};
+
 /** Запись журнала процесса этапа */
 export type ProcessJournalEntry = {
     id: string;
-    registeredAt: string;
-    eventCode: number;
     eventCodeLabel: string;
-    subCode?: string;
-    removeScrapImmediately: boolean;
-    startSummary: string;
-    endSummary: string;
-    meterageSummary: string;
-    details: Record<string, string>;
-};
-
-export type EventMachineTelemetry = {
-    stopsCount: number;
-    knifeHitsCount: number;
-    speedValue: string;
-    speedUnit: string;
+    timeStart: string;
+    timeEnd: string;
+    lengthM: string;
+    details?: ProcessJournalDetailRow[];
 };
 
 export type EventRegistrationSnapshot = {
     eventCodes: EventCodeDefinition[];
-    telemetry: EventMachineTelemetry;
+    setupRunTags: SetupRunTag[];
     unprocessedEvents: UnprocessedMachineEvent[];
     rollOptions: string[];
+    rollCatalog: EventRollCatalogItem[];
     scrapRollDefault: string;
     activeRollDefault: string;
     lineCount: number;
+    lineNumberOptions: string[];
     sideOptions: EventSide[];
+    /** Значение для поля «Сторона» по умолчанию (defaults.side на BFF) */
+    sideDefault: EventSide;
     cardColorOptions: string[];
+    cardColorCatalog: EventCardColorCatalogItem[];
     initialJournal: ProcessJournalEntry[];
 };
 

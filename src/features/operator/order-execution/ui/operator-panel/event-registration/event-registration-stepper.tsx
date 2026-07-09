@@ -11,15 +11,16 @@ const STEPS: { step: EventRegistrationStep; label: string }[] = [
 type Props = {
     currentStep: EventRegistrationStep;
     onStepClick: (step: EventRegistrationStep) => void;
+    disabled?: boolean;
 };
 
-export function EventRegistrationStepper({ currentStep, onStepClick }: Props) {
+export function EventRegistrationStepper({ currentStep, onStepClick, disabled }: Props) {
     return (
         <div className="flex border-b border-border">
             {STEPS.map((item) => {
                 const completed = currentStep > item.step;
                 const active = currentStep === item.step;
-                const canNavigate = item.step < currentStep;
+                const canNavigate = !disabled && item.step < currentStep;
 
                 return (
                     <button
