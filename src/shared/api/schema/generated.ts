@@ -812,7 +812,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialSeries": {
+    "/v1/contexts/users.admin.models.rest/functions/resolveBarcodeOnStage": {
         parameters: {
             query?: never;
             header?: never;
@@ -822,8 +822,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Данные серии материала для списания/возврата
-         * @description Кнопка «Найти» в блоке «Материалы. Списание/возврат»
+         * Скан рулона на этапе — кнопка «В машину»
+         * @description BFF resolveBarcodeOnStage (SCR-04 M2)
          */
         post: {
             parameters: {
@@ -834,17 +834,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionMaterialSeriesRequest"];
+                    "application/json": components["schemas"]["OrderExecutionResolveBarcodeOnStageRequest"];
                 };
             };
             responses: {
-                /** @description Данные по серии (error_code OK — успех) */
+                /** @description Результат регистрации рулона в машине (error_code OK — успех) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionMaterialSeriesResponse"];
+                        "application/json": components["schemas"]["OrderExecutionResolveBarcodeOnStageResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -857,7 +857,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/getActiveInputPrefill": {
+    "/v1/contexts/users.admin.models.rest/functions/submitMoveToUnwind": {
         parameters: {
             query?: never;
             header?: never;
@@ -867,8 +867,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Предзаполнение поля скана ACTIVE входа (SCR-04 UI-30)
-         * @description Init блока «Материалы. Списание/возврат» — CL-MAT-53
+         * Перемещение рулона на размотку — кнопка «На размотку»
+         * @description BFF submitMoveToUnwind (SCR-04 M3)
          */
         post: {
             parameters: {
@@ -879,17 +879,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionActiveInputPrefillRequest"];
+                    "application/json": components["schemas"]["OrderExecutionSubmitMoveToUnwindRequest"];
                 };
             };
             responses: {
-                /** @description Снимок ACTIVE входа (error_code OK — успех) */
+                /** @description Результат перемещения на размотку (error_code OK — успех) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionActiveInputPrefillResponse"];
+                        "application/json": components["schemas"]["OrderExecutionSubmitMoveToUnwindResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -902,7 +902,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialStageRegistry": {
+    "/v1/contexts/users.admin.models.rest/functions/getStageRollRegistry": {
         parameters: {
             query?: never;
             header?: never;
@@ -912,8 +912,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Списания и возвраты материалов на этапе
-         * @description Таблица «Списания и возвраты на этапе» в блоке «Материалы. Списание/возврат»
+         * Журнал операций по рулонам на этапе
+         * @description Таблица «Выполненные операции на этапе» в блоке «Материалы. Списание/возврат»
          */
         post: {
             parameters: {
@@ -924,17 +924,62 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionMaterialStageRegistryRequest"];
+                    "application/json": components["schemas"]["OrderExecutionStageRollRegistryRequest"];
                 };
             };
             responses: {
-                /** @description Список операций списания/возврата на этапе (error_code OK — успех) */
+                /** @description Журнал операций по рулонам (error_code OK — успех) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionMaterialStageRegistryResponse"];
+                        "application/json": components["schemas"]["OrderExecutionStageRollRegistryResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getStageRollPresence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Рулоны в машине на этапе
+         * @description Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionStageRollPresenceRequest"];
+                };
+            };
+            responses: {
+                /** @description Список рулонов у машины (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionStageRollPresenceResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -992,7 +1037,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialWriteoffWeight": {
+    "/v1/contexts/users.admin.models.rest/functions/convertConsumedLengthToWeight": {
         parameters: {
             query?: never;
             header?: never;
@@ -1002,8 +1047,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Расчёт веса для списания/возврата по метражу
-         * @description Поле «Вес, кг» в блоке «Материалы. Списание/возврат» (только чтение)
+         * Пересчёт веса по метражу списания
+         * @description Кнопка «Пересчитать» в блоке «Материалы. Списание/возврат»
          */
         post: {
             parameters: {
@@ -1014,7 +1059,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionMaterialWriteoffWeightRequest"];
+                    "application/json": components["schemas"]["ConvertConsumedLengthToWeightRequest"];
                 };
             };
             responses: {
@@ -1024,7 +1069,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionMaterialWriteoffWeightResponse"];
+                        "application/json": components["schemas"]["ConvertConsumedLengthToWeightResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1037,7 +1082,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialReturn": {
+    "/v1/contexts/users.admin.models.rest/functions/listReturnWarehouses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1047,7 +1092,52 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отразить возврат материала
+         * Склады для возврата/списания материала
+         * @description Комбобокс «Отправить на склад» в блоке «Материалы. Списание/возврат»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListReturnWarehousesRequest"];
+                };
+            };
+            responses: {
+                /** @description Список складов (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListReturnWarehousesResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/submitPartialReturn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отразить частичный возврат материала
          * @description Кнопка «Отразить возврат» в блоке «Материалы. Списание/возврат»
          */
         post: {
@@ -1059,17 +1149,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionMaterialReturnRequest"];
+                    "application/json": components["schemas"]["SubmitPartialReturnRequest"];
                 };
             };
             responses: {
-                /** @description Результат регистрации возврата (error_code OK — успех) */
+                /** @description Результат регистрации частичного возврата (error_code OK — успех) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionMaterialReturnResponse"];
+                        "application/json": components["schemas"]["SubmitPartialReturnResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1082,7 +1172,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialFullWriteoff": {
+    "/v1/contexts/users.admin.models.rest/functions/submitFullWriteOff": {
         parameters: {
             query?: never;
             header?: never;
@@ -1104,7 +1194,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["OrderExecutionMaterialFullWriteoffRequest"];
+                    "application/json": components["schemas"]["SubmitFullWriteOffRequest"];
                 };
             };
             responses: {
@@ -1114,7 +1204,52 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["OrderExecutionMaterialFullWriteoffResponse"];
+                        "application/json": components["schemas"]["SubmitFullWriteOffResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/submitStageLkm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отразить списание ЛКМ по этапу
+         * @description Кнопка «Отразить списание по этапу» в блоке «Материалы. Списание/возврат»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SubmitStageLkmRequest"];
+                };
+            };
+            responses: {
+                /** @description Результат списания по этапу (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SubmitStageLkmResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2383,15 +2518,23 @@ export interface components {
             [key: string]: unknown;
         };
         OrderExecutionResponse: components["schemas"]["OrderExecutionResultRow"][];
-        OrderExecutionMaterialSeriesRequestItem: {
-            /** @description Штрихкод серии материала */
-            barcode: string;
+        /** @description Запрос resolveBarcodeOnStage (SCR-04 M2) — кнопка «В машину» */
+        OrderExecutionResolveBarcodeOnStageRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
+            /** @description Штрихкод серии материала (lot; пробелы значимы) */
+            barcode: string;
+            /**
+             * @description Место установки рулона (`installation_place`)
+             * @enum {string}
+             */
+            installationPlace: "WAITING" | "ON_UNWIND";
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialSeriesRequest: components["schemas"]["OrderExecutionMaterialSeriesRequestItem"][];
+        OrderExecutionResolveBarcodeOnStageRequest: components["schemas"]["OrderExecutionResolveBarcodeOnStageRequestItem"][];
         OrderExecutionMaterialSeriesCard: {
             nomenclature_name?: string | null;
             nomenclature_code?: string | null;
@@ -2404,78 +2547,75 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description Элемент `result` в ответе getOrderExecutionMaterialSeries */
-        OrderExecutionMaterialSeriesResultItem: {
+        /** @description Элемент `result` в ответе resolveBarcodeOnStage */
+        OrderExecutionResolveBarcodeOnStageResultItem: {
             stage_spec_status?: string | null;
             stage_spec_banner_visible?: boolean | null;
             stage_spec_banner_title?: string | null;
             stage_spec_banner_detail?: string | null;
             already_registered_on_stage?: boolean | null;
+            scan_blocked_by_active_input?: boolean | null;
             material_roll_id?: string | null;
             roll_trace_context_id?: string | null;
+            /** @description Статус после скана (`WAITING` / `ON_UNWIND`) */
+            presence_status?: string | null;
+            presence_refresh_hint?: boolean | null;
             stage_registry_refresh_hint?: boolean | null;
+            write_off_form_enabled?: boolean | null;
             series_card?: components["schemas"]["OrderExecutionMaterialSeriesCard"][];
         } & {
             [key: string]: unknown;
         };
-        /** @description Обёртка ответа RPC getOrderExecutionMaterialSeries */
-        OrderExecutionMaterialSeriesResultRow: {
+        /** @description Обёртка ответа RPC resolveBarcodeOnStage */
+        OrderExecutionResolveBarcodeOnStageResultRow: {
             error_code?: string;
             error_message?: string | null;
-            result?: components["schemas"]["OrderExecutionMaterialSeriesResultItem"][];
+            result?: components["schemas"]["OrderExecutionResolveBarcodeOnStageResultItem"][];
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialSeriesResponse: components["schemas"]["OrderExecutionMaterialSeriesResultRow"][];
-        OrderExecutionActiveInputPrefillRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+        OrderExecutionResolveBarcodeOnStageResponse: components["schemas"]["OrderExecutionResolveBarcodeOnStageResultRow"][];
+        /** @description Запрос submitMoveToUnwind (SCR-04 M3) — кнопка «На размотку» */
+        OrderExecutionSubmitMoveToUnwindRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
+            /** @description Идентификатор рулона (`material_roll_id` из строки presence) */
+            materialRollId: string;
+            /** @description Штрихкод серии рулона */
+            barcode: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionActiveInputPrefillRequest: components["schemas"]["OrderExecutionActiveInputPrefillRequestItem"][];
-        /** @description Обёртка ответа RPC блока «Выпуск» */
-        OrderExecutionReleaseRpcResultRow: {
+        OrderExecutionSubmitMoveToUnwindRequest: components["schemas"]["OrderExecutionSubmitMoveToUnwindRequestItem"][];
+        /** @description Элемент `result` в ответе submitMoveToUnwind */
+        OrderExecutionSubmitMoveToUnwindResultItem: {
+            material_roll_id?: string | null;
+            /** @description Статус после перемещения (`ON_UNWIND`) */
+            presence_status?: string | null;
+            presence_refresh_hint?: boolean | null;
+            stage_registry_refresh_hint?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Обёртка ответа RPC submitMoveToUnwind */
+        OrderExecutionSubmitMoveToUnwindResultRow: {
             error_code?: string;
             error_message?: string | null;
-            result?: {
-                [key: string]: unknown;
-            }[];
+            result?: components["schemas"]["OrderExecutionSubmitMoveToUnwindResultItem"][];
         } & {
             [key: string]: unknown;
         };
-        /** @description Строка `active_input_rolls[]` в ответе getActiveInputPrefill (SCR-04) */
-        OrderExecutionActiveInputRollItem: {
-            material_roll_id?: string | null;
-            roll_trace_context_id?: string | null;
-            /** @description Штрихкод серии — пробелы значимы */
-            series_key?: string | null;
-            nomenclature_code?: string | null;
-            nomenclature_name?: string | null;
-            current_length_m?: number | null;
-        } & {
-            [key: string]: unknown;
-        };
-        /** @description Элемент `result` в ответе getActiveInputPrefill */
-        OrderExecutionActiveInputPrefillResultItem: {
-            work_area_id?: string | null;
-            has_active_input_roll?: boolean | null;
-            should_prefill_scan?: boolean | null;
-            active_input_rolls?: components["schemas"]["OrderExecutionActiveInputRollItem"][];
-        } & {
-            [key: string]: unknown;
-        };
-        OrderExecutionActiveInputPrefillResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
-            result?: components["schemas"]["OrderExecutionActiveInputPrefillResultItem"][];
-        })[];
-        OrderExecutionMaterialStageRegistryRequestItem: {
+        OrderExecutionSubmitMoveToUnwindResponse: components["schemas"]["OrderExecutionSubmitMoveToUnwindResultRow"][];
+        OrderExecutionStageRollRegistryRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialStageRegistryRequest: components["schemas"]["OrderExecutionMaterialStageRegistryRequestItem"][];
-        OrderExecutionMaterialStageRegistryOperationLine: {
+        OrderExecutionStageRollRegistryRequest: components["schemas"]["OrderExecutionStageRollRegistryRequestItem"][];
+        OrderExecutionStageRollRegistryOperationLine: {
             operation_kind?: string | null;
             operation_kind_label?: string | null;
             quantity_primary?: number | null;
@@ -2485,8 +2625,8 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description Карточка рулона в `result` ответа getOrderExecutionMaterialStageRegistry */
-        OrderExecutionMaterialStageRegistryRollRow: {
+        /** @description Запись рулона в `rows` ответа getStageRollRegistry */
+        OrderExecutionStageRollRegistryRollRow: {
             material_roll_id?: string | null;
             barcode?: string | null;
             nomenclature_name?: string | null;
@@ -2497,22 +2637,77 @@ export interface components {
             roll_status?: string | null;
             roll_status_label?: string | null;
             stage_input_card_status?: string | null;
-            operation_lines?: components["schemas"]["OrderExecutionMaterialStageRegistryOperationLine"][];
+            operation_lines?: components["schemas"]["OrderExecutionStageRollRegistryOperationLine"][];
         } & {
             [key: string]: unknown;
         };
-        /** @description Обёртка ответа RPC getOrderExecutionMaterialStageRegistry */
-        OrderExecutionMaterialStageRegistryResultRow: {
-            error_code?: string;
-            error_message?: string | null;
+        /** @description Снимок журнала в `result` ответа getStageRollRegistry */
+        OrderExecutionStageRollRegistrySnapshot: {
             work_area_id?: string | null;
             /** @description Время актуальности данных */
             as_of?: string | null;
-            result?: components["schemas"]["OrderExecutionMaterialStageRegistryRollRow"][];
+            rows?: components["schemas"]["OrderExecutionStageRollRegistryRollRow"][];
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialStageRegistryResponse: components["schemas"]["OrderExecutionMaterialStageRegistryResultRow"][];
+        /** @description Обёртка ответа RPC getStageRollRegistry */
+        OrderExecutionStageRollRegistryResultRow: {
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["OrderExecutionStageRollRegistrySnapshot"][];
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionStageRollRegistryResponse: components["schemas"]["OrderExecutionStageRollRegistryResultRow"][];
+        OrderExecutionStageRollPresenceRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionStageRollPresenceRequest: components["schemas"]["OrderExecutionStageRollPresenceRequestItem"][];
+        /** @description Рулон в `waiting_rows` / `unwind_row` ответа getStageRollPresence */
+        OrderExecutionStageRollPresencePresenceRow: {
+            presence_id?: string | null;
+            material_roll_id?: string | null;
+            barcode?: string | null;
+            /** @description Статус (`WAITING` / `ON_UNWIND`) */
+            presence_status?: string | null;
+            presence_status_label?: string | null;
+            current_length_m?: number | null;
+            current_weight_kg?: number | null;
+            can_move_to_unwind?: boolean | null;
+            write_off_allowed?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Группа рулонов одной номенклатуры в `slot_groups` */
+        OrderExecutionStageRollPresenceSlotGroup: {
+            nomenclature_name?: string | null;
+            nomenclature_code?: string | null;
+            waiting_rows?: components["schemas"]["OrderExecutionStageRollPresencePresenceRow"][];
+            unwind_row?: components["schemas"]["OrderExecutionStageRollPresencePresenceRow"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Снимок присутствия рулонов в `result` ответа getStageRollPresence */
+        OrderExecutionStageRollPresenceSnapshot: {
+            work_area_id?: string | null;
+            /** @description Время актуальности данных */
+            as_of?: string | null;
+            slot_groups?: components["schemas"]["OrderExecutionStageRollPresenceSlotGroup"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Обёртка ответа RPC getStageRollPresence */
+        OrderExecutionStageRollPresenceResultRow: {
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["OrderExecutionStageRollPresenceSnapshot"][];
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionStageRollPresenceResponse: components["schemas"]["OrderExecutionStageRollPresenceResultRow"][];
         OrderExecutionMaterialReturnLabelRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
@@ -2551,34 +2746,67 @@ export interface components {
             [key: string]: unknown;
         };
         OrderExecutionMaterialReturnLabelResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        OrderExecutionMaterialWriteoffWeightRequestItem: {
-            /** @description Метраж, м (ввод оператора) */
-            length: number;
+        ConvertConsumedLengthToWeightRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
+            /** @description Штрихкод серии материала */
+            barcode: string;
+            /** @description Метраж, м (ввод оператора) */
+            length: number;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialWriteoffWeightRequest: components["schemas"]["OrderExecutionMaterialWriteoffWeightRequestItem"][];
-        /** @description Элемент `result` в ответе getOrderExecutionMaterialWriteoffWeight */
-        OrderExecutionMaterialWriteoffWeightResultItem: {
+        ConvertConsumedLengthToWeightRequest: components["schemas"]["ConvertConsumedLengthToWeightRequestItem"][];
+        /** @description Элемент `result` в ответе convertConsumedLengthToWeight */
+        ConvertConsumedLengthToWeightResultItem: {
             /** @description Рассчитанный вес, кг */
             weight_kg?: number | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Обёртка ответа RPC getOrderExecutionMaterialWriteoffWeight */
-        OrderExecutionMaterialWriteoffWeightResultRow: {
+        /** @description Обёртка ответа RPC convertConsumedLengthToWeight */
+        ConvertConsumedLengthToWeightResultRow: {
             error_code?: string;
             error_message?: string | null;
-            result?: components["schemas"]["OrderExecutionMaterialWriteoffWeightResultItem"][];
+            result?: components["schemas"]["ConvertConsumedLengthToWeightResultItem"][];
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialWriteoffWeightResponse: components["schemas"]["OrderExecutionMaterialWriteoffWeightResultRow"][];
-        OrderExecutionMaterialReturnRequestItem: {
+        ConvertConsumedLengthToWeightResponse: components["schemas"]["ConvertConsumedLengthToWeightResultRow"][];
+        /** @description Запрос listReturnWarehouses (SCR-04) — комбобокс «Отправить на склад» */
+        ListReturnWarehousesRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
+        } & {
+            [key: string]: unknown;
+        };
+        ListReturnWarehousesRequest: components["schemas"]["ListReturnWarehousesRequestItem"][];
+        /** @description Элемент `result` в ответе listReturnWarehouses */
+        ListReturnWarehousesResultItem: {
+            /** @description Код склада (`warehouse_code` на BFF) */
+            warehouse_code?: string | null;
+            /** @description Подпись склада (`warehouse_label` на BFF) */
+            warehouse_label?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Обёртка ответа RPC listReturnWarehouses */
+        ListReturnWarehousesResultRow: {
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["ListReturnWarehousesResultItem"][];
+        } & {
+            [key: string]: unknown;
+        };
+        ListReturnWarehousesResponse: components["schemas"]["ListReturnWarehousesResultRow"][];
+        /** @description Запрос submitPartialReturn (SCR-04) — кнопка «Отразить возврат» */
+        SubmitPartialReturnRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+            /** @description Идентификатор рулона (`material_roll_id` из строки presence) */
+            materialRollId: string;
             /** @description Штрихкод серии материала */
             barcode: string;
             /** @description Метраж, м */
@@ -2587,51 +2815,81 @@ export interface components {
             weight: number;
             /** @description Склад возврата */
             warehouse: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialReturnRequest: components["schemas"]["OrderExecutionMaterialReturnRequestItem"][];
-        /** @description Элемент `result` в ответе registerOrderExecutionMaterialReturn */
-        OrderExecutionMaterialReturnResultItem: {
+        SubmitPartialReturnRequest: components["schemas"]["SubmitPartialReturnRequestItem"][];
+        /** @description Элемент `result` в ответе submitPartialReturn */
+        SubmitPartialReturnResultItem: {
+            presence_refresh_hint?: boolean | null;
             stage_registry_refresh_hint?: boolean | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Обёртка ответа RPC registerOrderExecutionMaterialReturn */
-        OrderExecutionMaterialReturnResultRow: {
+        /** @description Обёртка ответа RPC submitPartialReturn */
+        SubmitPartialReturnResultRow: {
             error_code?: string;
             error_message?: string | null;
-            result?: components["schemas"]["OrderExecutionMaterialReturnResultItem"][];
+            result?: components["schemas"]["SubmitPartialReturnResultItem"][];
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialReturnResponse: components["schemas"]["OrderExecutionMaterialReturnResultRow"][];
-        OrderExecutionMaterialFullWriteoffRequestItem: {
+        SubmitPartialReturnResponse: components["schemas"]["SubmitPartialReturnResultRow"][];
+        /** @description Запрос submitFullWriteOff (SCR-04) — кнопка «Списать полностью» */
+        SubmitFullWriteOffRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
             workAreaId: string;
+            /** @description Идентификатор рулона (`material_roll_id` из строки presence) */
+            materialRollId: string;
             /** @description Штрихкод серии материала */
             barcode: string;
-            /** @description Склад */
-            warehouse: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialFullWriteoffRequest: components["schemas"]["OrderExecutionMaterialFullWriteoffRequestItem"][];
-        /** @description Элемент `result` в ответе registerOrderExecutionMaterialFullWriteoff */
-        OrderExecutionMaterialFullWriteoffResultItem: {
+        SubmitFullWriteOffRequest: components["schemas"]["SubmitFullWriteOffRequestItem"][];
+        /** @description Элемент `result` в ответе submitFullWriteOff */
+        SubmitFullWriteOffResultItem: {
+            presence_refresh_hint?: boolean | null;
             stage_registry_refresh_hint?: boolean | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Обёртка ответа RPC registerOrderExecutionMaterialFullWriteoff */
-        OrderExecutionMaterialFullWriteoffResultRow: {
+        /** @description Обёртка ответа RPC submitFullWriteOff */
+        SubmitFullWriteOffResultRow: {
             error_code?: string;
             error_message?: string | null;
-            result?: components["schemas"]["OrderExecutionMaterialFullWriteoffResultItem"][];
+            result?: components["schemas"]["SubmitFullWriteOffResultItem"][];
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionMaterialFullWriteoffResponse: components["schemas"]["OrderExecutionMaterialFullWriteoffResultRow"][];
+        SubmitFullWriteOffResponse: components["schemas"]["SubmitFullWriteOffResultRow"][];
+        /** @description Запрос submitStageLkm (SCR-04) — кнопка «Отразить списание по этапу» */
+        SubmitStageLkmRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
+        } & {
+            [key: string]: unknown;
+        };
+        SubmitStageLkmRequest: components["schemas"]["SubmitStageLkmRequestItem"][];
+        /** @description Элемент `result` в ответе submitStageLkm */
+        SubmitStageLkmResultItem: {
+            [key: string]: unknown;
+        };
+        /** @description Обёртка ответа RPC submitStageLkm */
+        SubmitStageLkmResultRow: {
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["SubmitStageLkmResultItem"][];
+        } & {
+            [key: string]: unknown;
+        };
+        SubmitStageLkmResponse: components["schemas"]["SubmitStageLkmResultRow"][];
         OrderExecutionReleaseWorkAreaRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */
             workAreaId: string;
@@ -2639,6 +2897,16 @@ export interface components {
             [key: string]: unknown;
         };
         OrderExecutionReleaseWorkAreaRequest: components["schemas"]["OrderExecutionReleaseWorkAreaRequestItem"][];
+        /** @description Обёртка ответа RPC блока «Выпуск» */
+        OrderExecutionReleaseRpcResultRow: {
+            error_code?: string;
+            error_message?: string | null;
+            result?: {
+                [key: string]: unknown;
+            }[];
+        } & {
+            [key: string]: unknown;
+        };
         /** @description Элемент `result` в ответе getReleaseFormInit */
         OrderExecutionReleaseFormInitResultItem: {
             work_area_id?: string | null;

@@ -1,12 +1,9 @@
 import { Fragment } from "react";
 
 import type { MaterialsStageOperation } from "@/features/operator/order-execution/model/materials-writeoff/types";
-import type { MaterialsWriteoffFormState } from "@/features/operator/order-execution/model/materials-writeoff/materials-writeoff-form";
 import { Button } from "@/shared/ui/kit/button";
-import { Input } from "@/shared/ui/kit/input";
 import { Icon } from "@/shared/ui/kit/icon";
 import { cn } from "@/shared/lib/css";
-import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
     dataTableScrollViewportClassName,
@@ -17,23 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 
 type MaterialsWriteoffStageRegistryProps = {
-    showWriteoffForm?: boolean;
-    selectedNomenclature?: string | null;
-    writeoffForm: MaterialsWriteoffFormState;
-    warehouseOptions: string[];
-    isWriteoffWeightLoading?: boolean;
-    writeoffWeightError?: string | null;
-    canCalculateWeight?: boolean;
-    isWriteoffActionsEnabled?: boolean;
-    isReflectReturnEnabled?: boolean;
-    isFullWriteoffEnabled?: boolean;
-    isReflectingReturn?: boolean;
-    isWritingOffFully?: boolean;
-    reflectReturnError?: string | null;
-    writeOffFullyError?: string | null;
-    onCalculateWriteoffWeight: () => void;
-    onReflectMaterialReturn: () => void;
-    onWriteOffMaterialFully: () => void;
     stageOperations: MaterialsStageOperation[];
     isStageRegistryLoading?: boolean;
     stageRegistryError?: string | null;
@@ -41,29 +21,11 @@ type MaterialsWriteoffStageRegistryProps = {
     printError?: string | null;
     printingMaterialRollId?: string | null;
     expandedOpId: string | null;
-    onWriteoffFormChange: (patch: Partial<MaterialsWriteoffFormState>) => void;
     onExpandedOpIdChange: (id: string | null) => void;
     onPrintReturnLabel: (materialRollId: string) => void;
 };
 
 export function MaterialsWriteoffStageRegistry({
-    showWriteoffForm = true,
-    selectedNomenclature = null,
-    writeoffForm,
-    warehouseOptions,
-    isWriteoffWeightLoading = false,
-    writeoffWeightError = null,
-    canCalculateWeight = false,
-    isWriteoffActionsEnabled = false,
-    isReflectReturnEnabled = false,
-    isFullWriteoffEnabled = false,
-    isReflectingReturn = false,
-    isWritingOffFully = false,
-    reflectReturnError = null,
-    writeOffFullyError = null,
-    onCalculateWriteoffWeight,
-    onReflectMaterialReturn,
-    onWriteOffMaterialFully,
     stageOperations,
     isStageRegistryLoading = false,
     stageRegistryError = null,
@@ -71,94 +33,18 @@ export function MaterialsWriteoffStageRegistry({
     printError = null,
     printingMaterialRollId = null,
     expandedOpId,
-    onWriteoffFormChange,
     onExpandedOpIdChange,
     onPrintReturnLabel,
 }: MaterialsWriteoffStageRegistryProps) {
     return (
-        <div className="space-y-3">
-            {showWriteoffForm ? (
-                <>
-                    <div className={cnSectionBlockTitle()}>Данные для списания и последующего возврата</div>
-                    <div>
-                        <div className={comboboxFieldLabelClassName}>Списываемая номенклатура</div>
-                        <Input value={selectedNomenclature ?? "—"} readOnly disabled className="mt-1" />
-                    </div>
-                    <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                        <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
-                            <div>
-                                <div className={comboboxFieldLabelClassName}>Метраж, м</div>
-                                <Input
-                                    value={writeoffForm.meters}
-                                    inputMode="decimal"
-                                    onChange={(e) => onWriteoffFormChange({ meters: e.target.value })}
-                                    className="mt-1"
-                                />
-                            </div>
-                            <div>
-                                <div className={comboboxFieldLabelClassName}>Вес, кг</div>
-                                <Input
-                                    value={isWriteoffWeightLoading ? "…" : writeoffForm.weight}
-                                    inputMode="decimal"
-                                    onChange={(e) => onWriteoffFormChange({ weight: e.target.value })}
-                                    className="mt-1"
-                                />
-                                {writeoffWeightError ? (
-                                    <div className="mt-1 text-[11px] text-destructive">{writeoffWeightError}</div>
-                                ) : null}
-                            </div>
-                            <div>
-                                <div className={comboboxFieldLabelClassName}>Отправить на склад</div>
-                                <select
-                                    className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                                    value={writeoffForm.warehouse}
-                                    onChange={(e) => onWriteoffFormChange({ warehouse: e.target.value })}
-                                >
-                                    <option value="">Выберите склад</option>
-                                    {warehouseOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            Склад {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                        <Button
-                            size="sm"
-                            className="shrink-0"
-                            disabled={!canCalculateWeight || isWriteoffWeightLoading}
-                            onClick={onCalculateWriteoffWeight}
-                        >
-                            {isWriteoffWeightLoading ? "Расчёт…" : "Рассчитать"}
-                        </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                        {reflectReturnError ? (
-                            <div className="w-full text-right text-[12px] text-destructive">{reflectReturnError}</div>
-                        ) : null}
-                        {writeOffFullyError ? (
-                            <div className="w-full text-right text-[12px] text-destructive">{writeOffFullyError}</div>
-                        ) : null}
-                        <Button size="sm" disabled={!isReflectReturnEnabled} onClick={onReflectMaterialReturn}>
-                            {isReflectingReturn ? "Отражение…" : "Отразить возврат"}
-                        </Button>
-                        <Button size="sm" disabled={!isFullWriteoffEnabled} onClick={onWriteOffMaterialFully}>
-                            {isWritingOffFully ? "Списание…" : "Списать полностью"}
-                        </Button>
-                        <Button size="sm" disabled={!isWriteoffActionsEnabled}>
-                            Отразить списание по этапу
-                        </Button>
-                    </div>
-                </>
-            ) : null}
-
-            <div className="space-y-2">
-                <div className="flex min-w-0 items-center justify-between gap-3 pb-2">
+        <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 pb-2">
                     <div className={cnSectionBlockTitle()}>Выполненные операции на этапе</div>
-                    {stageRegistryAsOf ? (
+                    {isStageRegistryLoading ? (
+                        <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
+                    ) : stageRegistryAsOf ? (
                         <span className="shrink-0 text-[11px] text-muted-foreground">
-                            Обновлено: {stageRegistryAsOf}
+                            Актуально на {stageRegistryAsOf}
                         </span>
                     ) : null}
                 </div>
@@ -350,7 +236,6 @@ export function MaterialsWriteoffStageRegistry({
                         </TableBody>
                     </Table>
                 </div>
-            </div>
         </div>
     );
 }

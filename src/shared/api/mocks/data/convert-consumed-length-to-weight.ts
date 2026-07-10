@@ -1,11 +1,26 @@
-export function buildMockOrderExecutionMaterialWriteoffWeightResponse(length: number, workAreaId: string) {
+export function buildMockConvertConsumedLengthToWeightResponse(
+    length: number,
+    workAreaId: string,
+    barcode: string,
+) {
     const normalizedWorkAreaId = workAreaId.trim();
+    const normalizedBarcode = barcode.trim();
 
     if (!normalizedWorkAreaId) {
         return [
             {
                 error_code: "VALIDATION",
                 error_message: "Укажите workAreaId",
+                result: [],
+            },
+        ];
+    }
+
+    if (!normalizedBarcode) {
+        return [
+            {
+                error_code: "VALIDATION",
+                error_message: "Укажите barcode",
                 result: [],
             },
         ];

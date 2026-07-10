@@ -17,7 +17,9 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 type MaterialsWriteoffPresenceTableProps = {
     rows: MaterialsPresenceRow[];
     isLoading?: boolean;
+    presenceAsOf?: string | null;
     expandedRowId: string | null;
+    movingToUnwindRowId?: string | null;
     selectedRowId: string | null;
     onExpandedRowIdChange: (id: string | null) => void;
     onMoveToUnwind: (rowId: string) => void;
@@ -40,10 +42,14 @@ function PresenceStatusPill({ status }: { status: MaterialsPresenceRow["status"]
     );
 }
 
+const presenceActionButtonClassName = "hover:bg-accent hover:text-accent-foreground";
+
 export function MaterialsWriteoffPresenceTable({
     rows,
     isLoading = false,
+    presenceAsOf = null,
     expandedRowId,
+    movingToUnwindRowId = null,
     selectedRowId,
     onExpandedRowIdChange,
     onMoveToUnwind,
@@ -51,7 +57,14 @@ export function MaterialsWriteoffPresenceTable({
 }: MaterialsWriteoffPresenceTableProps) {
     return (
         <div className="space-y-2">
-            <div className={cnSectionBlockTitle()}>Рулоны в машине</div>
+            <div className="flex items-center justify-between gap-3">
+                <div className={cnSectionBlockTitle()}>Рулоны в машине</div>
+                {isLoading ? (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
+                ) : presenceAsOf ? (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {presenceAsOf}</span>
+                ) : null}
+            </div>
             <div className={dataTableScrollViewportClassName}>
                 <Table className={cn(dataTableShellClassName, "text-[12px]")}>
                     <TableHeader className="bg-muted/40">
@@ -120,28 +133,35 @@ export function MaterialsWriteoffPresenceTable({
                                                 <PresenceStatusPill status={row.status} />
                                             </TableCell>
                                             <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                                {row.status === "WAITING" && row.canMoveToUnwind ? (
-                                                    <Button
-                                                        type="button"
-                                                        variant="link"
-                                                        size="sm"
-                                                        className="h-auto px-0"
-                                                        onClick={() => onMoveToUnwind(row.id)}
-                                                    >
-                                                        На размотку
-                                                    </Button>
-                                                ) : null}
-                                                {row.status === "ON_UNWIND" && row.writeOffAllowed ? (
-                                                    <Button
-                                                        type="button"
-                                                        variant="link"
-                                                        size="sm"
-                                                        className="h-auto px-0"
-                                                        onClick={() => onSelectForWriteoff(row)}
-                                                    >
-                                                        Списать
-                                                    </Button>
-                                                ) : null}
+                                                <div className="flex justify-end">
+                                                    {row.status === "WAITING" && row.canMoveToUnwind ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className={presenceActionButtonClassName}
+                                                            pending={movingToUnwindRowId === row.id}
+                                                            pendingLabel="Перемещение…"
+                                                            disabled={movingToUnwindRowId === row.id}
+                                                            onClick={() => {
+                                                                void onMoveToUnwind(row.id);
+                                                            }}
+                                                        >
+                                                            На размотку
+                                                        </Button>
+                                                    ) : null}
+                                                    {row.status === "ON_UNWIND" && row.writeOffAllowed ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className={presenceActionButtonClassName}
+                                                            onClick={() => onSelectForWriteoff(row)}
+                                                        >
+                                                            Списать
+                                                        </Button>
+                                                    ) : null}
+                                                </div>
                                             </TableCell>
                                         </TableRow>
 

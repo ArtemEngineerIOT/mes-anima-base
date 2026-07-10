@@ -34,19 +34,78 @@ const buttonVariants = cva(
     },
 );
 
+type ButtonProps = React.ComponentProps<"button"> &
+    VariantProps<typeof buttonVariants> & {
+        asChild?: boolean;
+        /** Показать `pendingLabel` вместо `children` (ширина кнопки не меняется, если задан `pendingLabel`). */
+        pending?: boolean;
+        /** Текст/разметка на время ожидания; вместе с `children` резервирует max-ширину обоих подписей. */
+        pendingLabel?: React.ReactNode;
+    };
+
+type ButtonPendingLabelProps = {
+    pending?: boolean;
+    pendingLabel: React.ReactNode;
+    children: React.ReactNode;
+};
+
+/** Стабильная ширина подписи внутри `Button` (например, рядом с иконкой). */
+function ButtonPendingLabel({ pending = false, pendingLabel, children }: ButtonPendingLabelProps) {
+    return (
+        <span className="inline-grid grid-cols-1 grid-rows-1 [&>*]:col-start-1 [&>*]:row-start-1">
+            <span className={cn(pending && "invisible")}>{children}</span>
+            <span className={cn(!pending && "invisible")} aria-hidden={!pending}>
+                {pendingLabel}
+            </span>
+        </span>
+    );
+}
+
+function renderButtonContent(
+    children: React.ReactNode,
+    pending: boolean,
+    pendingLabel: React.ReactNode | undefined,
+): React.ReactNode {
+    if (pendingLabel === undefined) {
+        return children;
+    }
+
+    return (
+        <ButtonPendingLabel pending={pending} pendingLabel={pendingLabel}>
+            {children}
+        </ButtonPendingLabel>
+    );
+}
+
 function Button({
     className,
     variant,
     size,
     asChild = false,
+    pending = false,
+    pendingLabel,
+    children,
     ...props
-}: React.ComponentProps<"button"> &
-    VariantProps<typeof buttonVariants> & {
-        asChild?: boolean;
-    }) {
+}: ButtonProps) {
     const Comp = asChild ? Slot : "button";
+    const content =
+        asChild || pendingLabel === undefined
+            ? pending && pendingLabel !== undefined
+                ? pendingLabel
+                : children
+            : renderButtonContent(children, pending, pendingLabel);
 
-    return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+    return (
+        <Comp
+            data-slot="button"
+            data-pending={pending ? "" : undefined}
+            aria-busy={pending || undefined}
+            className={cn(buttonVariants({ variant, size, className }))}
+            {...props}
+        >
+            {content}
+        </Comp>
+    );
 }
 
-export { Button, buttonVariants };
+export { Button, ButtonPendingLabel, buttonVariants };

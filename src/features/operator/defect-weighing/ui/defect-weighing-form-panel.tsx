@@ -117,8 +117,15 @@ export function DefectWeighingFormPanel({ model }: DefectWeighingFormPanelProps)
             </div>
 
             <div className="flex justify-end">
-                <Button type="button" size="sm" disabled={!canRegister} onClick={() => void registerDefect()}>
-                    {isRegistering ? "Регистрация…" : "Зарегистрировать брак"}
+                <Button
+                    type="button"
+                    size="sm"
+                    pending={isRegistering}
+                    pendingLabel="Регистрация…"
+                    disabled={!canRegister}
+                    onClick={() => void registerDefect()}
+                >
+                    Зарегистрировать брак
                 </Button>
             </div>
         </div>

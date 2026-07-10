@@ -263,12 +263,14 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                     <Button
                         type="button"
                         size="sm"
+                        pending={isSubmittingBlock}
+                        pendingLabel="Передача…"
                         disabled={!canSubmitBlock || isLoading || Boolean(error) || isSubmittingBlock}
                         onClick={() => {
                             void submitBlock();
                         }}
                     >
-                        {isSubmittingBlock ? "Передача…" : "Передать блокировки"}
+                        Передать блокировки
                     </Button>
                 </div>
             </div>
@@ -283,12 +285,14 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                 <Button
                     type="button"
                     size="sm"
+                    pending={isRegisteringRelease}
+                    pendingLabel="Регистрация…"
                     disabled={!canRegisterRelease || isLoading || Boolean(error) || isRegisteringRelease}
                     onClick={() => {
                         void registerRelease();
                     }}
                 >
-                    {isRegisteringRelease ? "Регистрация…" : "Зарегистрировать выпуск"}
+                    Зарегистрировать выпуск
                 </Button>
             </div>
         </div>

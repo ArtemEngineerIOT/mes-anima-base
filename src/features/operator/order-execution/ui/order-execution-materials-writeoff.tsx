@@ -3,6 +3,7 @@ import { useMaterialsWriteoff } from "@/features/operator/order-execution/model/
 import { useOrderExecutionMachineStompState } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
 import { resolveMaterialsWriteoffMachinePanel } from "@/features/operator/order-execution/model/machine-stomp/resolve-materials-writeoff-machine-panel";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
+import { MaterialsWriteoffFormPanel } from "@/features/operator/order-execution/ui/materials-writeoff-form-panel";
 import { MaterialsWriteoffPresenceTable } from "@/features/operator/order-execution/ui/materials-writeoff-presence-table";
 import { MaterialsWriteoffStageRegistry } from "@/features/operator/order-execution/ui/materials-writeoff-stage-registry";
 import { Button } from "@/shared/ui/kit/button";
@@ -26,6 +27,9 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         setInstallationPlace,
         installationPlaceOptions,
         presenceRows,
+        isPresenceLoading,
+        presenceAsOf,
+        presenceError,
         expandedPresenceRowId,
         setExpandedPresenceRowId,
         selectedWriteoffRoll,
@@ -41,7 +45,10 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         calculateWriteoffWeight,
         reflectMaterialReturn,
         writeOffMaterialFully,
+        submitStageLkmWriteoff,
         moveToUnwind,
+        movingToUnwindRowId,
+        moveToUnwindError,
         selectForWriteoff,
         canCalculateWeight,
         isReflectReturnEnabled,
@@ -49,9 +56,13 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         isWriteoffActionsEnabled,
         isReflectingReturn,
         isWritingOffFully,
+        isSubmittingStageLkm,
         reflectReturnError,
         writeOffFullyError,
+        submitStageLkmError,
         warehouseOptions,
+        isWarehousesLoading,
+        warehousesError,
         isWriteoffWeightLoading,
         writeoffWeightError,
         showWriteoffFlow,
@@ -100,14 +111,21 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                             disabled={isSearching}
                         >
                             {installationPlaceOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
+                                <option key={option.value} value={option.value} disabled={option.disabled}>
                                     {option.label}
                                 </option>
                             ))}
                         </select>
                     </div>
-                    <Button size="sm" className="shrink-0" onClick={handleSearch} disabled={!canSearch}>
-                        {isSearching ? "Регистрация…" : "В машину"}
+                    <Button
+                        size="sm"
+                        className="shrink-0"
+                        pending={isSearching}
+                        pendingLabel="Регистрация…"
+                        onClick={handleSearch}
+                        disabled={!canSearch}
+                    >
+                        В машину
                     </Button>
                 </div>
             </div>
@@ -125,9 +143,26 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                 />
             ) : null}
 
+            {presenceError ? (
+                <Informer tone="alert" variant="filled" size="s" title="Рулоны в машине" description={presenceError} />
+            ) : null}
+
+            {moveToUnwindError ? (
+                <Informer
+                    tone="alert"
+                    variant="filled"
+                    size="s"
+                    title="На размотку"
+                    description={moveToUnwindError}
+                />
+            ) : null}
+
             <MaterialsWriteoffPresenceTable
                 rows={presenceRows}
+                isLoading={isPresenceLoading}
+                presenceAsOf={presenceAsOf}
                 expandedRowId={expandedPresenceRowId}
+                movingToUnwindRowId={movingToUnwindRowId}
                 selectedRowId={selectedWriteoffRoll?.id ?? null}
                 onExpandedRowIdChange={setExpandedPresenceRowId}
                 onMoveToUnwind={moveToUnwind}
@@ -142,30 +177,43 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                 />
             ) : null}
 
+            {enabled ? (
+                <MaterialsWriteoffFormPanel
+                    selectedNomenclature={selectedWriteoffRoll?.nomenclatureName ?? null}
+                    writeoffForm={writeoffForm}
+                    warehouseOptions={warehouseOptions}
+                    isWarehousesLoading={isWarehousesLoading}
+                    warehousesError={warehousesError}
+                    isWriteoffWeightLoading={isWriteoffWeightLoading}
+                    writeoffWeightError={writeoffWeightError}
+                    canCalculateWeight={canCalculateWeight}
+                    isWriteoffActionsEnabled={isWriteoffActionsEnabled}
+                    isReflectReturnEnabled={isReflectReturnEnabled}
+                    isFullWriteoffEnabled={isFullWriteoffEnabled}
+                    isReflectingReturn={isReflectingReturn}
+                    isWritingOffFully={isWritingOffFully}
+                    isSubmittingStageLkm={isSubmittingStageLkm}
+                    reflectReturnError={reflectReturnError}
+                    writeOffFullyError={writeOffFullyError}
+                    submitStageLkmError={submitStageLkmError}
+                    isFormEnabled={showWriteoffFlow}
+                    onCalculateWriteoffWeight={() => {
+                        void calculateWriteoffWeight();
+                    }}
+                    onReflectMaterialReturn={() => {
+                        void reflectMaterialReturn();
+                    }}
+                    onWriteOffMaterialFully={() => {
+                        void writeOffMaterialFully();
+                    }}
+                    onSubmitStageLkmWriteoff={() => {
+                        void submitStageLkmWriteoff();
+                    }}
+                    onWriteoffFormChange={updateWriteoffForm}
+                />
+            ) : null}
+
             <MaterialsWriteoffStageRegistry
-                showWriteoffForm={showWriteoffFlow}
-                selectedNomenclature={selectedWriteoffRoll?.nomenclatureName ?? null}
-                writeoffForm={writeoffForm}
-                warehouseOptions={warehouseOptions}
-                isWriteoffWeightLoading={isWriteoffWeightLoading}
-                writeoffWeightError={writeoffWeightError}
-                canCalculateWeight={canCalculateWeight}
-                isWriteoffActionsEnabled={isWriteoffActionsEnabled}
-                isReflectReturnEnabled={isReflectReturnEnabled}
-                isFullWriteoffEnabled={isFullWriteoffEnabled}
-                isReflectingReturn={isReflectingReturn}
-                isWritingOffFully={isWritingOffFully}
-                reflectReturnError={reflectReturnError}
-                writeOffFullyError={writeOffFullyError}
-                onCalculateWriteoffWeight={() => {
-                    void calculateWriteoffWeight();
-                }}
-                onReflectMaterialReturn={() => {
-                    void reflectMaterialReturn();
-                }}
-                onWriteOffMaterialFully={() => {
-                    void writeOffMaterialFully();
-                }}
                 stageOperations={stageRegistry.stageOperations}
                 isStageRegistryLoading={stageRegistry.isLoading}
                 stageRegistryError={stageRegistry.error}
@@ -173,7 +221,6 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                 printError={stageRegistry.printError}
                 printingMaterialRollId={stageRegistry.printingMaterialRollId}
                 expandedOpId={expandedOpId}
-                onWriteoffFormChange={updateWriteoffForm}
                 onExpandedOpIdChange={setExpandedOpId}
                 onPrintReturnLabel={(materialRollId) => {
                     void stageRegistry.printReturnLabel(materialRollId);

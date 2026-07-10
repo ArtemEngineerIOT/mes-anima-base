@@ -22,7 +22,7 @@ function formatWeightKg(weightKg: number): string {
 }
 
 export function mapMaterialsWriteoffWeightPayload(
-    payload: ApiSchemas["OrderExecutionMaterialWriteoffWeightResponse"] | undefined,
+    payload: ApiSchemas["ConvertConsumedLengthToWeightResponse"] | undefined,
 ): MaterialsWriteoffWeightCalculation {
     const fallbackMessage = "Не удалось рассчитать вес";
     const wrapper = payload?.[0];

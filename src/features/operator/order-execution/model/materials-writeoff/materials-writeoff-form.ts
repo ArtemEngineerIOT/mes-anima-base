@@ -1,16 +1,30 @@
-export const MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS = ["100", "200"];
+import type { MaterialsPresenceRow } from "./types";
 
 export type MaterialsInstallationPlace = "WAITING" | "ON_UNWIND";
 
-export const MATERIALS_INSTALLATION_PLACE_OPTIONS: ReadonlyArray<{
+export type MaterialsInstallationPlaceOption = {
     value: MaterialsInstallationPlace;
     label: string;
-}> = [
+    disabled?: boolean;
+};
+
+export const MATERIALS_INSTALLATION_PLACE_OPTIONS: ReadonlyArray<MaterialsInstallationPlaceOption> = [
     { value: "WAITING", label: "Ожидание" },
     { value: "ON_UNWIND", label: "Размотка" },
 ];
 
 export const DEFAULT_MATERIALS_INSTALLATION_PLACE: MaterialsInstallationPlace = "WAITING";
+
+export function resolveInstallationPlaceOptions(
+    rows: MaterialsPresenceRow[],
+): ReadonlyArray<MaterialsInstallationPlaceOption> {
+    const unwindOccupied = rows.some((row) => row.status === "ON_UNWIND");
+
+    return MATERIALS_INSTALLATION_PLACE_OPTIONS.map((option) => ({
+        ...option,
+        disabled: unwindOccupied && option.value === "ON_UNWIND",
+    }));
+}
 
 export type MaterialsWriteoffFormState = {
     meters: string;
@@ -66,10 +80,6 @@ export function isMaterialsWriteoffFormReady(form: MaterialsWriteoffFormState): 
     );
 }
 
-export function isMaterialFullWriteoffReady(form: MaterialsWriteoffFormState): boolean {
-    return form.warehouse.trim() !== "";
-}
-
-export function canCalculateWriteoffWeight(length: string): boolean {
-    return parseWriteoffLength(length) !== null;
+export function canCalculateWriteoffWeight(length: string, barcode?: string | null): boolean {
+    return Boolean(barcode?.trim()) && parseWriteoffLength(length) !== null;
 }

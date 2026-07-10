@@ -9,11 +9,16 @@ export type MaterialsSeriesCard = {
     isSemiFinished: boolean;
 };
 
+export type MaterialsReturnWarehouseOption = {
+    warehouseCode: string;
+    warehouseLabel: string;
+};
+
 export type MaterialsWriteoffDefaults = {
     meters: string;
     weight: string;
     warehouse: string;
-    warehouseOptions: string[];
+    warehouseOptions: MaterialsReturnWarehouseOption[];
 };
 
 export type MaterialsStageOperationDetail = {
@@ -61,6 +66,43 @@ export type MaterialsPresenceRow = {
     currentWeightKg: number;
     canMoveToUnwind: boolean;
     writeOffAllowed: boolean;
+};
+
+export type MaterialsRollPresenceSnapshot = {
+    rows: MaterialsPresenceRow[];
+    asOf: string | null;
+    workAreaId: string | null;
+};
+
+export type MaterialsResolveBarcodeOnStageResult = {
+    stageSpecStatus: string;
+    stageSpecBannerVisible: boolean;
+    stageSpecBannerTitle: string;
+    stageSpecBannerDetail: string;
+    alreadyRegisteredOnStage: boolean;
+    scanBlockedByActiveInput: boolean;
+    materialRollId: string;
+    rollTraceContextId: string;
+    presenceStatus: string;
+    presenceRefreshHint: boolean;
+    stageRegistryRefreshHint: boolean;
+};
+
+export type MaterialsSubmitMoveToUnwindResult = {
+    materialRollId: string;
+    presenceStatus: string;
+    presenceRefreshHint: boolean;
+    stageRegistryRefreshHint: boolean;
+};
+
+export type MaterialsSubmitPartialReturnResult = {
+    presenceRefreshHint: boolean;
+    stageRegistryRefreshHint: boolean;
+};
+
+export type MaterialsSubmitFullWriteOffResult = {
+    presenceRefreshHint: boolean;
+    stageRegistryRefreshHint: boolean;
 };
 
 export type MaterialsWriteoffData = {

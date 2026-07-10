@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { Button } from "@/shared/ui/kit/button";
+import { Button, ButtonPendingLabel } from "@/shared/ui/kit/button";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Label } from "@/shared/ui/kit/label";
@@ -181,7 +181,9 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                             }}
                         >
                             <Icon name="refresh" className="text-base" />
-                            {locationLoading ? "Обновление…" : "Обновить"}
+                            <ButtonPendingLabel pending={locationLoading} pendingLabel="Обновление…">
+                                Обновить
+                            </ButtonPendingLabel>
                         </Button>
                     </div>
                     {locationError ? (
@@ -348,12 +350,14 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                     <Button
                         type="button"
                         size="sm"
+                        pending={isSubmittingBlock}
+                        pendingLabel="Передача…"
                         disabled={!canSubmitBlock || isSubmittingBlock}
                         onClick={() => {
                             void submitBlock();
                         }}
                     >
-                        {isSubmittingBlock ? "Передача…" : "Передать блокировку"}
+                        Передать блокировку
                     </Button>
                 </div>
             </section>

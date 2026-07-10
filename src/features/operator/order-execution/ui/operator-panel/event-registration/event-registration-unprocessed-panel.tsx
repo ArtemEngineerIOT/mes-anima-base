@@ -114,10 +114,12 @@ export function EventRegistrationUnprocessedPanel({
                         <Button
                             type="button"
                             size="sm"
+                            pending={isDiscardSignalsPending}
+                            pendingLabel="Удаление…"
                             disabled={disabled || !canDeleteSelectedSignals}
                             onClick={() => void deleteSelectedSignals()}
                         >
-                            {isDiscardSignalsPending ? "Удаление…" : "Удалить"}
+                            Удалить
                         </Button>
                     </div>
                 </div>

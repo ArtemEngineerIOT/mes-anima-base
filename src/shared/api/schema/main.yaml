@@ -82,33 +82,45 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecution"
 
-    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialSeries:
+    /v1/contexts/users.admin.models.rest/functions/resolveBarcodeOnStage:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialSeries"
+            $ref: "./endpoints/operator/order-execution.yaml#/postResolveBarcodeOnStage"
 
-    /v1/contexts/users.admin.models.rest/functions/getActiveInputPrefill:
+    /v1/contexts/users.admin.models.rest/functions/submitMoveToUnwind:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postGetActiveInputPrefill"
+            $ref: "./endpoints/operator/order-execution.yaml#/postSubmitMoveToUnwind"
 
-    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialStageRegistry:
+    /v1/contexts/users.admin.models.rest/functions/getStageRollRegistry:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialStageRegistry"
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetStageRollRegistry"
+
+    /v1/contexts/users.admin.models.rest/functions/getStageRollPresence:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetStageRollPresence"
 
     /v1/contexts/users.admin.models.rest/functions/printOrderExecutionMaterialReturnLabel:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postPrintOrderExecutionMaterialReturnLabel"
 
-    /v1/contexts/users.admin.models.rest/functions/getOrderExecutionMaterialWriteoffWeight:
+    /v1/contexts/users.admin.models.rest/functions/convertConsumedLengthToWeight:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postGetOrderExecutionMaterialWriteoffWeight"
+            $ref: "./endpoints/operator/order-execution.yaml#/postConvertConsumedLengthToWeight"
 
-    /v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialReturn:
+    /v1/contexts/users.admin.models.rest/functions/listReturnWarehouses:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterOrderExecutionMaterialReturn"
+            $ref: "./endpoints/operator/order-execution.yaml#/postListReturnWarehouses"
 
-    /v1/contexts/users.admin.models.rest/functions/registerOrderExecutionMaterialFullWriteoff:
+    /v1/contexts/users.admin.models.rest/functions/submitPartialReturn:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postRegisterOrderExecutionMaterialFullWriteoff"
+            $ref: "./endpoints/operator/order-execution.yaml#/postSubmitPartialReturn"
+
+    /v1/contexts/users.admin.models.rest/functions/submitFullWriteOff:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postSubmitFullWriteOff"
+
+    /v1/contexts/users.admin.models.rest/functions/submitStageLkm:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postSubmitStageLkm"
 
     /v1/contexts/users.admin.models.rest/functions/getReleaseFormInit:
         post:

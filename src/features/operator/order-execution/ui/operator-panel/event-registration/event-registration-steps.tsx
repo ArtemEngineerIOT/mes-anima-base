@@ -553,8 +553,14 @@ export function EventRegistrationStep3({
                 <Button type="button" variant="outline" disabled={disabled} onClick={onBack}>
                     Назад
                 </Button>
-                <Button type="button" disabled={disabled} onClick={() => void onRegister()}>
-                    {isRegisterEventPending ? "Регистрация…" : "Зарегистрировать"}
+                <Button
+                    type="button"
+                    pending={isRegisterEventPending}
+                    pendingLabel="Регистрация…"
+                    disabled={disabled}
+                    onClick={() => void onRegister()}
+                >
+                    Зарегистрировать
                 </Button>
             </div>
         </div>
