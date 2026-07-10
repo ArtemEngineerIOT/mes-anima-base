@@ -1,14 +1,22 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
+import type { MaterialsSubmitPartialReturnResult } from "./types";
+
 const OK_ERROR_CODE = "OK";
 
-export type RegisterMaterialReturnResult = {
-    stageRegistryRefreshHint: boolean;
-};
+function pickBoolean(value: unknown): boolean {
+    if (typeof value === "boolean") {
+        return value;
+    }
+    if (value === 1 || value === "1" || value === "true" || value === "TRUE") {
+        return true;
+    }
+    return false;
+}
 
-export function mapRegisterMaterialReturnPayload(
-    payload: ApiSchemas["OrderExecutionMaterialReturnResponse"] | undefined,
-): RegisterMaterialReturnResult {
+export function mapSubmitPartialReturnPayload(
+    payload: ApiSchemas["SubmitPartialReturnResponse"] | undefined,
+): MaterialsSubmitPartialReturnResult {
     const fallbackMessage = "Не удалось отразить возврат";
     const wrapper = payload?.[0];
     if (!wrapper) {
@@ -23,7 +31,8 @@ export function mapRegisterMaterialReturnPayload(
     const result = (wrapper.result?.[0] ?? undefined) as Record<string, unknown> | undefined;
 
     return {
-        stageRegistryRefreshHint: Boolean(
+        presenceRefreshHint: pickBoolean(result?.presence_refresh_hint ?? result?.presenceRefreshHint),
+        stageRegistryRefreshHint: pickBoolean(
             result?.stage_registry_refresh_hint ?? result?.stageRegistryRefreshHint,
         ),
     };

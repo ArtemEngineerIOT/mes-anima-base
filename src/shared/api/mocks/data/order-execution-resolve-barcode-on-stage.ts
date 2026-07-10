@@ -1,9 +1,13 @@
 import {
     MOCK_WA207_ACTIVE_INPUT_ROLL,
     MOCK_WA207_ACTIVE_INPUT_SERIES_KEY,
-} from "./order-execution-active-input-prefill";
+} from "./order-execution-resolve-barcode-mock-constants";
 
-export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, workAreaId?: string) {
+export function buildMockResolveBarcodeOnStageResponse(
+    barcode: string,
+    workAreaId?: string,
+    installationPlace: "WAITING" | "ON_UNWIND" = "WAITING",
+) {
     const rawBarcode = barcode;
     const normalized = barcode.trim();
     const normalizedWorkAreaId = workAreaId?.trim() ?? "";
@@ -11,17 +15,14 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
     if (!normalized) {
         return [
             {
-                error_code: "VALIDATION",
+                error_code: "INVALID_INPUT",
                 error_message: "Укажите штрихкод серии",
                 result: [],
             },
         ];
     }
 
-    if (
-        normalizedWorkAreaId === "207" &&
-        rawBarcode !== MOCK_WA207_ACTIVE_INPUT_SERIES_KEY
-    ) {
+    if (normalizedWorkAreaId === "207" && rawBarcode !== MOCK_WA207_ACTIVE_INPUT_SERIES_KEY) {
         return [
             {
                 error_message: "",
@@ -36,8 +37,10 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
                         material_roll_id: "",
                         stage_spec_banner_visible: true,
                         stage_registry_refresh_hint: false,
+                        presence_refresh_hint: false,
                         series_card: [],
                         roll_trace_context_id: "",
+                        presence_status: installationPlace,
                     },
                 ],
             },
@@ -61,7 +64,7 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
                 error_code: "OK",
                 result: [
                     {
-                        stage_spec_status: "NOT_MATCHED",
+                        stage_spec_status: "NOT_IN_SPEC",
                         stage_spec_banner_detail:
                             "Отсканированная серия отсутствует в основных/альтернативных материалах заказа",
                         already_registered_on_stage: false,
@@ -69,8 +72,10 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
                         material_roll_id: "",
                         stage_spec_banner_visible: true,
                         stage_registry_refresh_hint: false,
+                        presence_refresh_hint: false,
                         series_card: [],
                         roll_trace_context_id: "",
+                        presence_status: installationPlace,
                     },
                 ],
             },
@@ -89,10 +94,13 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
                     stage_spec_status: "MATCHED",
                     stage_spec_banner_detail: "",
                     already_registered_on_stage: isWa207ActiveSeries,
+                    scan_blocked_by_active_input: false,
                     stage_spec_banner_title: "",
                     material_roll_id: isWa207ActiveSeries ? MOCK_WA207_ACTIVE_INPUT_ROLL.material_roll_id : "30",
                     stage_spec_banner_visible: false,
-                    stage_registry_refresh_hint: false,
+                    stage_registry_refresh_hint: true,
+                    presence_refresh_hint: true,
+                    write_off_form_enabled: installationPlace === "ON_UNWIND",
                     series_card: [
                         {
                             nomenclature_name: isWa207ActiveSeries
@@ -114,13 +122,7 @@ export function buildMockOrderExecutionMaterialSeriesResponse(barcode: string, w
                     roll_trace_context_id: isWa207ActiveSeries
                         ? MOCK_WA207_ACTIVE_INPUT_ROLL.roll_trace_context_id
                         : "28",
-                    writeoff_defaults: [
-                        {
-                            meters: "1500",
-                            warehouse: "100",
-                            warehouse_options: ["100", "200"],
-                        },
-                    ],
+                    presence_status: installationPlace,
                 },
             ],
         },

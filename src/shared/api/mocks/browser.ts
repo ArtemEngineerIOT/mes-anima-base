@@ -2,13 +2,16 @@ import { setupWorker } from "msw/browser";
 import { authHandlers } from "./handlers/auth";
 import { mesUserProfileFunctionHandlers } from "./handlers/mes-user-profile-function";
 import { orderExecutionHandlers } from "./handlers/order-execution";
-import { orderExecutionMaterialSeriesHandlers } from "./handlers/order-execution-material-series";
-import { orderExecutionActiveInputPrefillHandlers } from "./handlers/order-execution-active-input-prefill";
-import { orderExecutionMaterialStageRegistryHandlers } from "./handlers/order-execution-material-stage-registry";
+import { orderExecutionResolveBarcodeOnStageHandlers } from "./handlers/order-execution-resolve-barcode-on-stage";
+import { orderExecutionSubmitMoveToUnwindHandlers } from "./handlers/order-execution-submit-move-to-unwind";
+import { orderExecutionStageRollRegistryHandlers } from "./handlers/order-execution-stage-roll-registry";
+import { orderExecutionStageRollPresenceHandlers } from "./handlers/order-execution-stage-roll-presence";
 import { orderExecutionMaterialReturnLabelHandlers } from "./handlers/order-execution-material-return-label";
-import { orderExecutionMaterialWriteoffWeightHandlers } from "./handlers/order-execution-material-writeoff-weight";
-import { orderExecutionMaterialReturnHandlers } from "./handlers/order-execution-material-return";
-import { orderExecutionMaterialFullWriteoffHandlers } from "./handlers/order-execution-material-full-writeoff";
+import { convertConsumedLengthToWeightHandlers } from "./handlers/convert-consumed-length-to-weight";
+import { listReturnWarehousesHandlers } from "./handlers/list-return-warehouses";
+import { submitPartialReturnHandlers } from "./handlers/submit-partial-return";
+import { submitFullWriteOffHandlers } from "./handlers/submit-full-write-off";
+import { submitStageLkmHandlers } from "./handlers/submit-stage-lkm";
 import { orderExecutionReleaseHandlers } from "./handlers/order-execution-release";
 import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-monitoring";
 import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
@@ -42,13 +45,16 @@ export const worker = setupWorker(
     ...materialOrderSubmitBlockHandlers,
     ...materialOrderSubmitHandlers,
     ...orderExecutionHandlers,
-    ...orderExecutionMaterialSeriesHandlers,
-    ...orderExecutionActiveInputPrefillHandlers,
-    ...orderExecutionMaterialStageRegistryHandlers,
+    ...orderExecutionResolveBarcodeOnStageHandlers,
+    ...orderExecutionSubmitMoveToUnwindHandlers,
+    ...orderExecutionStageRollRegistryHandlers,
+    ...orderExecutionStageRollPresenceHandlers,
     ...orderExecutionMaterialReturnLabelHandlers,
-    ...orderExecutionMaterialWriteoffWeightHandlers,
-    ...orderExecutionMaterialReturnHandlers,
-    ...orderExecutionMaterialFullWriteoffHandlers,
+    ...convertConsumedLengthToWeightHandlers,
+    ...listReturnWarehousesHandlers,
+    ...submitPartialReturnHandlers,
+    ...submitFullWriteOffHandlers,
+    ...submitStageLkmHandlers,
     ...orderExecutionReleaseHandlers,
     ...orderExecutionMonitoringHandlers,
     ...orderExecutionProductionEventWizardHandlers,

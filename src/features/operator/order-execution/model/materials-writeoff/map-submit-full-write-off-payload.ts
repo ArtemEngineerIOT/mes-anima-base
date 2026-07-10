@@ -1,14 +1,22 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
+import type { MaterialsSubmitFullWriteOffResult } from "./types";
+
 const OK_ERROR_CODE = "OK";
 
-export type RegisterMaterialFullWriteoffResult = {
-    stageRegistryRefreshHint: boolean;
-};
+function pickBoolean(value: unknown): boolean {
+    if (typeof value === "boolean") {
+        return value;
+    }
+    if (value === 1 || value === "1" || value === "true" || value === "TRUE") {
+        return true;
+    }
+    return false;
+}
 
-export function mapRegisterMaterialFullWriteoffPayload(
-    payload: ApiSchemas["OrderExecutionMaterialFullWriteoffResponse"] | undefined,
-): RegisterMaterialFullWriteoffResult {
+export function mapSubmitFullWriteOffPayload(
+    payload: ApiSchemas["SubmitFullWriteOffResponse"] | undefined,
+): MaterialsSubmitFullWriteOffResult {
     const fallbackMessage = "Не удалось списать материал полностью";
     const wrapper = payload?.[0];
     if (!wrapper) {
@@ -23,7 +31,8 @@ export function mapRegisterMaterialFullWriteoffPayload(
     const result = (wrapper.result?.[0] ?? undefined) as Record<string, unknown> | undefined;
 
     return {
-        stageRegistryRefreshHint: Boolean(
+        presenceRefreshHint: pickBoolean(result?.presence_refresh_hint ?? result?.presenceRefreshHint),
+        stageRegistryRefreshHint: pickBoolean(
             result?.stage_registry_refresh_hint ?? result?.stageRegistryRefreshHint,
         ),
     };

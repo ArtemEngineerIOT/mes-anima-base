@@ -99,8 +99,8 @@ export function ProductionPlanFilters({
                     </select>
                 </div>
 
-                <Button type="button" onClick={onRefresh} disabled={isRefreshing}>
-                    {isRefreshing ? "Загрузка…" : "Обновить"}
+                <Button type="button" pending={isRefreshing} pendingLabel="Загрузка…" onClick={onRefresh} disabled={isRefreshing}>
+                    Обновить
                 </Button>
             </div>
 

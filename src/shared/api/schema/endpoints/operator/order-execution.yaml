@@ -21,9 +21,9 @@ postGetOrderExecution:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postGetOrderExecutionMaterialSeries:
-    summary: Данные серии материала для списания/возврата
-    description: Кнопка «Найти» в блоке «Материалы. Списание/возврат»
+postResolveBarcodeOnStage:
+    summary: Скан рулона на этапе — кнопка «В машину»
+    description: BFF resolveBarcodeOnStage (SCR-04 M2)
     security:
         - bearerAuth: []
     requestBody:
@@ -31,22 +31,22 @@ postGetOrderExecutionMaterialSeries:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialSeriesRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionResolveBarcodeOnStageRequest"
     responses:
         "200":
-            description: Данные по серии (error_code OK — успех)
+            description: Результат регистрации рулона в машине (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialSeriesResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionResolveBarcodeOnStageResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postGetActiveInputPrefill:
-    summary: Предзаполнение поля скана ACTIVE входа (SCR-04 UI-30)
-    description: Init блока «Материалы. Списание/возврат» — CL-MAT-53
+postSubmitMoveToUnwind:
+    summary: Перемещение рулона на размотку — кнопка «На размотку»
+    description: BFF submitMoveToUnwind (SCR-04 M3)
     security:
         - bearerAuth: []
     requestBody:
@@ -54,22 +54,22 @@ postGetActiveInputPrefill:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionActiveInputPrefillRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSubmitMoveToUnwindRequest"
     responses:
         "200":
-            description: Снимок ACTIVE входа (error_code OK — успех)
+            description: Результат перемещения на размотку (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionActiveInputPrefillResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSubmitMoveToUnwindResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postGetOrderExecutionMaterialStageRegistry:
-    summary: Списания и возвраты материалов на этапе
-    description: Таблица «Списания и возвраты на этапе» в блоке «Материалы. Списание/возврат»
+postGetStageRollRegistry:
+    summary: Журнал операций по рулонам на этапе
+    description: Таблица «Выполненные операции на этапе» в блоке «Материалы. Списание/возврат»
     security:
         - bearerAuth: []
     requestBody:
@@ -77,14 +77,37 @@ postGetOrderExecutionMaterialStageRegistry:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialStageRegistryRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageRollRegistryRequest"
     responses:
         "200":
-            description: Список операций списания/возврата на этапе (error_code OK — успех)
+            description: Журнал операций по рулонам (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialStageRegistryResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageRollRegistryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetStageRollPresence:
+    summary: Рулоны в машине на этапе
+    description: Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageRollPresenceRequest"
+    responses:
+        "200":
+            description: Список рулонов у машины (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageRollPresenceResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
@@ -113,9 +136,9 @@ postPrintOrderExecutionMaterialReturnLabel:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postGetOrderExecutionMaterialWriteoffWeight:
-    summary: Расчёт веса для списания/возврата по метражу
-    description: Поле «Вес, кг» в блоке «Материалы. Списание/возврат» (только чтение)
+postConvertConsumedLengthToWeight:
+    summary: Пересчёт веса по метражу списания
+    description: Кнопка «Пересчитать» в блоке «Материалы. Списание/возврат»
     security:
         - bearerAuth: []
     requestBody:
@@ -123,21 +146,44 @@ postGetOrderExecutionMaterialWriteoffWeight:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialWriteoffWeightRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ConvertConsumedLengthToWeightRequest"
     responses:
         "200":
             description: Рассчитанный вес (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialWriteoffWeightResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ConvertConsumedLengthToWeightResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postRegisterOrderExecutionMaterialReturn:
-    summary: Отразить возврат материала
+postListReturnWarehouses:
+    summary: Склады для возврата/списания материала
+    description: Комбобокс «Отправить на склад» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ListReturnWarehousesRequest"
+    responses:
+        "200":
+            description: Список складов (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ListReturnWarehousesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postSubmitPartialReturn:
+    summary: Отразить частичный возврат материала
     description: Кнопка «Отразить возврат» в блоке «Материалы. Списание/возврат»
     security:
         - bearerAuth: []
@@ -146,20 +192,20 @@ postRegisterOrderExecutionMaterialReturn:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/SubmitPartialReturnRequest"
     responses:
         "200":
-            description: Результат регистрации возврата (error_code OK — успех)
+            description: Результат регистрации частичного возврата (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialReturnResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/SubmitPartialReturnResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postRegisterOrderExecutionMaterialFullWriteoff:
+postSubmitFullWriteOff:
     summary: Списать материал полностью
     description: Кнопка «Списать полностью» в блоке «Материалы. Списание/возврат»
     security:
@@ -169,14 +215,37 @@ postRegisterOrderExecutionMaterialFullWriteoff:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialFullWriteoffRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/SubmitFullWriteOffRequest"
     responses:
         "200":
             description: Результат полного списания (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMaterialFullWriteoffResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/SubmitFullWriteOffResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postSubmitStageLkm:
+    summary: Отразить списание ЛКМ по этапу
+    description: Кнопка «Отразить списание по этапу» в блоке «Материалы. Списание/возврат»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/SubmitStageLkmRequest"
+    responses:
+        "200":
+            description: Результат списания по этапу (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/SubmitStageLkmResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

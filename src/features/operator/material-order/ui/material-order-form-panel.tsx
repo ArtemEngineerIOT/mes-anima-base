@@ -180,6 +180,8 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                     <Button
                         type="button"
                         size="sm"
+                        pending={isComposing}
+                        pendingLabel="Формирование…"
                         disabled={
                             planStagesLoading ||
                             isComposing ||
@@ -190,7 +192,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                             void composeOrder();
                         }}
                     >
-                        {isComposing ? "Формирование…" : "Сформировать заказ"}
+                        Сформировать заказ
                     </Button>
                 </div>
             </section>
@@ -399,12 +401,14 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                             <Button
                                 type="button"
                                 size="sm"
+                                pending={isAddingToOrder}
+                                pendingLabel="Проверка…"
                                 disabled={isAddingToOrder || rollsLoading}
                                 onClick={() => {
                                     void addToOrder();
                                 }}
                             >
-                                {isAddingToOrder ? "Проверка…" : "Добавить в заказ"}
+                                Добавить в заказ
                             </Button>
                         </div>
                     </div>
@@ -445,12 +449,14 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                     </Button>
                     <Button
                         type="button"
+                        pending={isSubmitting}
+                        pendingLabel="Отправка…"
                         disabled={isSubmitting}
                         onClick={() => {
                             void submitOrder();
                         }}
                     >
-                        {isSubmitting ? "Отправка…" : "Отправить заявку"}
+                        Отправить заявку
                     </Button>
                 </div>
             </section>

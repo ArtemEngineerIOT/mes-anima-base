@@ -4,9 +4,9 @@ import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
 import {
-    mapMaterialsStageRegistryPayload,
+    mapStageRollRegistryPayload,
     MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT,
-} from "./map-materials-stage-registry-payload";
+} from "./map-stage-roll-registry-payload";
 import { mapPrintMaterialReturnLabelPayload } from "./map-print-material-return-label-payload";
 import type { MaterialsStageRegistrySnapshot } from "./types";
 
@@ -27,9 +27,9 @@ export function useMaterialsWriteoffStageRegistry({
     const [printingMaterialRollId, setPrintingMaterialRollId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
 
-    const { mutateAsync: fetchStageRegistry } = rqClient.useMutation(
+    const { mutateAsync: fetchStageRollRegistry } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.getOrderExecutionMaterialStageRegistry,
+        REST_FUNCTION_PATHS.getStageRollRegistry,
         {},
     );
 
@@ -39,8 +39,8 @@ export function useMaterialsWriteoffStageRegistry({
         {},
     );
 
-    const fetchStageRegistryRef = useRef(fetchStageRegistry);
-    fetchStageRegistryRef.current = fetchStageRegistry;
+    const fetchStageRollRegistryRef = useRef(fetchStageRollRegistry);
+    fetchStageRollRegistryRef.current = fetchStageRollRegistry;
 
     const printReturnLabelRequestRef = useRef(printReturnLabelRequest);
     printReturnLabelRequestRef.current = printReturnLabelRequest;
@@ -57,10 +57,10 @@ export function useMaterialsWriteoffStageRegistry({
         setError(null);
 
         try {
-            const payload = await fetchStageRegistryRef.current({
+            const payload = await fetchStageRollRegistryRef.current({
                 body: [{ workAreaId: trimmedWorkAreaId }],
             });
-            setSnapshot(mapMaterialsStageRegistryPayload(payload));
+            setSnapshot(mapStageRollRegistryPayload(payload));
         } catch (loadError) {
             setSnapshot(MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT);
             setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные");

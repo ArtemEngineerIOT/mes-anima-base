@@ -16,7 +16,7 @@ export function useMaterialsWriteoffWeight({ workAreaId }: UseMaterialsWriteoffW
 
     const { mutateAsync: fetchWriteoffWeight } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.getOrderExecutionMaterialWriteoffWeight,
+        REST_FUNCTION_PATHS.convertConsumedLengthToWeight,
         {},
     );
 
@@ -29,12 +29,18 @@ export function useMaterialsWriteoffWeight({ workAreaId }: UseMaterialsWriteoffW
     }, []);
 
     const calculate = useCallback(
-        async (lengthValue: string): Promise<string | null> => {
+        async (lengthValue: string, barcode: string): Promise<string | null> => {
             const trimmedWorkAreaId = workAreaId?.trim();
+            const trimmedBarcode = barcode.trim();
             const parsedLength = parseWriteoffLength(lengthValue);
 
             if (!trimmedWorkAreaId) {
                 setError("Не удалось определить workAreaId этапа");
+                return null;
+            }
+
+            if (!trimmedBarcode) {
+                setError("Выберите рулон кнопкой «Списать»");
                 return null;
             }
 
@@ -48,7 +54,13 @@ export function useMaterialsWriteoffWeight({ workAreaId }: UseMaterialsWriteoffW
 
             try {
                 const payload = await fetchWriteoffWeightRef.current({
-                    body: [{ length: parsedLength, workAreaId: trimmedWorkAreaId }],
+                    body: [
+                        {
+                            workAreaId: trimmedWorkAreaId,
+                            barcode: trimmedBarcode,
+                            length: parsedLength,
+                        },
+                    ],
                 });
                 const mapped = mapMaterialsWriteoffWeightPayload(payload);
                 setError(mapped.warningMessage ?? null);

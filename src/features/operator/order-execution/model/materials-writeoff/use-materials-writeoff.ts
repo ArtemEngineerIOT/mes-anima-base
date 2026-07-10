@@ -1,41 +1,46 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
+import { useSession } from "@/shared/model/session";
 
-import { buildPresenceRowFromScan } from "./build-presence-row-from-scan";
-import { mapMaterialsWriteoffPayload } from "./map-materials-writeoff-payload";
-import { mapRegisterMaterialFullWriteoffPayload } from "./map-register-material-full-writeoff-payload";
-import { mapRegisterMaterialReturnPayload } from "./map-register-material-return-payload";
+import { buildResolveBarcodeOnStageBody } from "./build-resolve-barcode-on-stage-body";
+import { buildSubmitFullWriteOffBody } from "./build-submit-full-write-off-body";
+import { buildSubmitMoveToUnwindBody } from "./build-submit-move-to-unwind-body";
+import { buildSubmitPartialReturnBody } from "./build-submit-partial-return-body";
+import { buildSubmitStageLkmBody } from "./build-submit-stage-lkm-body";
+import { mapResolveBarcodeOnStagePayload } from "./map-resolve-barcode-on-stage-payload";
+import { mapSubmitFullWriteOffPayload } from "./map-submit-full-write-off-payload";
+import { mapSubmitMoveToUnwindPayload } from "./map-submit-move-to-unwind-payload";
+import { mapSubmitPartialReturnPayload } from "./map-submit-partial-return-payload";
+import { mapSubmitStageLkmPayload } from "./map-submit-stage-lkm-payload";
 import {
-    canInstallAtUnwind,
-    movePresenceRowToUnwind,
-    removePresenceRow,
     resolveDefaultInstallationPlace,
-    upsertPresenceRow,
 } from "./materials-presence-rules";
 import {
     canCalculateWriteoffWeight,
     DEFAULT_MATERIALS_INSTALLATION_PLACE,
     EMPTY_MATERIALS_WRITEOFF_FORM,
-    isMaterialFullWriteoffReady,
     isMaterialsWriteoffFormReady,
-    MATERIALS_INSTALLATION_PLACE_OPTIONS,
-    MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS,
     parseWriteoffLength,
     parseWriteoffWeight,
+    resolveInstallationPlaceOptions,
     sanitizeWriteoffMetersInput,
     type MaterialsInstallationPlace,
 } from "./materials-writeoff-form";
 import type { MaterialsWriteoffFormState } from "./materials-writeoff-form";
+import { resolveMaterialsWriteoffOperatorRef } from "./resolve-materials-writeoff-operator-ref";
+import { useMaterialsWriteoffReturnWarehouses } from "./use-materials-writeoff-return-warehouses";
+import { useMaterialsWriteoffRollPresence } from "./use-materials-writeoff-roll-presence";
 import { useMaterialsWriteoffStageRegistry } from "./use-materials-writeoff-stage-registry";
 import { useMaterialsWriteoffWeight } from "./use-materials-writeoff-weight";
-import type { MaterialsPresenceRow, MaterialsWriteoffData } from "./types";
+import type { MaterialsPresenceRow, MaterialsReturnWarehouseOption } from "./types";
 
-type ScanBannerState = Pick<
-    MaterialsWriteoffData,
-    "stageSpecBannerVisible" | "stageSpecBannerTitle" | "stageSpecBannerDetail"
->;
+type ScanBannerState = {
+    stageSpecBannerVisible: boolean;
+    stageSpecBannerTitle: string;
+    stageSpecBannerDetail: string;
+};
 
 type UseMaterialsWriteoffOptions = {
     workAreaId?: string;
@@ -43,22 +48,37 @@ type UseMaterialsWriteoffOptions = {
 };
 
 function buildWriteoffFormFromSelection(
-    _row: MaterialsPresenceRow,
-    defaults: MaterialsWriteoffData["writeoffDefaults"],
+    row: MaterialsPresenceRow,
+    warehouseOptions: MaterialsReturnWarehouseOption[],
 ): MaterialsWriteoffFormState {
-    const warehouseOptions =
-        defaults?.warehouseOptions && defaults.warehouseOptions.length > 0
-            ? defaults.warehouseOptions
-            : MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS;
+    const metersFromRow = row.currentLengthM > 0 ? String(row.currentLengthM) : "";
+    const weightFromRow = row.currentWeightKg > 0 ? String(row.currentWeightKg) : "";
 
     return {
-        meters: defaults?.meters ?? "",
-        weight: defaults?.weight ?? "",
-        warehouse: defaults?.warehouse ?? warehouseOptions[0] ?? "",
+        meters: metersFromRow,
+        weight: weightFromRow,
+        warehouse: warehouseOptions[0]?.warehouseCode ?? "",
     };
 }
 
+function resolveDefaultWarehouse(
+    currentWarehouse: string,
+    warehouseOptions: MaterialsReturnWarehouseOption[],
+): string {
+    const trimmedCurrent = currentWarehouse.trim();
+    if (
+        trimmedCurrent &&
+        warehouseOptions.some((option) => option.warehouseCode === trimmedCurrent)
+    ) {
+        return trimmedCurrent;
+    }
+
+    return warehouseOptions[0]?.warehouseCode ?? "";
+}
+
 export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterialsWriteoffOptions) {
+    const { session } = useSession();
+    const operatorRef = resolveMaterialsWriteoffOperatorRef(session);
     const [barcode, setBarcode] = useState("");
     const [installationPlace, setInstallationPlace] = useState<MaterialsInstallationPlace>(
         DEFAULT_MATERIALS_INSTALLATION_PLACE,
@@ -70,39 +90,62 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [expandedOpId, setExpandedOpId] = useState<string | null>(null);
+    const [presenceRefreshKey, setPresenceRefreshKey] = useState(0);
     const [stageRegistryRefreshKey, setStageRegistryRefreshKey] = useState(0);
     const [writeoffForm, setWriteoffForm] = useState<MaterialsWriteoffFormState>(EMPTY_MATERIALS_WRITEOFF_FORM);
     const [isReflectingReturn, setIsReflectingReturn] = useState(false);
     const [reflectReturnError, setReflectReturnError] = useState<string | null>(null);
     const [isWritingOffFully, setIsWritingOffFully] = useState(false);
     const [writeOffFullyError, setWriteOffFullyError] = useState<string | null>(null);
+    const [isSubmittingStageLkm, setIsSubmittingStageLkm] = useState(false);
+    const [submitStageLkmError, setSubmitStageLkmError] = useState<string | null>(null);
+    const [movingToUnwindRowId, setMovingToUnwindRowId] = useState<string | null>(null);
+    const [moveToUnwindError, setMoveToUnwindError] = useState<string | null>(null);
 
-    const { mutateAsync: fetchMaterialSeries } = rqClient.useMutation(
+    const { mutateAsync: resolveBarcodeOnStage } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.getOrderExecutionMaterialSeries,
+        REST_FUNCTION_PATHS.resolveBarcodeOnStage,
         {},
     );
 
-    const fetchMaterialSeriesRef = useRef(fetchMaterialSeries);
-    fetchMaterialSeriesRef.current = fetchMaterialSeries;
+    const resolveBarcodeOnStageRef = useRef(resolveBarcodeOnStage);
+    resolveBarcodeOnStageRef.current = resolveBarcodeOnStage;
 
-    const { mutateAsync: registerMaterialReturn } = rqClient.useMutation(
+    const { mutateAsync: submitMoveToUnwind } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.registerOrderExecutionMaterialReturn,
+        REST_FUNCTION_PATHS.submitMoveToUnwind,
         {},
     );
 
-    const registerMaterialReturnRef = useRef(registerMaterialReturn);
-    registerMaterialReturnRef.current = registerMaterialReturn;
+    const submitMoveToUnwindRef = useRef(submitMoveToUnwind);
+    submitMoveToUnwindRef.current = submitMoveToUnwind;
 
-    const { mutateAsync: registerMaterialFullWriteoff } = rqClient.useMutation(
+    const { mutateAsync: submitPartialReturn } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.registerOrderExecutionMaterialFullWriteoff,
+        REST_FUNCTION_PATHS.submitPartialReturn,
         {},
     );
 
-    const registerMaterialFullWriteoffRef = useRef(registerMaterialFullWriteoff);
-    registerMaterialFullWriteoffRef.current = registerMaterialFullWriteoff;
+    const submitPartialReturnRef = useRef(submitPartialReturn);
+    submitPartialReturnRef.current = submitPartialReturn;
+
+    const { mutateAsync: submitFullWriteOff } = rqClient.useMutation(
+        "post",
+        REST_FUNCTION_PATHS.submitFullWriteOff,
+        {},
+    );
+
+    const submitFullWriteOffRef = useRef(submitFullWriteOff);
+    submitFullWriteOffRef.current = submitFullWriteOff;
+
+    const { mutateAsync: submitStageLkm } = rqClient.useMutation(
+        "post",
+        REST_FUNCTION_PATHS.submitStageLkm,
+        {},
+    );
+
+    const submitStageLkmRef = useRef(submitStageLkm);
+    submitStageLkmRef.current = submitStageLkm;
 
     const showWriteoffFlow = selectedWriteoffRoll !== null;
 
@@ -123,6 +166,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             setScanBanner(null);
             setBarcode("");
             setSearchError(null);
+            setMoveToUnwindError(null);
             setInstallationPlace(DEFAULT_MATERIALS_INSTALLATION_PLACE);
         }
     }, [enabled, resetWriteoffSelection, workAreaId]);
@@ -140,69 +184,58 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
                 return;
             }
 
+            const operatorRef = resolveMaterialsWriteoffOperatorRef(session);
+            if (!operatorRef) {
+                setSearchError("Не удалось определить оператора");
+                return;
+            }
+
+            if (
+                installationPlace === "ON_UNWIND" &&
+                resolveInstallationPlaceOptions(presenceRows).find((option) => option.value === "ON_UNWIND")?.disabled
+            ) {
+                setSearchError("На размотке уже есть рулон. Выберите «Ожидание».");
+                return;
+            }
+
             setIsSearching(true);
             setSearchError(null);
             setScanBanner(null);
 
             try {
-                const payload = await fetchMaterialSeriesRef.current({
-                    body: [
-                        {
-                            barcode: barcodeValue,
-                            workAreaId: trimmedWorkAreaId,
-                            installationPlace,
-                        },
-                    ],
+                const payload = await resolveBarcodeOnStageRef.current({
+                    body: buildResolveBarcodeOnStageBody({
+                        workAreaId: trimmedWorkAreaId,
+                        barcode: barcodeValue,
+                        installationPlace,
+                        operatorRef,
+                    }),
                 });
-                const mapped = mapMaterialsWriteoffPayload(payload);
+                const mapped = mapResolveBarcodeOnStagePayload(payload);
 
-                if (mapped.stageSpecBannerVisible) {
+                if (
+                    mapped.stageSpecBannerVisible ||
+                    (mapped.scanBlockedByActiveInput && installationPlace === "ON_UNWIND")
+                ) {
                     setScanBanner({
                         stageSpecBannerVisible: true,
-                        stageSpecBannerTitle: mapped.stageSpecBannerTitle,
-                        stageSpecBannerDetail: mapped.stageSpecBannerDetail,
+                        stageSpecBannerTitle: mapped.stageSpecBannerTitle || "Внимание",
+                        stageSpecBannerDetail: mapped.stageSpecBannerDetail || "",
                     });
                     return;
                 }
 
-                const nextRow = buildPresenceRowFromScan({
-                    barcode: barcodeValue,
-                    installationPlace,
-                    data: mapped,
-                });
-
-                if (!nextRow) {
-                    setSearchError("Не удалось получить данные по серии");
-                    return;
-                }
-
-                if (
-                    installationPlace === "ON_UNWIND" &&
-                    !canInstallAtUnwind(presenceRows, nextRow.nomenclatureCode, installationPlace)
-                ) {
-                    setSearchError("На размотке уже есть рулон этой номенклатуры. Выберите «Ожидание».");
-                    return;
-                }
-
-                setPresenceRows((prev) => {
-                    const nextRows = upsertPresenceRow(prev, nextRow);
-                    setInstallationPlace(resolveDefaultInstallationPlace(nextRows));
-                    return nextRows;
-                });
-
                 setBarcode("");
-                setExpandedPresenceRowId(nextRow.id);
-
-                if (mapped.stageRegistryRefreshHint) {
-                    setStageRegistryRefreshKey((prev) => prev + 1);
-                }
+                setExpandedPresenceRowId(mapped.materialRollId || null);
+                setPresenceRefreshKey((prev) => prev + 1);
+                setStageRegistryRefreshKey((prev) => prev + 1);
             } catch (error) {
                 setSearchError(error instanceof Error ? error.message : "Не удалось зарегистрировать серию");
             } finally {
                 setIsSearching(false);
             }
         },
-        [installationPlace, presenceRows, workAreaId],
+        [installationPlace, presenceRows, session, workAreaId],
     );
 
     const search = useCallback(async () => {
@@ -215,15 +248,128 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         refreshKey: stageRegistryRefreshKey,
     });
 
-    const moveToUnwind = useCallback((rowId: string) => {
-        setPresenceRows((prev) => movePresenceRowToUnwind(prev, rowId));
-    }, []);
+    const rollPresence = useMaterialsWriteoffRollPresence({
+        workAreaId,
+        enabled,
+        refreshKey: presenceRefreshKey,
+    });
 
-    const selectForWriteoff = useCallback((row: MaterialsPresenceRow) => {
-        setSelectedWriteoffRoll(row);
-        setWriteoffForm(buildWriteoffFormFromSelection(row, null));
-        reset();
-    }, [reset]);
+    const returnWarehouses = useMaterialsWriteoffReturnWarehouses({
+        workAreaId,
+        operatorRef,
+        enabled,
+    });
+
+    useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
+        setPresenceRows(rollPresence.rows);
+    }, [enabled, rollPresence.rows]);
+
+    useEffect(() => {
+        if (!enabled || rollPresence.isLoading) {
+            return;
+        }
+
+        setInstallationPlace(resolveDefaultInstallationPlace(rollPresence.rows));
+    }, [enabled, rollPresence.isLoading, rollPresence.rows]);
+
+    const installationPlaceOptions = useMemo(
+        () => resolveInstallationPlaceOptions(presenceRows),
+        [presenceRows],
+    );
+
+    const refreshWriteoffTables = useCallback(async () => {
+        await rollPresence.reload();
+        setStageRegistryRefreshKey((prev) => prev + 1);
+    }, [rollPresence]);
+
+    useEffect(() => {
+        const selectedOption = installationPlaceOptions.find((option) => option.value === installationPlace);
+        if (selectedOption?.disabled) {
+            setInstallationPlace("WAITING");
+        }
+    }, [installationPlace, installationPlaceOptions]);
+
+    const moveToUnwind = useCallback(
+        async (rowId: string) => {
+            const target = presenceRows.find((row) => row.id === rowId);
+            if (!target || !target.canMoveToUnwind || target.status !== "WAITING") {
+                return;
+            }
+
+            const trimmedWorkAreaId = workAreaId?.trim();
+            if (!trimmedWorkAreaId) {
+                setMoveToUnwindError("Не удалось определить workAreaId этапа");
+                return;
+            }
+
+            const materialRollId = target.materialRollId.trim();
+            const barcodeValue = target.barcode.trim();
+            if (!materialRollId || !barcodeValue) {
+                setMoveToUnwindError("Не удалось определить рулон для перемещения");
+                return;
+            }
+
+            const operatorRef = resolveMaterialsWriteoffOperatorRef(session);
+            if (!operatorRef) {
+                setMoveToUnwindError("Не удалось определить оператора");
+                return;
+            }
+
+            setMovingToUnwindRowId(rowId);
+            setMoveToUnwindError(null);
+
+            try {
+                const payload = await submitMoveToUnwindRef.current({
+                    body: buildSubmitMoveToUnwindBody({
+                        workAreaId: trimmedWorkAreaId,
+                        materialRollId,
+                        barcode: barcodeValue,
+                        operatorRef,
+                    }),
+                });
+                mapSubmitMoveToUnwindPayload(payload);
+                await refreshWriteoffTables();
+            } catch (error) {
+                setMoveToUnwindError(
+                    error instanceof Error ? error.message : "Не удалось переместить рулон на размотку",
+                );
+            } finally {
+                setMovingToUnwindRowId(null);
+            }
+        },
+        [presenceRows, refreshWriteoffTables, session, workAreaId],
+    );
+
+    const selectForWriteoff = useCallback(
+        (row: MaterialsPresenceRow) => {
+            setSelectedWriteoffRoll(row);
+            setWriteoffForm(buildWriteoffFormFromSelection(row, returnWarehouses.warehouseOptions));
+            reset();
+        },
+        [reset, returnWarehouses.warehouseOptions],
+    );
+
+    useEffect(() => {
+        if (!showWriteoffFlow) {
+            return;
+        }
+
+        setWriteoffForm((prev) => {
+            const nextWarehouse = resolveDefaultWarehouse(prev.warehouse, returnWarehouses.warehouseOptions);
+            if (nextWarehouse === prev.warehouse) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+                warehouse: nextWarehouse,
+            };
+        });
+    }, [returnWarehouses.warehouseOptions, showWriteoffFlow]);
 
     const updateWriteoffForm = useCallback(
         (patch: Partial<MaterialsWriteoffFormState>) => {
@@ -231,9 +377,6 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
                 const normalizedPatch = { ...patch };
                 if ("meters" in normalizedPatch && typeof normalizedPatch.meters === "string") {
                     normalizedPatch.meters = sanitizeWriteoffMetersInput(normalizedPatch.meters);
-                }
-                if ("weight" in normalizedPatch && typeof normalizedPatch.weight === "string") {
-                    normalizedPatch.weight = sanitizeWriteoffMetersInput(normalizedPatch.weight);
                 }
 
                 const next = { ...prev, ...normalizedPatch };
@@ -251,12 +394,13 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
     );
 
     const calculateWriteoffWeight = useCallback(async () => {
-        const weight = await calculate(writeoffForm.meters);
+        const barcode = selectedWriteoffRoll?.barcode ?? "";
+        const weight = await calculate(writeoffForm.meters, barcode);
         setWriteoffForm((prev) => ({
             ...prev,
             weight: weight ?? "",
         }));
-    }, [calculate, writeoffForm.meters]);
+    }, [calculate, selectedWriteoffRoll?.barcode, writeoffForm.meters]);
 
     const reflectMaterialReturn = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -275,6 +419,18 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             return;
         }
 
+        const materialRollId = activeRoll.materialRollId.trim();
+        if (!materialRollId) {
+            setReflectReturnError("Не удалось определить рулон для возврата");
+            return;
+        }
+
+        const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
+        if (!operatorRefValue) {
+            setReflectReturnError("Не удалось определить оператора");
+            return;
+        }
+
         if (length === null || weight === null || !warehouse) {
             setReflectReturnError("Заполните метраж, вес и склад");
             return;
@@ -284,33 +440,38 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         setReflectReturnError(null);
 
         try {
-            const payload = await registerMaterialReturnRef.current({
-                body: [
-                    {
-                        workAreaId: trimmedWorkAreaId,
-                        barcode: activeRoll.barcode,
-                        length,
-                        weight,
-                        warehouse,
-                    },
-                ],
+            const payload = await submitPartialReturnRef.current({
+                body: buildSubmitPartialReturnBody({
+                    workAreaId: trimmedWorkAreaId,
+                    materialRollId,
+                    barcode: activeRoll.barcode,
+                    length,
+                    weight,
+                    warehouse,
+                    operatorRef: operatorRefValue,
+                }),
             });
-            const result = mapRegisterMaterialReturnPayload(payload);
-            if (result.stageRegistryRefreshHint) {
-                setStageRegistryRefreshKey((prev) => prev + 1);
-            }
-            setPresenceRows((prev) => removePresenceRow(prev, activeRoll.id));
+            mapSubmitPartialReturnPayload(payload);
+            await refreshWriteoffTables();
             resetWriteoffSelection();
         } catch (error) {
             setReflectReturnError(error instanceof Error ? error.message : "Не удалось отразить возврат");
         } finally {
             setIsReflectingReturn(false);
         }
-    }, [resetWriteoffSelection, selectedWriteoffRoll, workAreaId, writeoffForm.meters, writeoffForm.weight, writeoffForm.warehouse]);
+    }, [
+        refreshWriteoffTables,
+        resetWriteoffSelection,
+        selectedWriteoffRoll,
+        session,
+        workAreaId,
+        writeoffForm.meters,
+        writeoffForm.weight,
+        writeoffForm.warehouse,
+    ]);
 
     const writeOffMaterialFully = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
-        const warehouse = writeoffForm.warehouse.trim();
         const activeRoll = selectedWriteoffRoll;
 
         if (!trimmedWorkAreaId) {
@@ -323,8 +484,15 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             return;
         }
 
-        if (!warehouse) {
-            setWriteOffFullyError("Выберите склад");
+        const materialRollId = activeRoll.materialRollId.trim();
+        if (!materialRollId) {
+            setWriteOffFullyError("Не удалось определить рулон для списания");
+            return;
+        }
+
+        const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
+        if (!operatorRefValue) {
+            setWriteOffFullyError("Не удалось определить оператора");
             return;
         }
 
@@ -332,41 +500,77 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         setWriteOffFullyError(null);
 
         try {
-            const payload = await registerMaterialFullWriteoffRef.current({
-                body: [
-                    {
-                        workAreaId: trimmedWorkAreaId,
-                        barcode: activeRoll.barcode,
-                        warehouse,
-                    },
-                ],
+            const payload = await submitFullWriteOffRef.current({
+                body: buildSubmitFullWriteOffBody({
+                    workAreaId: trimmedWorkAreaId,
+                    materialRollId,
+                    barcode: activeRoll.barcode,
+                    operatorRef: operatorRefValue,
+                }),
             });
-            const result = mapRegisterMaterialFullWriteoffPayload(payload);
-            if (result.stageRegistryRefreshHint) {
-                setStageRegistryRefreshKey((prev) => prev + 1);
-            }
-            setPresenceRows((prev) => removePresenceRow(prev, activeRoll.id));
+            mapSubmitFullWriteOffPayload(payload);
+            await refreshWriteoffTables();
             resetWriteoffSelection();
         } catch (error) {
             setWriteOffFullyError(error instanceof Error ? error.message : "Не удалось списать материал полностью");
         } finally {
             setIsWritingOffFully(false);
         }
-    }, [resetWriteoffSelection, selectedWriteoffRoll, workAreaId, writeoffForm.warehouse]);
+    }, [refreshWriteoffTables, resetWriteoffSelection, selectedWriteoffRoll, session, workAreaId]);
 
-    const canCalculateWeight = canCalculateWriteoffWeight(writeoffForm.meters);
-    const isWriteoffActionInProgress = isReflectingReturn || isWritingOffFully;
-    const isReflectReturnEnabled = isMaterialsWriteoffFormReady(writeoffForm) && !isWriteoffActionInProgress;
-    const isFullWriteoffEnabled = isMaterialFullWriteoffReady(writeoffForm) && !isWriteoffActionInProgress;
-    const isWriteoffActionsEnabled = isMaterialsWriteoffFormReady(writeoffForm) && !isWriteoffActionInProgress;
+    const submitStageLkmWriteoff = useCallback(async () => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            setSubmitStageLkmError("Не удалось определить workAreaId этапа");
+            return;
+        }
+
+        const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
+        if (!operatorRefValue) {
+            setSubmitStageLkmError("Не удалось определить оператора");
+            return;
+        }
+
+        setIsSubmittingStageLkm(true);
+        setSubmitStageLkmError(null);
+
+        try {
+            const payload = await submitStageLkmRef.current({
+                body: buildSubmitStageLkmBody({
+                    workAreaId: trimmedWorkAreaId,
+                    operatorRef: operatorRefValue,
+                }),
+            });
+            mapSubmitStageLkmPayload(payload);
+        } catch (error) {
+            setSubmitStageLkmError(
+                error instanceof Error ? error.message : "Не удалось отразить списание по этапу",
+            );
+        } finally {
+            setIsSubmittingStageLkm(false);
+        }
+    }, [session, workAreaId]);
+
+    const canCalculateWeight =
+        showWriteoffFlow &&
+        canCalculateWriteoffWeight(writeoffForm.meters, selectedWriteoffRoll?.barcode);
+    const isWriteoffFormComplete =
+        Boolean(selectedWriteoffRoll) && isMaterialsWriteoffFormReady(writeoffForm);
+    const isWriteoffActionInProgress = isReflectingReturn || isWritingOffFully || isSubmittingStageLkm;
+    const isReflectReturnEnabled = isWriteoffFormComplete && !isWriteoffActionInProgress;
+    const isFullWriteoffEnabled = isWriteoffFormComplete && !isWriteoffActionInProgress;
+    const isWriteoffActionsEnabled = isWriteoffFormComplete && !isWriteoffActionInProgress;
 
     return {
         barcode,
         setBarcode,
         installationPlace,
         setInstallationPlace,
-        installationPlaceOptions: MATERIALS_INSTALLATION_PLACE_OPTIONS,
+        installationPlaceOptions,
         presenceRows,
+        isPresenceLoading: rollPresence.isLoading,
+        presenceAsOf: rollPresence.asOf,
+        presenceError: rollPresence.error,
         expandedPresenceRowId,
         setExpandedPresenceRowId,
         selectedWriteoffRoll,
@@ -376,7 +580,10 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         calculateWriteoffWeight,
         reflectMaterialReturn,
         writeOffMaterialFully,
+        submitStageLkmWriteoff,
         moveToUnwind,
+        movingToUnwindRowId,
+        moveToUnwindError,
         selectForWriteoff,
         canCalculateWeight,
         isReflectReturnEnabled,
@@ -384,9 +591,13 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         isWriteoffActionsEnabled,
         isReflectingReturn,
         isWritingOffFully,
+        isSubmittingStageLkm,
         reflectReturnError,
         writeOffFullyError,
-        warehouseOptions: MATERIALS_WRITEOFF_WAREHOUSE_OPTIONS,
+        submitStageLkmError,
+        warehouseOptions: returnWarehouses.warehouseOptions,
+        isWarehousesLoading: returnWarehouses.isLoading,
+        warehousesError: returnWarehouses.error,
         writeoffWeightError,
         isWriteoffWeightLoading,
         showWriteoffFlow,
