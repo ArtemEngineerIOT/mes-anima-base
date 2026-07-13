@@ -1,22 +1,51 @@
 import type { TechnologicalParamsSections } from "./technological-params-mock";
+import { formatManualCheckedAt } from "./technological-params-history";
 
-export type TechnologicalParamSectionKey = "unwinding1" | "unwinding2" | "winding1";
-
-export type TechnologicalParamsDraft = {
-    speedCurrent: string;
-    params: Record<TechnologicalParamSectionKey, Record<string, string>>;
+export type ManualInputMeta = {
+    rollNumber: string;
+    checkedAt: string;
 };
 
-export function buildTechnologicalParamsDraft(data: TechnologicalParamsSections): TechnologicalParamsDraft {
-    const toCurrentMap = (rows: TechnologicalParamsSections["unwinding1"]) =>
-        Object.fromEntries(rows.map((row) => [row.label, row.current]));
+export type TechnologicalParamsDraft = {
+    presserWidth: string;
+    presserNumbers: Record<string, string>;
+    manualValues: Record<string, string>;
+    manualInputMeta: ManualInputMeta;
+};
 
+export function createDefaultManualInputMeta(rollNumber = ""): ManualInputMeta {
     return {
-        speedCurrent: data.speed.current,
-        params: {
-            unwinding1: toCurrentMap(data.unwinding1),
-            unwinding2: toCurrentMap(data.unwinding2),
-            winding1: toCurrentMap(data.winding1),
-        },
+        rollNumber,
+        checkedAt: formatManualCheckedAt(),
+    };
+}
+
+export function buildTechnologicalParamsDraft(
+    data: TechnologicalParamsSections,
+    defaultRollNumber = "",
+): TechnologicalParamsDraft {
+    return {
+        presserWidth: data.presserWidth,
+        presserNumbers: Object.fromEntries(
+            data.printingSections.map((row) => [row.id, row.presserNo]),
+        ),
+        manualValues: {},
+        manualInputMeta: createDefaultManualInputMeta(defaultRollNumber),
+    };
+}
+
+export function createEmptyManualDraft(rowIds: string[]): Record<string, string> {
+    return Object.fromEntries(rowIds.map((rowId) => [rowId, ""]));
+}
+
+export type SavedPresserState = {
+    width: string;
+    numbers: Record<string, string>;
+};
+
+export function buildSavedPresserState(data: TechnologicalParamsSections): SavedPresserState {
+    return {
+        width: data.presserWidth,
+        numbers: Object.fromEntries(data.printingSections.map((row) => [row.id, row.presserNo])),
     };
 }
