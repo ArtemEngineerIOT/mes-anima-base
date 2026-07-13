@@ -48,6 +48,39 @@ function mapUpdatesRecord(updates: Record<string, unknown>, timestamp: string | 
     };
 }
 
+function isTagUpdateEntry(value: unknown): value is { tagName: unknown; value?: unknown } {
+    return Boolean(value && typeof value === "object" && "tagName" in value);
+}
+
+/** Формат переменной `tags`: updates = [{ tagName, value, description }, ...]. */
+function mapTagsUpdatesArray(
+    updates: unknown[],
+    timestamp: string | null,
+): OrderExecutionMachineDataSnapshot {
+    const fields: Record<string, unknown> = {};
+
+    for (const entry of updates) {
+        if (!isTagUpdateEntry(entry)) {
+            continue;
+        }
+
+        const tagName = pickString(entry.tagName);
+        if (!tagName) {
+            continue;
+        }
+
+        fields[tagName] = entry.value;
+    }
+
+    const rows = Object.entries(fields).map(([key, value]) => mapOrderExecutionMachineStompField(key, value));
+
+    return {
+        rows: rows.length > 0 ? rows : ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER.rows,
+        fields,
+        updatedAt: timestamp,
+    };
+}
+
 function mapStompValuePayload(body: unknown): OrderExecutionMachineDataSnapshot | null {
     if (!Array.isArray(body)) {
         return null;
@@ -71,17 +104,33 @@ function mapStompValuePayload(body: unknown): OrderExecutionMachineDataSnapshot 
     const valueRecord = firstValue as Record<string, unknown>;
     const timestamp = pickString(valueRecord.timestamp) ?? null;
     const updates = valueRecord.updates;
-    const firstUpdate = Array.isArray(updates) ? updates[0] : updates;
 
-    if (!firstUpdate || typeof firstUpdate !== "object") {
-        return {
-            rows: ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER.rows,
-            fields: {},
-            updatedAt: timestamp,
-        };
+    if (Array.isArray(updates)) {
+        if (updates.some(isTagUpdateEntry)) {
+            return mapTagsUpdatesArray(updates, timestamp);
+        }
+
+        const firstUpdate = updates[0];
+        if (!firstUpdate || typeof firstUpdate !== "object") {
+            return {
+                rows: ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER.rows,
+                fields: {},
+                updatedAt: timestamp,
+            };
+        }
+
+        return mapUpdatesRecord(firstUpdate as Record<string, unknown>, timestamp);
     }
 
-    return mapUpdatesRecord(firstUpdate as Record<string, unknown>, timestamp);
+    if (updates && typeof updates === "object") {
+        return mapUpdatesRecord(updates as Record<string, unknown>, timestamp);
+    }
+
+    return {
+        rows: ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER.rows,
+        fields: {},
+        updatedAt: timestamp,
+    };
 }
 
 export function mapOrderExecutionMachineStompPayload(body: unknown): OrderExecutionMachineDataSnapshot {
@@ -176,3 +225,6 @@ export function mapOrderExecutionMachineStompPayload(body: unknown): OrderExecut
 
 export const ORDER_EXECUTION_MACHINE_STOMP_DESTINATION =
     "/v1/contexts/users.admin.models.stomp/variables/parameters";
+
+export const ORDER_EXECUTION_MACHINE_STOMP_TAGS_DESTINATION =
+    "/v1/contexts/users.admin.models.stomp/variables/tags";

@@ -164,6 +164,8 @@ export function createWebsocketConnection(config: WebSocketConfig) {
 
         const token = encodeURIComponent(getToken());
         socket = new WebSocket(`${config.url}?token=${token}`);
+        // Прокси часто шлёт STOMP как binary-кадры (Buffer); читаем как ArrayBuffer и декодируем в текст.
+        socket.binaryType = "arraybuffer";
 
         socket.onopen = () => {
             status = WebSocket.OPEN;
@@ -183,7 +185,11 @@ export function createWebsocketConnection(config: WebSocketConfig) {
         };
 
         socket.onmessage = (event) => {
-            const data = String(event.data);
+            const data =
+                typeof event.data === "string"
+                    ? event.data
+                    : new TextDecoder("utf-8").decode(event.data as ArrayBuffer);
+
             if (data === "CONNECTED") {
                 proxyConnected = true;
                 debug("Proxy CONNECTED received");

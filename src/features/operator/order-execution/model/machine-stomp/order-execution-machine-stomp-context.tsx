@@ -14,15 +14,18 @@ const OrderExecutionMachineStompContext = createContext<OrderExecutionMachineSto
 type OrderExecutionMachineStompProviderProps = {
     enabled: boolean;
     workAreaId?: string;
+    /** Подписка на `tags` (таблицы технологических параметров на «Показать все»). */
+    subscribeToTags?: boolean;
     children: React.ReactNode;
 };
 
 export function OrderExecutionMachineStompProvider({
     enabled,
     workAreaId,
+    subscribeToTags = false,
     children,
 }: OrderExecutionMachineStompProviderProps) {
-    const stompState = useOrderExecutionMachineStomp({ enabled, workAreaId });
+    const stompState = useOrderExecutionMachineStomp({ enabled, workAreaId, subscribeToTags });
 
     return (
         <OrderExecutionMachineStompContext.Provider value={stompState}>

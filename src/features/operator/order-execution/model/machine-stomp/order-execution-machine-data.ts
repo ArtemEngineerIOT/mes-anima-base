@@ -9,9 +9,15 @@ export type OrderExecutionMachineDataSnapshot = {
 };
 
 export type OrderExecutionMachineStompState = {
+    /** Переменная STOMP `parameters` — синхронизация и общие параметры машины. */
     snapshot: OrderExecutionMachineDataSnapshot;
+    /** Переменная STOMP `tags` — текущие значения для таблиц технологических параметров. */
+    tagsSnapshot: OrderExecutionMachineDataSnapshot;
     isStompConnected: boolean;
+    /** Получено сообщение по `parameters`. */
     hasReceivedStompData: boolean;
+    /** Получено сообщение по `tags`. */
+    hasReceivedTagsData: boolean;
 };
 
 export const ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER_ROWS: OrderExecutionMachineDataRow[] = [
@@ -27,8 +33,10 @@ export const ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER: OrderExecutionMachineData
 
 export const ORDER_EXECUTION_MACHINE_STOMP_PLACEHOLDER: OrderExecutionMachineStompState = {
     snapshot: ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER,
+    tagsSnapshot: ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER,
     isStompConnected: false,
     hasReceivedStompData: false,
+    hasReceivedTagsData: false,
 };
 
 export function hasOrderExecutionMachineStompData(snapshot: OrderExecutionMachineDataSnapshot): boolean {

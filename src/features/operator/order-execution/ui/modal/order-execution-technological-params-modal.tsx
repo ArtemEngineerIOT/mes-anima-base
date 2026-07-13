@@ -35,7 +35,7 @@ export function OrderExecutionTechnologicalParamsModal({
                     </DialogClose>
                 </DialogHeader>
 
-                <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-4">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4">
                     <OrderExecutionTechnologicalParamsPanel
                         machineId={machineId}
                         layout="embedded"

@@ -105,7 +105,7 @@ export function OrderExecutionMonitoringContent({
                             size="sm"
                             disabled={!canOpenMonitoringTab}
                             onClick={() => {
-                                openOrderExecutionMonitoringTab({ machineId });
+                                openOrderExecutionMonitoringTab({ machineId, workAreaId });
                             }}
                         >
                             Показать все
