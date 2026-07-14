@@ -5,10 +5,11 @@ import { OrderExecutionJbDocumentsTable } from "./jb-documents-table";
 
 type OrderExecutionJbSectionProps = {
     jb: OperatorJbPanel;
+    workAreaId?: string;
 };
 
-export function OrderExecutionJbSection({ jb }: OrderExecutionJbSectionProps) {
-    const { printJbDocument, printingRowId, printError } = useJbCylinderReportPrint();
+export function OrderExecutionJbSection({ jb, workAreaId }: OrderExecutionJbSectionProps) {
+    const { printJbDocument, printingRowId, printError } = useJbCylinderReportPrint({ workAreaId });
 
     return (
         <OrderExecutionCollapsibleSection

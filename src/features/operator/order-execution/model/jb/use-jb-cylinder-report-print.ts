@@ -3,40 +3,50 @@ import { useCallback, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
-import { JB_CYLINDER_LIST_ROW_ID, JB_INK_RECIPE_ROW_ID, JB_PRINT_PARAMS_MAP_ROW_ID, JB_SECTION_LABEL_ROW_ID, JB_STAGE_INFO_ROW_ID } from "./constants";
-import { mapTestGetLabelSectionPayload } from "./map-test-get-label-section-payload";
-import { mapTestGetListCylindersPayload } from "./map-test-get-list-cylinders-payload";
-import { mapTestGetStageInfoPayload } from "./map-test-get-stage-info-payload";
-import { mapTestMapParametersPayload } from "./map-test-map-parameters-payload";
-import { mapTestPaintsRecipePayload } from "./map-test-paints-recipe-payload";
+import {
+    JB_CYLINDER_LIST_ROW_ID,
+    JB_INK_RECIPE_ROW_ID,
+    JB_PRINT_PARAMS_MAP_ROW_ID,
+    JB_SECTION_LABEL_ROW_ID,
+    JB_STAGE_INFO_ROW_ID,
+} from "./constants";
+import { mapJbLabelSectionPayload } from "./map-jb-label-section-payload";
+import { mapJbMapParametersPayload } from "./map-jb-map-parameters-payload";
+import { mapJbPaintsRecipePayload } from "./map-jb-paints-recipe-payload";
+import { mapJbGetListCylindersPayload } from "./map-jb-get-list-cylinders-payload";
+import { mapJbGetStageInfoPayload } from "./map-jb-get-stage-info-payload";
 
-export function useJbCylinderReportPrint() {
+type UseJbCylinderReportPrintOptions = {
+    workAreaId?: string;
+};
+
+export function useJbCylinderReportPrint({ workAreaId }: UseJbCylinderReportPrintOptions = {}) {
     const [printingRowId, setPrintingRowId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
 
     const { mutateAsync: fetchListCylindersReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.testGetListCylinders,
+        REST_FUNCTION_PATHS.jbGetListCylinders,
         {},
     );
     const { mutateAsync: fetchStageInfoReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.testGetStageInfo,
+        REST_FUNCTION_PATHS.jbGetStageInfo,
         {},
     );
     const { mutateAsync: fetchMapParametersReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.testMapParameters,
+        REST_FUNCTION_PATHS.jbMapParameters,
         {},
     );
     const { mutateAsync: fetchPaintsRecipeReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.testPaintsRecipe,
+        REST_FUNCTION_PATHS.jbPaintsRecipe,
         {},
     );
     const { mutateAsync: fetchLabelSectionReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.testGetLabelSection,
+        REST_FUNCTION_PATHS.jbLabelSection,
         {},
     );
 
@@ -51,51 +61,86 @@ export function useJbCylinderReportPrint() {
     const fetchLabelSectionReportRef = useRef(fetchLabelSectionReport);
     fetchLabelSectionReportRef.current = fetchLabelSectionReport;
 
-    const printJbDocument = useCallback(async (rowId: string) => {
-        setPrintingRowId(rowId);
-        setPrintError(null);
+    const printJbDocument = useCallback(
+        async (rowId: string) => {
+            setPrintingRowId(rowId);
+            setPrintError(null);
 
-        try {
-            if (rowId === JB_CYLINDER_LIST_ROW_ID) {
-                const payload = await fetchListCylindersReportRef.current({ body: [] });
-                const previewFilePath = mapTestGetListCylindersPayload(payload);
-                window.open(previewFilePath, "_blank", "noopener,noreferrer");
-                return;
-            }
+            try {
+                const trimmedWorkAreaId = workAreaId?.trim() ?? "";
 
-            if (rowId === JB_STAGE_INFO_ROW_ID) {
-                const payload = await fetchStageInfoReportRef.current({ body: [] });
-                const previewFilePath = mapTestGetStageInfoPayload(payload);
-                window.open(previewFilePath, "_blank", "noopener,noreferrer");
-                return;
-            }
+                if (rowId === JB_CYLINDER_LIST_ROW_ID) {
+                    if (!trimmedWorkAreaId) {
+                        throw new Error("Не удалось определить workAreaId этапа");
+                    }
 
-            if (rowId === JB_PRINT_PARAMS_MAP_ROW_ID) {
-                const payload = await fetchMapParametersReportRef.current({ body: [] });
-                const previewFilePath = mapTestMapParametersPayload(payload);
-                window.open(previewFilePath, "_blank", "noopener,noreferrer");
-                return;
-            }
+                    const payload = await fetchListCylindersReportRef.current({
+                        body: [{ workAreaId: trimmedWorkAreaId }],
+                    });
+                    const previewFilePath = mapJbGetListCylindersPayload(payload);
+                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    return;
+                }
 
-            if (rowId === JB_INK_RECIPE_ROW_ID) {
-                const payload = await fetchPaintsRecipeReportRef.current({ body: [] });
-                const previewFilePath = mapTestPaintsRecipePayload(payload);
-                window.open(previewFilePath, "_blank", "noopener,noreferrer");
-                return;
-            }
+                if (rowId === JB_STAGE_INFO_ROW_ID) {
+                    if (!trimmedWorkAreaId) {
+                        throw new Error("Не удалось определить workAreaId этапа");
+                    }
 
-            if (rowId === JB_SECTION_LABEL_ROW_ID) {
-                const payload = await fetchLabelSectionReportRef.current({ body: [] });
-                const previewFilePath = mapTestGetLabelSectionPayload(payload);
-                window.open(previewFilePath, "_blank", "noopener,noreferrer");
-                return;
+                    const payload = await fetchStageInfoReportRef.current({
+                        body: [{ workAreaId: trimmedWorkAreaId }],
+                    });
+                    const previewFilePath = mapJbGetStageInfoPayload(payload);
+                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    return;
+                }
+
+                if (rowId === JB_PRINT_PARAMS_MAP_ROW_ID) {
+                    if (!trimmedWorkAreaId) {
+                        throw new Error("Не удалось определить workAreaId этапа");
+                    }
+
+                    const payload = await fetchMapParametersReportRef.current({
+                        body: [{ workAreaId: trimmedWorkAreaId }],
+                    });
+                    const previewFilePath = mapJbMapParametersPayload(payload);
+                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    return;
+                }
+
+                if (rowId === JB_INK_RECIPE_ROW_ID) {
+                    if (!trimmedWorkAreaId) {
+                        throw new Error("Не удалось определить workAreaId этапа");
+                    }
+
+                    const payload = await fetchPaintsRecipeReportRef.current({
+                        body: [{ workAreaId: trimmedWorkAreaId }],
+                    });
+                    const previewFilePath = mapJbPaintsRecipePayload(payload);
+                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    return;
+                }
+
+                if (rowId === JB_SECTION_LABEL_ROW_ID) {
+                    if (!trimmedWorkAreaId) {
+                        throw new Error("Не удалось определить workAreaId этапа");
+                    }
+
+                    const payload = await fetchLabelSectionReportRef.current({
+                        body: [{ workAreaId: trimmedWorkAreaId }],
+                    });
+                    const previewFilePath = mapJbLabelSectionPayload(payload);
+                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    return;
+                }
+            } catch (error) {
+                setPrintError(error instanceof Error ? error.message : "Не удалось напечатать отчёт");
+            } finally {
+                setPrintingRowId(null);
             }
-        } catch (error) {
-            setPrintError(error instanceof Error ? error.message : "Не удалось напечатать отчёт");
-        } finally {
-            setPrintingRowId(null);
-        }
-    }, []);
+        },
+        [workAreaId],
+    );
 
     const printCylinderList = useCallback(() => {
         void printJbDocument(JB_CYLINDER_LIST_ROW_ID);

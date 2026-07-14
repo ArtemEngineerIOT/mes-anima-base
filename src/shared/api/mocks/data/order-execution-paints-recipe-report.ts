@@ -1,4 +1,4 @@
-export function buildMockTestPaintsRecipeResponse() {
+export function buildMockJbPaintsRecipeResponse() {
     return [
         {
             error_message: "",

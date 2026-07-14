@@ -1,4 +1,4 @@
-export function buildMockTestGetStageInfoResponse() {
+export function buildMockJbGetStageInfoResponse() {
     return [
         {
             error_message: "",

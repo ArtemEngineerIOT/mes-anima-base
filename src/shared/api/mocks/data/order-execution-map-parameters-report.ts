@@ -1,4 +1,4 @@
-export function buildMockTestMapParametersResponse() {
+export function buildMockJbMapParametersResponse() {
     return [
         {
             error_message: "",

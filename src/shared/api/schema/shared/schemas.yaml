@@ -771,66 +771,121 @@ components:
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        TestGetListCylindersRequest:
-            type: array
-            description: Пустой массив `[]` — отчёт «Список цилиндров» без параметров
-            items:
-                type: object
-                additionalProperties: true
+        JbGetListCylindersRequestItem:
+            type: object
+            description: Запрос jbGetListCylinders — печать «Список цилиндров» (JB)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
 
-        TestGetListCylindersResponse:
+        JbGetListCylindersRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ workAreaId }]` для jbGetListCylinders
+            items:
+                $ref: "#/components/schemas/JbGetListCylindersRequestItem"
+
+        JbGetListCylindersResponse:
             type: array
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        TestGetStageInfoRequest:
-            type: array
-            description: Пустой массив `[]` — отчёт «Информация по этапу» без параметров
-            items:
-                type: object
-                additionalProperties: true
+        JbGetStageInfoRequestItem:
+            type: object
+            description: Запрос jbGetStageInfo — печать «Информация по этапу» (JB)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
 
-        TestGetStageInfoResponse:
+        JbGetStageInfoRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ workAreaId }]` для jbGetStageInfo
+            items:
+                $ref: "#/components/schemas/JbGetStageInfoRequestItem"
+
+        JbGetStageInfoResponse:
             type: array
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        TestMapParametersRequest:
-            type: array
-            description: Пустой массив `[]` — отчёт «Карта технологических параметров печати» без параметров
-            items:
-                type: object
-                additionalProperties: true
+        JbMapParametersRequestItem:
+            type: object
+            description: Запрос jbMapParameters — печать «Карта технологических параметров печати» (JB)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
 
-        TestMapParametersResponse:
+        JbMapParametersRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ workAreaId }]` для jbMapParameters
+            items:
+                $ref: "#/components/schemas/JbMapParametersRequestItem"
+
+        JbMapParametersResponse:
             type: array
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        TestPaintsRecipeRequest:
-            type: array
-            description: Пустой массив `[]` — отчёт «Рецептура красок» без параметров
-            items:
-                type: object
-                additionalProperties: true
+        JbPaintsRecipeRequestItem:
+            type: object
+            description: Запрос jbPaintsRecipe — печать «Рецептура красок» (JB)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
 
-        TestPaintsRecipeResponse:
+        JbPaintsRecipeRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ workAreaId }]` для jbPaintsRecipe
+            items:
+                $ref: "#/components/schemas/JbPaintsRecipeRequestItem"
+
+        JbPaintsRecipeResponse:
             type: array
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        TestGetLabelSectionRequest:
-            type: array
-            description: Пустой массив `[]` — отчёт «Этикетка на секцию» без параметров
-            items:
-                type: object
-                additionalProperties: true
+        JbLabelSectionRequestItem:
+            type: object
+            description: Запрос jbLabelSection — печать «Этикетка на секцию» (JB)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+            required:
+                - workAreaId
+            additionalProperties: true
 
-        TestGetLabelSectionResponse:
+        JbLabelSectionRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ workAreaId }]` для jbLabelSection
+            items:
+                $ref: "#/components/schemas/JbLabelSectionRequestItem"
+
+        JbLabelSectionResponse:
             type: array
             minItems: 1
             items:
