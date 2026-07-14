@@ -1,4 +1,4 @@
-export function buildMockTestGetListCylindersResponse() {
+export function buildMockJbGetListCylindersResponse() {
     return [
         {
             error_message: "",

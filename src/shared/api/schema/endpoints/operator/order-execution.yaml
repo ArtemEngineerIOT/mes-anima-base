@@ -320,7 +320,7 @@ postListStageInputRollsForWorkArea:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postTestGetListCylinders:
+postJbGetListCylinders:
     summary: Отчёт «Список цилиндров» (JB)
     description: Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа»
     security:
@@ -330,20 +330,20 @@ postTestGetListCylinders:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetListCylindersRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbGetListCylindersRequest"
     responses:
         "200":
             description: Ссылка на PDF отчёта (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetListCylindersResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbGetListCylindersResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postTestGetStageInfo:
+postJbGetStageInfo:
     summary: Отчёт «Информация по этапу» (JB)
     description: Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа»
     security:
@@ -353,20 +353,20 @@ postTestGetStageInfo:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetStageInfoRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbGetStageInfoRequest"
     responses:
         "200":
             description: Ссылка на PDF отчёта (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetStageInfoResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbGetStageInfoResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postTestMapParameters:
+postJbMapParameters:
     summary: Отчёт «Карта технологических параметров печати» (JB)
     description: Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа»
     security:
@@ -376,20 +376,20 @@ postTestMapParameters:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/TestMapParametersRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbMapParametersRequest"
     responses:
         "200":
             description: Ссылка на PDF отчёта (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/TestMapParametersResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbMapParametersResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postTestPaintsRecipe:
+postJbPaintsRecipe:
     summary: Отчёт «Рецептура красок» (JB)
     description: Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа»
     security:
@@ -399,20 +399,20 @@ postTestPaintsRecipe:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/TestPaintsRecipeRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPaintsRecipeRequest"
     responses:
         "200":
             description: Ссылка на PDF отчёта (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/TestPaintsRecipeResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPaintsRecipeResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postTestGetLabelSection:
+postJbLabelSection:
     summary: Отчёт «Этикетка на секцию» (JB)
     description: Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа»
     security:
@@ -422,14 +422,14 @@ postTestGetLabelSection:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/TestGetLabelSectionRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbLabelSectionRequest"
     responses:
         "200":
             description: Ссылка на PDF отчёта (error_code OK — успех)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/TestGetLabelSectionResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbLabelSectionResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

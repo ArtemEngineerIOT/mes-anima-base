@@ -134,25 +134,25 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postListStageInputRollsForWorkArea"
 
-    /v1/contexts/users.admin.models.rest/functions/testGetListCylinders:
+    /v1/contexts/users.admin.models.rest/functions/jbGetListCylinders:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetListCylinders"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbGetListCylinders"
 
-    /v1/contexts/users.admin.models.rest/functions/testGetStageInfo:
+    /v1/contexts/users.admin.models.rest/functions/jbGetStageInfo:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetStageInfo"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbGetStageInfo"
 
-    /v1/contexts/users.admin.models.rest/functions/testMapParameters:
+    /v1/contexts/users.admin.models.rest/functions/jbMapParameters:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postTestMapParameters"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbMapParameters"
 
-    /v1/contexts/users.admin.models.rest/functions/testPaintsRecipe:
+    /v1/contexts/users.admin.models.rest/functions/jbPaintsRecipe:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postTestPaintsRecipe"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbPaintsRecipe"
 
-    /v1/contexts/users.admin.models.rest/functions/testGetLabelSection:
+    /v1/contexts/users.admin.models.rest/functions/jbLabelSection:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postTestGetLabelSection"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbLabelSection"
 
     /v1/contexts/users.admin.models.rest/functions/registerRelease:
         post:

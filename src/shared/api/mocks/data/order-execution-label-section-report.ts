@@ -1,4 +1,4 @@
-export function buildMockTestGetLabelSectionResponse() {
+export function buildMockJbLabelSectionResponse() {
     return [
         {
             error_message: "",

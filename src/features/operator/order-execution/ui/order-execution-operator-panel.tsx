@@ -34,7 +34,7 @@ export function OrderExecutionOperatorPanel({
             journalEnabled={processJournalExpanded}
         >
             <div className="min-h-0 flex flex-col gap-3 app-scroll overflow-auto">
-                <OrderExecutionJbSection jb={operator.jb} />
+                <OrderExecutionJbSection jb={operator.jb} workAreaId={workAreaId} />
                 
                 <OrderExecutionMaterialsSection workAreaId={workAreaId} />
                 <OrderExecutionProcessControlSection />

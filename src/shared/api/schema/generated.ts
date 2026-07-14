@@ -1397,7 +1397,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/testGetListCylinders": {
+    "/v1/contexts/users.admin.models.rest/functions/jbGetListCylinders": {
         parameters: {
             query?: never;
             header?: never;
@@ -1419,7 +1419,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["TestGetListCylindersRequest"];
+                    "application/json": components["schemas"]["JbGetListCylindersRequest"];
                 };
             };
             responses: {
@@ -1429,7 +1429,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TestGetListCylindersResponse"];
+                        "application/json": components["schemas"]["JbGetListCylindersResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1442,7 +1442,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/testGetStageInfo": {
+    "/v1/contexts/users.admin.models.rest/functions/jbGetStageInfo": {
         parameters: {
             query?: never;
             header?: never;
@@ -1464,7 +1464,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["TestGetStageInfoRequest"];
+                    "application/json": components["schemas"]["JbGetStageInfoRequest"];
                 };
             };
             responses: {
@@ -1474,7 +1474,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TestGetStageInfoResponse"];
+                        "application/json": components["schemas"]["JbGetStageInfoResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1487,7 +1487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/testMapParameters": {
+    "/v1/contexts/users.admin.models.rest/functions/jbMapParameters": {
         parameters: {
             query?: never;
             header?: never;
@@ -1509,7 +1509,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["TestMapParametersRequest"];
+                    "application/json": components["schemas"]["JbMapParametersRequest"];
                 };
             };
             responses: {
@@ -1519,7 +1519,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TestMapParametersResponse"];
+                        "application/json": components["schemas"]["JbMapParametersResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1532,7 +1532,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/testPaintsRecipe": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPaintsRecipe": {
         parameters: {
             query?: never;
             header?: never;
@@ -1554,7 +1554,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["TestPaintsRecipeRequest"];
+                    "application/json": components["schemas"]["JbPaintsRecipeRequest"];
                 };
             };
             responses: {
@@ -1564,7 +1564,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TestPaintsRecipeResponse"];
+                        "application/json": components["schemas"]["JbPaintsRecipeResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1577,7 +1577,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/testGetLabelSection": {
+    "/v1/contexts/users.admin.models.rest/functions/jbLabelSection": {
         parameters: {
             query?: never;
             header?: never;
@@ -1599,7 +1599,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["TestGetLabelSectionRequest"];
+                    "application/json": components["schemas"]["JbLabelSectionRequest"];
                 };
             };
             responses: {
@@ -1609,7 +1609,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TestGetLabelSectionResponse"];
+                        "application/json": components["schemas"]["JbLabelSectionResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2993,31 +2993,56 @@ export interface components {
         } & {
             [key: string]: unknown;
         })[];
-        /** @description Пустой массив `[]` — отчёт «Список цилиндров» без параметров */
-        TestGetListCylindersRequest: {
+        /** @description Запрос jbGetListCylinders — печать «Список цилиндров» (JB) */
+        JbGetListCylindersRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
             [key: string]: unknown;
-        }[];
-        TestGetListCylindersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Пустой массив `[]` — отчёт «Информация по этапу» без параметров */
-        TestGetStageInfoRequest: {
+        };
+        /** @description Тело `[{ workAreaId }]` для jbGetListCylinders */
+        JbGetListCylindersRequest: components["schemas"]["JbGetListCylindersRequestItem"][];
+        JbGetListCylindersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbGetStageInfo — печать «Информация по этапу» (JB) */
+        JbGetStageInfoRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
             [key: string]: unknown;
-        }[];
-        TestGetStageInfoResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Пустой массив `[]` — отчёт «Карта технологических параметров печати» без параметров */
-        TestMapParametersRequest: {
+        };
+        /** @description Тело `[{ workAreaId }]` для jbGetStageInfo */
+        JbGetStageInfoRequest: components["schemas"]["JbGetStageInfoRequestItem"][];
+        JbGetStageInfoResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbMapParameters — печать «Карта технологических параметров печати» (JB) */
+        JbMapParametersRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
             [key: string]: unknown;
-        }[];
-        TestMapParametersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Пустой массив `[]` — отчёт «Рецептура красок» без параметров */
-        TestPaintsRecipeRequest: {
+        };
+        /** @description Тело `[{ workAreaId }]` для jbMapParameters */
+        JbMapParametersRequest: components["schemas"]["JbMapParametersRequestItem"][];
+        JbMapParametersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbPaintsRecipe — печать «Рецептура красок» (JB) */
+        JbPaintsRecipeRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
             [key: string]: unknown;
-        }[];
-        TestPaintsRecipeResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Пустой массив `[]` — отчёт «Этикетка на секцию» без параметров */
-        TestGetLabelSectionRequest: {
+        };
+        /** @description Тело `[{ workAreaId }]` для jbPaintsRecipe */
+        JbPaintsRecipeRequest: components["schemas"]["JbPaintsRecipeRequestItem"][];
+        JbPaintsRecipeResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbLabelSection — печать «Этикетка на секцию» (JB) */
+        JbLabelSectionRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
             [key: string]: unknown;
-        }[];
-        TestGetLabelSectionResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        };
+        /** @description Тело `[{ workAreaId }]` для jbLabelSection */
+        JbLabelSectionRequest: components["schemas"]["JbLabelSectionRequestItem"][];
+        JbLabelSectionResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
         /** @description Запрос registerRelease (UI-60 SCR-06) */
         OrderExecutionRegisterReleaseRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */

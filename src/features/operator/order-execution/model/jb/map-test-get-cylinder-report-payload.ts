@@ -1,1 +1,1 @@
-export { mapTestGetListCylindersPayload as mapTestGetCylinderReportPayload } from "./map-test-get-list-cylinders-payload";
+export { mapJbGetListCylindersPayload as mapTestGetCylinderReportPayload } from "./map-jb-get-list-cylinders-payload";
