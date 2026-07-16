@@ -13,6 +13,7 @@ import { submitPartialReturnHandlers } from "./handlers/submit-partial-return";
 import { submitFullWriteOffHandlers } from "./handlers/submit-full-write-off";
 import { submitStageLkmHandlers } from "./handlers/submit-stage-lkm";
 import { orderExecutionReleaseHandlers } from "./handlers/order-execution-release";
+import { orderExecutionEventRollWriteOffHandlers } from "./handlers/order-execution-event-roll-write-off";
 import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-monitoring";
 import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
 import { orderExecutionListCylindersReportHandlers } from "./handlers/order-execution-list-cylinders-report";
@@ -20,6 +21,8 @@ import { orderExecutionStageInfoReportHandlers } from "./handlers/order-executio
 import { orderExecutionMapParametersReportHandlers } from "./handlers/order-execution-map-parameters-report";
 import { orderExecutionPaintsRecipeReportHandlers } from "./handlers/order-execution-paints-recipe-report";
 import { orderExecutionLabelSectionReportHandlers } from "./handlers/order-execution-label-section-report";
+import { orderExecutionStageCompletionInitHandlers } from "./handlers/order-execution-stage-completion-init";
+import { orderExecutionStageCompletionSubmitHandlers } from "./handlers/order-execution-stage-completion-submit";
 import { productionPlanHandlers } from "./handlers/production-plan";
 import { materialOrderPlanStagesHandlers } from "./handlers/material-order-plan-stages";
 import { materialOrderComposeHandlers } from "./handlers/material-order-compose";
@@ -56,6 +59,7 @@ export const worker = setupWorker(
     ...submitFullWriteOffHandlers,
     ...submitStageLkmHandlers,
     ...orderExecutionReleaseHandlers,
+    ...orderExecutionEventRollWriteOffHandlers,
     ...orderExecutionMonitoringHandlers,
     ...orderExecutionProductionEventWizardHandlers,
     ...orderExecutionListCylindersReportHandlers,
@@ -63,4 +67,6 @@ export const worker = setupWorker(
     ...orderExecutionMapParametersReportHandlers,
     ...orderExecutionPaintsRecipeReportHandlers,
     ...orderExecutionLabelSectionReportHandlers,
+    ...orderExecutionStageCompletionInitHandlers,
+    ...orderExecutionStageCompletionSubmitHandlers,
 );

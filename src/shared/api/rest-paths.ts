@@ -30,6 +30,12 @@ export const REST_FUNCTION_PATHS = {
     submitPartialReturn: `${REST_FUNCTIONS_BASE}/submitPartialReturn`,
     submitFullWriteOff: `${REST_FUNCTIONS_BASE}/submitFullWriteOff`,
     submitStageLkm: `${REST_FUNCTIONS_BASE}/submitStageLkm`,
+    eventReleaseProduction: `${REST_FUNCTIONS_BASE}/eventReleaseProduction`,
+    eventRollWriteOff: `${REST_FUNCTIONS_BASE}/eventRollWriteOff`,
+    discardEventRoll: `${REST_FUNCTIONS_BASE}/discardEventRoll`,
+    acceptRawFromEvent: `${REST_FUNCTIONS_BASE}/acceptRawFromEvent`,
+    discardEvent: `${REST_FUNCTIONS_BASE}/discardEvent`,
+    acceptProdFromEvent: `${REST_FUNCTIONS_BASE}/acceptProdFromEvent`,
     getReleaseFormInit: `${REST_FUNCTIONS_BASE}/getReleaseFormInit`,
     getBatchReleases: `${REST_FUNCTIONS_BASE}/getBatchReleases`,
     listStageInputRollsForWorkArea: `${REST_FUNCTIONS_BASE}/listStageInputRollsForWorkArea`,
@@ -47,6 +53,8 @@ export const REST_FUNCTION_PATHS = {
     discardProductionEventSignals: `${REST_FUNCTIONS_BASE}/discardProductionEventSignals`,
     getProductionEventProcessJournal: `${REST_FUNCTIONS_BASE}/getProductionEventProcessJournal`,
     registerProductionEvent: `${REST_FUNCTIONS_BASE}/registerProductionEvent`,
+    orderStageCompletionInit: `${REST_FUNCTIONS_BASE}/orderStageCompletionInit`,
+    orderStageCompletionSubmit: `${REST_FUNCTIONS_BASE}/orderStageCompletionSubmit`,
     /** MES-профиль и роли после POST /auth (Bearer обязателен). */
     mesUserProfile: `${REST_FUNCTIONS_BASE}/mesUserProfile`,
 } as const;

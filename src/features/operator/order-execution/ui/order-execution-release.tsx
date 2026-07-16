@@ -1,8 +1,11 @@
+import { useMemo } from "react";
+
 import { useRelease } from "../model/release/use-release";
 import { Button } from "@/shared/ui/kit/button";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Informer } from "@/shared/ui/kit/informer";
+import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
@@ -45,7 +48,27 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
         printError,
         printingReleaseId,
         printReleaseLabel,
+        productionEvent,
+        isProductionEventLoading,
+        productionEventError,
+        discardProductionEvent,
+        isDiscardingProductionEvent,
+        discardProductionEventError,
+        acceptProdFromEvent,
+        isAcceptingProdFromEvent,
+        acceptProdFromEventError,
+        manualReleaseBlocked,
     } = useRelease({ workAreaId, enabled });
+
+    const productionEventRows = useMemo(
+        () =>
+            productionEvent.currentEvent?.displayRows.map((row) => ({
+                characteristic: row.characteristic,
+                value: row.value,
+                unit: row.unit,
+            })) ?? [],
+        [productionEvent.currentEvent],
+    );
 
     if (!enabled) {
         return null;
@@ -53,6 +76,70 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
 
     return (
         <div className="flex flex-col gap-4">
+            {productionEventError ? (
+                <Informer
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Событие с машины"
+                    description={productionEventError}
+                />
+            ) : null}
+
+            {!isProductionEventLoading && !productionEventError && productionEvent.currentEvent ? (
+                <MachineDataPanel
+                    title={
+                        [
+                            productionEvent.plateTitle,
+                            productionEvent.currentEvent.eventCodeLabel,
+                        ]
+                            .filter(Boolean)
+                            .join(" · ") || "Событие с машины"
+                    }
+                    rows={productionEventRows}
+                    tone="warning"
+                    updatedAt={productionEvent.currentEvent.eventAt || null}
+                    updatedAtLabel="Зарегистрировано от"
+                    emptyText="Нет характеристик события"
+                    footer={
+                        <div className="flex flex-col items-end gap-2">
+                            {discardProductionEventError || acceptProdFromEventError ? (
+                                <div className="w-full text-[12px] text-destructive">
+                                    {acceptProdFromEventError || discardProductionEventError}
+                                </div>
+                            ) : null}
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    pending={isAcceptingProdFromEvent}
+                                    pendingLabel="Регистрация…"
+                                    disabled={isDiscardingProductionEvent || isAcceptingProdFromEvent}
+                                    onClick={() => {
+                                        void acceptProdFromEvent();
+                                    }}
+                                >
+                                    Зарегистрировать
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    pending={isDiscardingProductionEvent}
+                                    pendingLabel="Отклонение…"
+                                    disabled={isDiscardingProductionEvent || isAcceptingProdFromEvent}
+                                    onClick={() => {
+                                        void discardProductionEvent();
+                                    }}
+                                >
+                                    Отклонить
+                                </Button>
+                            </div>
+                        </div>
+                    }
+                />
+            ) : null}
+
             {error ? (
                 <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={error} />
             ) : null}
@@ -75,7 +162,9 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         </TableHeader>
                         <TableBody>
                             <TableRow>
-                                <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>Серия</TableCell>
+                                <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                    Серия
+                                </TableCell>
                                 <TableCell className={dataTableBodyCellClassName}>{series || "—"}</TableCell>
                             </TableRow>
                         </TableBody>
@@ -90,8 +179,9 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         <div className={comboboxFieldLabelClassName}>Метраж</div>
                         <Input
                             className="mt-1"
+                            inputMode="decimal"
                             value={form.lengthM}
-                            disabled={isLoading || Boolean(error)}
+                            disabled={isLoading || Boolean(error) || manualReleaseBlocked}
                             onChange={(event) => patchForm({ lengthM: event.target.value })}
                         />
                     </div>
@@ -99,8 +189,9 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         <div className={comboboxFieldLabelClassName}>Нетто</div>
                         <Input
                             className="mt-1"
+                            inputMode="decimal"
                             value={form.netWeightKg}
-                            disabled={isLoading || Boolean(error)}
+                            disabled={isLoading || Boolean(error) || manualReleaseBlocked}
                             onChange={(event) => setNetWeight(event.target.value)}
                         />
                     </div>
@@ -108,6 +199,7 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         <div className={comboboxFieldLabelClassName}>Брутто = нетто</div>
                         <Input
                             className="mt-1 bg-muted/40"
+                            inputMode="decimal"
                             value={form.grossWeightKg}
                             readOnly
                             tabIndex={-1}
@@ -119,7 +211,12 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         <select
                             className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
                             value={form.warehouse}
-                            disabled={isLoading || Boolean(error) || warehouseOptions.length === 0}
+                            disabled={
+                                isLoading ||
+                                Boolean(error) ||
+                                manualReleaseBlocked ||
+                                warehouseOptions.length === 0
+                            }
                             onChange={(event) => patchForm({ warehouse: event.target.value })}
                         >
                             {warehouseOptions.map((option) => (
@@ -135,7 +232,7 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                     <input
                         type="checkbox"
                         checked={form.requiresRewind}
-                        disabled={isLoading || Boolean(error)}
+                        disabled={isLoading || Boolean(error) || manualReleaseBlocked}
                         onChange={(event) => patchForm({ requiresRewind: event.target.checked })}
                         className="h-4 w-4 accent-primary"
                     />
@@ -159,9 +256,13 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                                 <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[200px]")}>
                                     Номенклатура
                                 </TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Кол-во 1</TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                    Кол-во 1
+                                </TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 1</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Кол-во 2</TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                    Кол-во 2
+                                </TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 2</TableHead>
                                 <TableHead className={cn(dataTableStickyHeadCellClassName, "w-12 text-right")} />
                             </TableRow>
@@ -287,7 +388,13 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                     size="sm"
                     pending={isRegisteringRelease}
                     pendingLabel="Регистрация…"
-                    disabled={!canRegisterRelease || isLoading || Boolean(error) || isRegisteringRelease}
+                    disabled={
+                        !canRegisterRelease ||
+                        isLoading ||
+                        Boolean(error) ||
+                        isRegisteringRelease ||
+                        manualReleaseBlocked
+                    }
                     onClick={() => {
                         void registerRelease();
                     }}

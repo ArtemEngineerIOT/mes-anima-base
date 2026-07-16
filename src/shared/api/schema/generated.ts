@@ -1262,6 +1262,276 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/eventReleaseProduction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Очередь событий выпуска с машины (UI-61)
+         * @description Первый запрос при раскрытии блока «Выпуск» — плашка «Событие с машины»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Очередь событий выпуска (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionReleaseProductionEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/eventRollWriteOff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Очередь событий списания сырья с машины (UI-61a)
+         * @description Первый запрос при раскрытии блока «Материалы. Списание/возврат» — плашка «Событие с машины»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Очередь событий списания (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionReleaseProductionEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/discardEventRoll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отклонить событие списания сырья с машины (UI-61a)
+         * @description Кнопка «Отклонить» на плашке списания — discardEventRoll
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionDiscardProductionEventRequest"];
+                };
+            };
+            responses: {
+                /** @description Событие отклонено (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionDiscardProductionEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/acceptRawFromEvent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Принять событие списания сырья с машины (UI-61a)
+         * @description Кнопка «Зарегистрировать» — acceptRawFromEvent (prefill формы списания)
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionAcceptProdFromEventRequest"];
+                };
+            };
+            responses: {
+                /** @description Событие принято, prefill для формы списания (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionAcceptRawFromEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/discardEvent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отклонить событие выпуска с машины (UI-61)
+         * @description Кнопка «Отклонить» на плашке «Событие с машины» — discardEvent
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionDiscardProductionEventRequest"];
+                };
+            };
+            responses: {
+                /** @description Событие отклонено (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionDiscardProductionEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/acceptProdFromEvent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Принять событие выпуска продукции с машины (UI-61)
+         * @description Кнопка «Зарегистрировать» при register_action PREFILL_PROD — acceptProdFromEvent
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionAcceptProdFromEventRequest"];
+                };
+            };
+            responses: {
+                /** @description Событие принято, prefill для формы (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionAcceptProdFromEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/contexts/users.admin.models.rest/functions/getReleaseFormInit": {
         parameters: {
             query?: never;
@@ -2015,6 +2285,96 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderExecutionProductionEventRegisterResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/orderStageCompletionInit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Init экрана завершения этапа (SCR-08 / UC-16)
+         * @description Первый запрос при раскрытии блока «Завершить этап» — сводка этапа и can_complete
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Init завершения этапа (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionStageCompletionInitResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/orderStageCompletionSubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Завершение этапа (SCR-08 / UC-16)
+         * @description Кнопка «Завершить этап» — orderStageCompletionSubmit
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionStageCompletionSubmitRequest"];
+                };
+            };
+            responses: {
+                /** @description Этап завершён или отказ COMPLETION_NOT_ALLOWED */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionStageCompletionSubmitResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2907,6 +3267,109 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        OrderExecutionReleaseProductionEventDisplayRow: {
+            characteristic_label?: string | null;
+            value_text?: string | null;
+            unit_label?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionReleaseProductionCurrentEvent: {
+            machine_event_signal_id?: string | null;
+            event_code?: string | null;
+            event_code_label?: string | null;
+            event_at?: string | null;
+            informer_detail?: string | null;
+            /** @description PREFILL_PROD | REGISTER_DEFECT */
+            register_action?: string | null;
+            event_display_rows?: components["schemas"]["OrderExecutionReleaseProductionEventDisplayRow"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Элемент `result` в ответе eventReleaseProduction (listPending) */
+        OrderExecutionReleaseProductionEventResultItem: {
+            work_area_id?: string | null;
+            plate_title?: string | null;
+            pending_count?: number | null;
+            manual_release_blocked?: boolean | null;
+            empty_state_message?: string | null;
+            /** @description Текущее событие (обычно 0 или 1 элемент); берём первый */
+            current_event?: components["schemas"]["OrderExecutionReleaseProductionCurrentEvent"][];
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionReleaseProductionEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionReleaseProductionEventResultItem"][];
+        })[];
+        /** @description Запрос discardEvent (UI-61 SCR-06) */
+        OrderExecutionDiscardProductionEventRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Id сигнала из current_event (`machine_event_signal_id`) */
+            machineEventSignalId: string;
+            /** @description Оператор (`operator_ref`) */
+            operatorRef?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionDiscardProductionEventRequest: components["schemas"]["OrderExecutionDiscardProductionEventRequestItem"][];
+        /** @description Элемент `result` в ответе discardEvent */
+        OrderExecutionDiscardProductionEventResultItem: {
+            machine_event_signal_id?: string | null;
+            /** @description DISCARDED */
+            processing_status?: string | null;
+            pending_count?: number | null;
+            manual_release_blocked?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionDiscardProductionEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionDiscardProductionEventResultItem"][];
+        })[];
+        /** @description Запрос acceptProdFromEvent (UI-61 SCR-06) */
+        OrderExecutionAcceptProdFromEventRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Id сигнала из current_event (`machine_event_signal_id`) */
+            machineEventSignalId: string;
+            /** @description Оператор (`operator_ref`) */
+            operatorRef?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionAcceptProdFromEventRequest: components["schemas"]["OrderExecutionAcceptProdFromEventRequestItem"][];
+        /** @description Элемент `result` в ответе acceptRawFromEvent (UI-61a SCR-04) */
+        OrderExecutionAcceptRawFromEventResultItem: {
+            machine_event_signal_id?: string | null;
+            /** @description OPERATOR_ACCEPTED */
+            processing_status?: string | null;
+            prefill_output_length_m?: number | null;
+            prefill_output_weight_kg?: number | null;
+            prefill_material_roll_id?: string | null;
+            prefill_barcode?: string | null;
+            pending_count?: number | null;
+            manual_release_blocked?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionAcceptRawFromEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionAcceptRawFromEventResultItem"][];
+        })[];
+        /** @description Элемент `result` в ответе acceptProdFromEvent */
+        OrderExecutionAcceptProdFromEventResultItem: {
+            machine_event_signal_id?: string | null;
+            /** @description OPERATOR_ACCEPTED */
+            processing_status?: string | null;
+            prefill_output_length_m?: number | null;
+            prefill_output_weight_kg?: number | null;
+            pending_count?: number | null;
+            manual_release_blocked?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionAcceptProdFromEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionAcceptProdFromEventResultItem"][];
+        })[];
         /** @description Элемент `result` в ответе getReleaseFormInit */
         OrderExecutionReleaseFormInitResultItem: {
             work_area_id?: string | null;
@@ -3271,6 +3734,77 @@ export interface components {
         };
         OrderExecutionProductionEventRegisterRequest: components["schemas"]["OrderExecutionProductionEventRegisterRequestItem"][];
         OrderExecutionProductionEventRegisterResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
+        /** @description Элемент result в ответе orderStageCompletionInit (SCR-08) */
+        OrderExecutionStageCompletionInitResultItem: {
+            work_area_id?: string | null;
+            scrap_percent?: number | null;
+            meterage_total_m?: number | null;
+            can_complete?: boolean | null;
+            input_rolls?: {
+                [key: string]: unknown;
+            }[];
+            output_releases?: {
+                [key: string]: unknown;
+            }[];
+            process_journal?: {
+                [key: string]: unknown;
+            }[];
+            unprocessed_events?: {
+                [key: string]: unknown;
+            }[];
+            blocking_issues?: {
+                [key: string]: unknown;
+            }[];
+            warnings?: {
+                [key: string]: unknown;
+            }[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ orderStageCompletionInit (SCR-08 / UC-16) */
+        OrderExecutionStageCompletionInitResponse: ({
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["OrderExecutionStageCompletionInitResultItem"][];
+        } & {
+            [key: string]: unknown;
+        })[];
+        /** @description Элемент тела orderStageCompletionSubmit (SCR-08) */
+        OrderExecutionStageCompletionSubmitRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Оператор / user ref (`completed_by`) */
+            completedBy: string;
+            /** @description Комментарий оператора (на бэке в БД не пишется) */
+            comment?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionStageCompletionSubmitRequest: components["schemas"]["OrderExecutionStageCompletionSubmitRequestItem"][];
+        /** @description Элемент result в ответе orderStageCompletionSubmit */
+        OrderExecutionStageCompletionSubmitResultItem: {
+            work_area_id?: string | null;
+            status_code?: string | null;
+            warnings?: {
+                [key: string]: unknown;
+            }[];
+            paused_sibling_modal?: {
+                [key: string]: unknown;
+            }[];
+            blocking_issues?: {
+                [key: string]: unknown;
+            }[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ orderStageCompletionSubmit (SCR-08 / UC-16) */
+        OrderExecutionStageCompletionSubmitResponse: ({
+            error_code?: string;
+            error_message?: string | null;
+            result?: components["schemas"]["OrderExecutionStageCompletionSubmitResultItem"][];
+        } & {
+            [key: string]: unknown;
+        })[];
         MaterialOrderSubmitLineItem: components["schemas"]["MaterialOrderComposeLineResultItem"];
     };
     responses: {

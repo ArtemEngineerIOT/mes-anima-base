@@ -30,11 +30,17 @@ export type MachineDataPanelRow = {
 export type MachineDataPanelProps = {
     rows: MachineDataPanelRow[];
     updatedAt?: string | null;
+    /** Подпись перед `updatedAt`. По умолчанию «Обновлено». */
+    updatedAtLabel?: string;
     tone?: InformerTone;
     iconName?: string;
     title?: ReactNode;
     emptyText?: string;
     className?: string;
+    /** Левая цветовая полоса `InformerTablePanel`. По умолчанию `true`. */
+    showToneBar?: boolean;
+    /** Футер под таблицей (кнопки действий и т. п.) */
+    footer?: ReactNode;
 };
 
 const DEFAULT_TITLE = "Данные с машины";
@@ -47,25 +53,37 @@ function resolvePanelTone(rows: MachineDataPanelRow[], fallback: InformerTone): 
 export function MachineDataPanel({
     rows,
     updatedAt,
+    updatedAtLabel = "Обновлено",
     tone = "success",
     iconName,
     title = DEFAULT_TITLE,
     emptyText = "Нет данных с машины",
     className,
+    showToneBar = true,
+    footer,
 }: MachineDataPanelProps) {
     const panelTone = resolvePanelTone(rows, tone);
     const panelIconName = iconName ?? (panelTone === "success" ? "settings" : undefined);
     const titleContent = updatedAt ? (
         <div className="flex min-w-0 items-center justify-between gap-3">
             <span className="min-w-0 truncate">{title}</span>
-            <span className="shrink-0 text-[11px] font-normal text-muted-foreground">Обновлено: {updatedAt}</span>
+            <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
+                {updatedAtLabel}: {updatedAt}
+            </span>
         </div>
     ) : (
         title
     );
 
     return (
-        <InformerTablePanel tone={panelTone} title={titleContent} iconName={panelIconName} className={className}>
+        <InformerTablePanel
+            tone={panelTone}
+            title={titleContent}
+            iconName={panelIconName}
+            showToneBar={showToneBar}
+            footer={footer}
+            className={className}
+        >
             <div className={dataTableScrollViewportClassName}>
                 <Table className={cn(dataTableShellClassName, "border-0")}>
                     <TableHeader className="bg-muted/40 [&_tr]:border-0">

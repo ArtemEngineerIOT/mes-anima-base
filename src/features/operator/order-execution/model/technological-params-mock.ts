@@ -2,6 +2,8 @@ import type { TechnologicalParamTagKey } from "./resolve-technological-param-sto
 import type { TechnologicalParamHistoryEntry } from "./technological-params-history";
 import type { MachineId } from "./types";
 
+const EMPTY_VALUE = "—";
+
 export type TechnologicalPrintingSectionRow = {
     id: string;
     sectionNumber: number;
@@ -30,6 +32,8 @@ export type TechnologicalProcessParamRow = {
     stompStandardFieldKey?: TechnologicalParamTagKey;
     fallbackCurrent: string;
     alert?: boolean;
+    /** Только ручной ввод: нет STOMP, поле активно без уставки. */
+    manualOnly?: boolean;
 };
 
 export type TechnologicalSpeedRow = {
@@ -58,24 +62,6 @@ export type TechnologicalParamsSections = {
     rulesText: string;
 };
 
-const SAMPLE_HISTORY: TechnologicalParamHistoryEntry[] = [
-    {
-        value: "72",
-        rollNumber: "002672230  1",
-        checkedAt: "03-11-2028 10:00:00",
-    },
-    {
-        value: "74",
-        rollNumber: "002672230  1",
-        checkedAt: "03-11-2028 11:00:00",
-    },
-    {
-        value: "75",
-        rollNumber: "002672230  1",
-        checkedAt: "03-11-2028 12:00:00",
-    },
-];
-
 /** Номера «печей» (hood) в тегах UNIT_{section}_HOOD_{n}_* по секциям из ответа STOMP. */
 const PRINTING_SECTION_HOODS: Record<number, number[]> = {
     1: [1, 2],
@@ -90,12 +76,7 @@ const PRINTING_SECTION_HOODS: Record<number, number[]> = {
     10: [1, 2, 3, 4],
 };
 
-function buildPrintingSection(
-    sectionNumber: number,
-    standard: string,
-    color = "",
-    presserNo = "",
-): TechnologicalPrintingSectionRow {
+function buildPrintingSection(sectionNumber: number, color = "", presserNo = ""): TechnologicalPrintingSectionRow {
     const hoods = PRINTING_SECTION_HOODS[sectionNumber] ?? [1];
 
     return {
@@ -103,115 +84,121 @@ function buildPrintingSection(
         sectionNumber,
         color,
         presserNo,
-        standard,
+        standard: EMPTY_VALUE,
         deviationPm: "± 5",
-        start: "03-11-2028 09:30:00",
-        history: SAMPLE_HISTORY.map((entry) => ({ ...entry, value: standard })),
+        start: EMPTY_VALUE,
+        history: [],
         stompStandardFieldKey: hoods.map((hood) => `UNIT_${sectionNumber}_HOOD_${hood}_SET_TEMP_`),
         stompFieldKey: hoods.map((hood) => `UNIT_${sectionNumber}_HOOD_${hood}_ACT_TEMP_`),
-        fallbackCurrent: standard,
+        fallbackCurrent: EMPTY_VALUE,
     };
 }
 
 const MOCK_LM230: TechnologicalParamsSections = {
     presserWidth: "",
     printingTitle: "Настройки печатных секций",
-    printingSections: [
-        ...Array.from({ length: 7 }, (_, index) => buildPrintingSection(index + 1, "75")),
-        buildPrintingSection(8, "105"),
-        buildPrintingSection(9, "100-100"),
-        buildPrintingSection(10, ""),
-    ],
+    printingSections: Array.from({ length: 10 }, (_, index) => buildPrintingSection(index + 1)),
     unwindingTitle: "Настройки размотки 1",
     unwinding: [
         {
             id: "unwinding-roll-tension",
             label: "Натяжение рулона:",
-            standard: "10",
+            standard: EMPTY_VALUE,
             deviationPm: "± 1",
-            start: "03-11-2028 09:30:00",
-            history: SAMPLE_HISTORY,
+            start: EMPTY_VALUE,
+            history: [],
             stompStandardFieldKey: "UNW_SET_TENSION_MIS",
             stompFieldKey: "UNW_ACT_TENSION_L_C_",
-            fallbackCurrent: "10",
+            fallbackCurrent: EMPTY_VALUE,
         },
         {
             id: "unwinding-drawing-group",
             label: "Тянущая группа:",
-            standard: "16",
+            standard: EMPTY_VALUE,
             deviationPm: "± 1",
-            start: "03-11-2028 09:30:00",
-            history: SAMPLE_HISTORY.map((entry) => ({ ...entry, value: "16" })),
+            start: EMPTY_VALUE,
+            history: [],
             stompStandardFieldKey: "ENTRY_DRAW_GROUP_SET_TENSION_MIS",
             stompFieldKey: "PRINTING_UNIT_INLET_ACT_TENSION_L_C_",
-            fallbackCurrent: "16",
+            fallbackCurrent: EMPTY_VALUE,
         },
         {
             id: "unwinding-coronator",
             label: "Коронатор:",
-            standard: "—",
-            deviationPm: "—",
-            start: "—",
+            standard: EMPTY_VALUE,
+            deviationPm: EMPTY_VALUE,
+            start: EMPTY_VALUE,
             history: [],
             stompFieldKey: "UNW_CORONA_CONTACTOR",
-            fallbackCurrent: "—",
+            fallbackCurrent: EMPTY_VALUE,
         },
     ],
     windingTitle: "Настройки намотки",
     winding: [
         {
-            id: "winding-upper-group",
-            label: "Верхняя группа:",
-            standard: "—",
-            deviationPm: "± 1",
-            start: "—",
-            history: [],
-            fallbackCurrent: "—",
-        },
-        {
             id: "winding-roll-tension",
             label: "Натяжение рулона:",
-            standard: "10",
-            deviationPm: "—",
-            start: "03-11-2028 09:30:00",
-            history: SAMPLE_HISTORY,
+            standard: EMPTY_VALUE,
+            deviationPm: EMPTY_VALUE,
+            start: EMPTY_VALUE,
+            history: [],
             stompStandardFieldKey: "REW_SET_TENSION_MIS",
             stompFieldKey: "REW_ACT_TENSION_CALCULATED",
-            fallbackCurrent: "10",
+            fallbackCurrent: EMPTY_VALUE,
         },
         {
             id: "winding-drawing-group",
             label: "Тянущая группа:",
-            standard: "10",
+            standard: EMPTY_VALUE,
             deviationPm: "± 1",
-            start: "03-11-2028 09:30:00",
-            history: SAMPLE_HISTORY,
+            start: EMPTY_VALUE,
+            history: [],
             stompStandardFieldKey: "REW_DRAW_GROUP_SET_TENSION_MIS",
             stompFieldKey: "REW_INLET_ACT_TENSION_L_C_",
-            fallbackCurrent: "10",
+            fallbackCurrent: EMPTY_VALUE,
         },
         {
             id: "winding-tension-drop",
             label: "Спад натяжения, %:",
-            standard: "70",
-            deviationPm: "—",
-            start: "03-11-2028 09:30:00",
-            history: SAMPLE_HISTORY.map((entry) => ({ ...entry, value: "70" })),
+            standard: EMPTY_VALUE,
+            deviationPm: EMPTY_VALUE,
+            start: EMPTY_VALUE,
+            history: [],
             stompStandardFieldKey: "REW_SET_TAPER_TENSION",
-            fallbackCurrent: "70",
+            fallbackCurrent: EMPTY_VALUE,
+        },
+        {
+            id: "winding-group-pressure",
+            label: "Давление группы намотки:",
+            standard: EMPTY_VALUE,
+            deviationPm: EMPTY_VALUE,
+            start: EMPTY_VALUE,
+            history: [],
+            fallbackCurrent: EMPTY_VALUE,
+            manualOnly: true,
+        },
+        {
+            id: "winding-roll-shaft-press",
+            label: "Прижим вала рулона:",
+            standard: EMPTY_VALUE,
+            deviationPm: EMPTY_VALUE,
+            start: EMPTY_VALUE,
+            history: [],
+            fallbackCurrent: EMPTY_VALUE,
+            manualOnly: true,
         },
     ],
     speedTitle: "Скорость",
     speed: {
         id: "print-speed",
         label: "Скорость печати:",
-        standard: "350",
-        deviationPm: "—",
-        start: "03-11-2028 09:30:00",
-        history: SAMPLE_HISTORY.map((entry) => ({ ...entry, value: "348" })),
+        standard: EMPTY_VALUE,
+        deviationPm: EMPTY_VALUE,
+        start: EMPTY_VALUE,
+        history: [],
         stompStandardFieldKey: "MAIN_MOTOR_SET_SPEED",
         stompFieldKey: "MAIN_MOTOR_CALC_SPEED_MIS",
-        fallbackCurrent: "348",
+        fallbackCurrent: EMPTY_VALUE,
     },
     rulesText:
         "Производить контроль и фиксацию параметров на каждом СТАРТЕ (при настройке и после длительных остановок более 1,5 часа). Периодичность заполнения карты контроля параметров печати — каждые 2 часа, но не реже, чем 1 раз на проект.",

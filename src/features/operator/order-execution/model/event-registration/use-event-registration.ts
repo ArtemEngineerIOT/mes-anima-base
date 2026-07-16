@@ -13,7 +13,7 @@ import { mapEventRegistrationDiscardSignalsPayload } from "./map-event-registrat
 import { mapEventRegistrationInitWizardPayload } from "./map-event-registration-init-wizard-payload";
 import { mapEventRegistrationProcessJournalPayload } from "./map-event-registration-process-journal-payload";
 import { mapEventRegistrationRegisterEventPayload } from "./map-event-registration-register-event-payload";
-import { getEventRegistrationSnapshot } from "./mock-event-registration";
+import { EMPTY_EVENT_REGISTRATION_SNAPSHOT } from "./empty-event-registration-snapshot";
 import {
     buildStep2SensorPrefill,
     mergeStep2SensorPrefill,
@@ -57,7 +57,6 @@ export function useEventRegistration({
     enabled,
     journalEnabled,
 }: UseEventRegistrationOptions) {
-    const fallbackSnapshot = useMemo(() => getEventRegistrationSnapshot(machineId), [machineId]);
     const machineSnapshot = useOrderExecutionMachineStompSnapshot();
     const { initWizard } = useEventRegistrationInitWizard();
     const { discardSignals, isDiscardSignalsPending } = useEventRegistrationDiscardSignals();
@@ -65,20 +64,19 @@ export function useEventRegistration({
     const { registerEvent: registerProductionEvent, isRegisterEventPending } =
         useEventRegistrationRegisterEvent();
 
-    const [snapshot, setSnapshot] = useState<EventRegistrationSnapshot>(fallbackSnapshot);
+    const [snapshot, setSnapshot] = useState<EventRegistrationSnapshot>(EMPTY_EVENT_REGISTRATION_SNAPSHOT);
     const [wizardSessionId, setWizardSessionId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const [step, setStep] = useState<EventRegistrationStep>(1);
-    const [draft, setDraft] = useState<EventRegistrationDraft>(() => createEmptyDraft(fallbackSnapshot));
-    const [journal, setJournal] = useState<ProcessJournalEntry[]>(() => fallbackSnapshot.initialJournal);
+    const [draft, setDraft] = useState<EventRegistrationDraft>(() =>
+        createEmptyDraft(EMPTY_EVENT_REGISTRATION_SNAPSHOT),
+    );
+    const [journal, setJournal] = useState<ProcessJournalEntry[]>([]);
     const [totalLengthM, setTotalLengthM] = useState<number | null>(null);
     const [isJournalLoading, setIsJournalLoading] = useState(false);
     const [journalLoadError, setJournalLoadError] = useState<string | null>(null);
-    const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>(
-        () => fallbackSnapshot.unprocessedEvents,
-    );
+    const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>([]);
     const [selectedUnprocessedId, setSelectedUnprocessedId] = useState<string | null>(null);
     const [deleteComment, setDeleteComment] = useState("");
     const [discardError, setDiscardError] = useState<string | null>(null);
@@ -93,39 +91,36 @@ export function useEventRegistration({
     loadProcessJournalRef.current = loadProcessJournal;
     const registerProductionEventRef = useRef(registerProductionEvent);
     registerProductionEventRef.current = registerProductionEvent;
-    const journalFallbackRef = useRef(fallbackSnapshot.initialJournal);
-    journalFallbackRef.current = fallbackSnapshot.initialJournal;
+    const journalFallbackRef = useRef<ProcessJournalEntry[]>([]);
 
-    const resetToFallbackSnapshot = useCallback(() => {
-        setSnapshot(fallbackSnapshot);
+    const resetToEmptySnapshot = useCallback(() => {
+        setSnapshot(EMPTY_EVENT_REGISTRATION_SNAPSHOT);
         setWizardSessionId(null);
-    }, [fallbackSnapshot]);
+    }, []);
 
     const load = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
         if (!trimmedWorkAreaId) {
-            resetToFallbackSnapshot();
+            resetToEmptySnapshot();
             setLoadError("Не удалось определить workAreaId этапа");
             return;
         }
 
-        setIsLoading(true);
+        setWizardSessionId(null);
         setLoadError(null);
 
         try {
             const payload = await initWizardRef.current({ workAreaId: trimmedWorkAreaId });
-            const mapped = mapEventRegistrationInitWizardPayload(payload, fallbackSnapshot);
+            const mapped = mapEventRegistrationInitWizardPayload(payload, EMPTY_EVENT_REGISTRATION_SNAPSHOT);
             setWizardSessionId(mapped.wizardSessionId || null);
             setSnapshot(mapped.snapshot);
         } catch (error) {
-            resetToFallbackSnapshot();
+            resetToEmptySnapshot();
             setLoadError(
                 error instanceof Error ? error.message : "Не удалось загрузить данные регистрации события",
             );
-        } finally {
-            setIsLoading(false);
         }
-    }, [fallbackSnapshot, resetToFallbackSnapshot, workAreaId]);
+    }, [resetToEmptySnapshot, workAreaId]);
 
     const loadJournal = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -157,7 +152,6 @@ export function useEventRegistration({
 
     useEffect(() => {
         if (!enabled) {
-            setIsLoading(false);
             return;
         }
 
@@ -174,11 +168,11 @@ export function useEventRegistration({
     }, [journalEnabled, loadJournal]);
 
     useEffect(() => {
-        resetToFallbackSnapshot();
-        setJournal(journalFallbackRef.current);
+        resetToEmptySnapshot();
+        setJournal([]);
         setTotalLengthM(null);
         setJournalLoadError(null);
-    }, [machineId, resetToFallbackSnapshot]);
+    }, [machineId, resetToEmptySnapshot]);
 
     useEffect(() => {
         setStep(1);
@@ -272,7 +266,7 @@ export function useEventRegistration({
 
     const canProceedStep1 = canProceedEventRegistrationStep1(draft);
     const canProceedStep2 = canProceedEventRegistrationStep2(draft, selectedCode);
-    const isWizardDisabled = isLoading || Boolean(loadError) || isRegisterEventPending;
+    const isWizardDisabled = !wizardSessionId || Boolean(loadError) || isRegisterEventPending;
 
     const goToStep = useCallback(
         (target: EventRegistrationStep) => {
@@ -424,7 +418,6 @@ export function useEventRegistration({
     return {
         snapshot,
         wizardSessionId,
-        isLoading,
         loadError,
         reload: load,
         isWizardDisabled,

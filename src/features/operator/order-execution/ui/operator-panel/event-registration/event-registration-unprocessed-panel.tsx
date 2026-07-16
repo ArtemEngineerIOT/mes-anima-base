@@ -1,5 +1,8 @@
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { Informer } from "@/shared/ui/kit/informer";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
@@ -7,8 +10,8 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 import {
     dataTableBodyCellClassName,
     dataTableHeadCellClassName,
-    dataTableScrollViewportClassName,
-    dataTableShellClassName,
+    dataTableInsetShellClassName,
+    dataTableSplitScrollBodyClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -40,65 +43,101 @@ export function EventRegistrationUnprocessedPanel({
         canDeleteSelectedSignals,
     } = registration;
 
+    const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(unprocessed, {
+        initialPageSize: 10,
+    });
+
     return (
         <div className="grid gap-3">
             <div className={cnSectionBlockTitle()}>Необработанные сигналы машины</div>
 
-            <div className={dataTableScrollViewportClassName}>
-                <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                    <TableHeader className="bg-muted/40">
+            <DataTableViewport
+                layout="fixed"
+                visibleBodyRows={pageSize}
+                footer={
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                }
+            >
+                <Table
+                    className={cn(
+                        dataTableInsetShellClassName,
+                        "min-w-[520px] border-separate border-spacing-0 text-[12px]",
+                    )}
+                >
+                    <TableHeader>
                         <TableRow className="hover:!bg-transparent">
                             <TableHead
-                                className={cn(dataTableHeadCellClassName, selectionColumnClassName)}
+                                className={cn(dataTableHeadCellClassName, "bg-muted/40", selectionColumnClassName)}
                                 aria-label="Выбор сигнала"
                             />
-                            <TableHead className={dataTableHeadCellClassName}>Имя</TableHead>
-                            <TableHead className={dataTableHeadCellClassName}>Начало</TableHead>
-                            <TableHead className={dataTableHeadCellClassName}>Завершение</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Имя</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Завершение</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
-                        {unprocessed.map((row) => {
-                            const selected = selectedUnprocessedId === row.id;
+                    <TableBody className={dataTableSplitScrollBodyClassName}>
+                        {pageItems.length > 0 ? (
+                            pageItems.map((row) => {
+                                const selected = selectedUnprocessedId === row.id;
 
-                            return (
-                                <TableRow key={row.id} className={cn(selected && "bg-muted/50")}>
-                                    <TableCell className={cn(dataTableBodyCellClassName, selectionColumnClassName)}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selected}
-                                            disabled={disabled}
-                                            onChange={() => toggleUnprocessedSelection(row.id)}
-                                            aria-label={`Выбрать сигнал ${row.description}`}
-                                            className="size-4 rounded border-input"
-                                        />
-                                    </TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.description}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.detectedAt}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.endedAt}</TableCell>
-                                </TableRow>
-                            );
-                        })}
-                        {unprocessed.length === 0 ? (
+                                return (
+                                    <TableRow key={row.id} className={cn(selected && "bg-muted/50")}>
+                                        <TableCell
+                                            className={cn(dataTableBodyCellClassName, selectionColumnClassName)}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selected}
+                                                disabled={disabled}
+                                                onChange={() => toggleUnprocessedSelection(row.id)}
+                                                aria-label={`Выбрать сигнал ${row.description}`}
+                                                className="size-4 rounded border-input"
+                                            />
+                                        </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.description}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.detectedAt}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.endedAt}</TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        ) : (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
-                                    className={cn(dataTableBodyCellClassName, "py-4 text-center text-muted-foreground")}
+                                    className={cn(
+                                        dataTableBodyCellClassName,
+                                        "py-6 text-center text-muted-foreground",
+                                    )}
                                 >
                                     Нет необработанных сигналов
                                 </TableCell>
                             </TableRow>
-                        ) : null}
+                        )}
                     </TableBody>
                 </Table>
-            </div>
+            </DataTableViewport>
 
             <div className="grid gap-2">
                 <Label htmlFor="event-discard-comment" className={comboboxFieldLabelClassName}>
                     Комментарий
                 </Label>
                 {discardError ? (
-                    <Informer tone="alert" variant="bordered" size="s" title="Ошибка удаления" description={discardError} />
+                    <Informer
+                        tone="alert"
+                        variant="bordered"
+                        size="s"
+                        title="Ошибка удаления"
+                        description={discardError}
+                    />
                 ) : null}
                 <div className="relative">
                     <textarea

@@ -42,7 +42,7 @@ export function OrderExecutionOperatorPanel({
                 <OrderExecutionEventRegistrationSection onExpandedChange={setEventRegistrationExpanded} />
                 <OrderExecutionReleaseSection workAreaId={workAreaId} />
 
-                <OrderExecutionStageCompletionSection machineId={machineId} />
+                <OrderExecutionStageCompletionSection workAreaId={workAreaId} />
             </div>
         </EventRegistrationProvider>
     );

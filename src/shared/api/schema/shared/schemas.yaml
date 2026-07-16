@@ -1201,6 +1201,249 @@ components:
             items:
                 $ref: "#/components/schemas/OrderExecutionReleaseWorkAreaRequestItem"
 
+        OrderExecutionReleaseProductionEventDisplayRow:
+            type: object
+            properties:
+                characteristic_label:
+                    type: string
+                    nullable: true
+                value_text:
+                    type: string
+                    nullable: true
+                unit_label:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionReleaseProductionCurrentEvent:
+            type: object
+            properties:
+                machine_event_signal_id:
+                    type: string
+                    nullable: true
+                event_code:
+                    type: string
+                    nullable: true
+                event_code_label:
+                    type: string
+                    nullable: true
+                event_at:
+                    type: string
+                    nullable: true
+                informer_detail:
+                    type: string
+                    nullable: true
+                register_action:
+                    type: string
+                    nullable: true
+                    description: PREFILL_PROD | REGISTER_DEFECT
+                event_display_rows:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionReleaseProductionEventDisplayRow"
+            additionalProperties: true
+
+        OrderExecutionReleaseProductionEventResultItem:
+            type: object
+            description: Элемент `result` в ответе eventReleaseProduction (listPending)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                plate_title:
+                    type: string
+                    nullable: true
+                pending_count:
+                    type: integer
+                    nullable: true
+                manual_release_blocked:
+                    type: boolean
+                    nullable: true
+                empty_state_message:
+                    type: string
+                    nullable: true
+                current_event:
+                    type: array
+                    description: Текущее событие (обычно 0 или 1 элемент); берём первый
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionReleaseProductionCurrentEvent"
+            additionalProperties: true
+
+        OrderExecutionReleaseProductionEventResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventResultItem"
+
+        OrderExecutionDiscardProductionEventRequestItem:
+            type: object
+            description: Запрос discardEvent (UI-61 SCR-06)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                machineEventSignalId:
+                    type: string
+                    description: Id сигнала из current_event (`machine_event_signal_id`)
+                operatorRef:
+                    type: string
+                    description: Оператор (`operator_ref`)
+            required:
+                - workAreaId
+                - machineEventSignalId
+            additionalProperties: true
+
+        OrderExecutionDiscardProductionEventRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionDiscardProductionEventRequestItem"
+
+        OrderExecutionDiscardProductionEventResultItem:
+            type: object
+            description: Элемент `result` в ответе discardEvent
+            properties:
+                machine_event_signal_id:
+                    type: string
+                    nullable: true
+                processing_status:
+                    type: string
+                    nullable: true
+                    description: DISCARDED
+                pending_count:
+                    type: integer
+                    nullable: true
+                manual_release_blocked:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionDiscardProductionEventResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionDiscardProductionEventResultItem"
+
+        OrderExecutionAcceptProdFromEventRequestItem:
+            type: object
+            description: Запрос acceptProdFromEvent (UI-61 SCR-06)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                machineEventSignalId:
+                    type: string
+                    description: Id сигнала из current_event (`machine_event_signal_id`)
+                operatorRef:
+                    type: string
+                    description: Оператор (`operator_ref`)
+            required:
+                - workAreaId
+                - machineEventSignalId
+            additionalProperties: true
+
+        OrderExecutionAcceptProdFromEventRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionAcceptProdFromEventRequestItem"
+
+        OrderExecutionAcceptProdFromEventResultItem:
+            type: object
+            description: Элемент `result` в ответе acceptProdFromEvent
+            properties:
+                machine_event_signal_id:
+                    type: string
+                    nullable: true
+                processing_status:
+                    type: string
+                    nullable: true
+                    description: OPERATOR_ACCEPTED
+                prefill_output_length_m:
+                    type: number
+                    nullable: true
+                prefill_output_weight_kg:
+                    type: number
+                    nullable: true
+                pending_count:
+                    type: integer
+                    nullable: true
+                manual_release_blocked:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionAcceptProdFromEventResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionAcceptProdFromEventResultItem"
+
+        OrderExecutionAcceptRawFromEventResultItem:
+            type: object
+            description: Элемент `result` в ответе acceptRawFromEvent (UI-61a SCR-04)
+            properties:
+                machine_event_signal_id:
+                    type: string
+                    nullable: true
+                processing_status:
+                    type: string
+                    nullable: true
+                    description: OPERATOR_ACCEPTED
+                prefill_output_length_m:
+                    type: number
+                    nullable: true
+                prefill_output_weight_kg:
+                    type: number
+                    nullable: true
+                prefill_material_roll_id:
+                    type: string
+                    nullable: true
+                prefill_barcode:
+                    type: string
+                    nullable: true
+                pending_count:
+                    type: integer
+                    nullable: true
+                manual_release_blocked:
+                    type: boolean
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionAcceptRawFromEventResponse:
+            type: array
+            minItems: 1
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionAcceptRawFromEventResultItem"
+
         OrderExecutionReleaseFormInitResultItem:
             type: object
             description: Элемент `result` в ответе getReleaseFormInit
@@ -2673,6 +2916,141 @@ components:
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+
+        OrderExecutionStageCompletionInitResultItem:
+            type: object
+            description: Элемент result в ответе orderStageCompletionInit (SCR-08)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                scrap_percent:
+                    type: number
+                    nullable: true
+                meterage_total_m:
+                    type: number
+                    nullable: true
+                can_complete:
+                    type: boolean
+                    nullable: true
+                input_rolls:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                output_releases:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                process_journal:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                unprocessed_events:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                blocking_issues:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                warnings:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+            additionalProperties: true
+
+        OrderExecutionStageCompletionInitResponse:
+            type: array
+            minItems: 1
+            description: Ответ orderStageCompletionInit (SCR-08 / UC-16)
+            items:
+                type: object
+                properties:
+                    error_code:
+                        type: string
+                    error_message:
+                        type: string
+                        nullable: true
+                    result:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/OrderExecutionStageCompletionInitResultItem"
+                additionalProperties: true
+
+        OrderExecutionStageCompletionSubmitRequestItem:
+            type: object
+            description: Элемент тела orderStageCompletionSubmit (SCR-08)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                completedBy:
+                    type: string
+                    description: Оператор / user ref (`completed_by`)
+                comment:
+                    type: string
+                    description: Комментарий оператора (на бэке в БД не пишется)
+            required:
+                - workAreaId
+                - completedBy
+            additionalProperties: true
+
+        OrderExecutionStageCompletionSubmitRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionStageCompletionSubmitRequestItem"
+
+        OrderExecutionStageCompletionSubmitResultItem:
+            type: object
+            description: Элемент result в ответе orderStageCompletionSubmit
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                status_code:
+                    type: string
+                    nullable: true
+                warnings:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                paused_sibling_modal:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+                blocking_issues:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: true
+            additionalProperties: true
+
+        OrderExecutionStageCompletionSubmitResponse:
+            type: array
+            minItems: 1
+            description: Ответ orderStageCompletionSubmit (SCR-08 / UC-16)
+            items:
+                type: object
+                properties:
+                    error_code:
+                        type: string
+                    error_message:
+                        type: string
+                        nullable: true
+                    result:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/OrderExecutionStageCompletionSubmitResultItem"
+                additionalProperties: true
 
         # Универсальный ответ бэка: массив узлов с примитивами и вложенным `table` (рекурсия без ограничения глубины).
         ServerDataRow:

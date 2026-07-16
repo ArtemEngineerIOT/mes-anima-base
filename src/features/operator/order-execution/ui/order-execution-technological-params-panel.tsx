@@ -23,6 +23,12 @@ import {
 } from "../model/resolve-technological-param-stomp-value";
 import { resolveTechnologicalParamsStompSyncInformer } from "../model/resolve-technological-params-stomp-sync-informer";
 import {
+    joinTechnologicalParamManualParts,
+    resolveTechnologicalParamPartsCount,
+    sanitizeTechnologicalParamNumericInput,
+    splitTechnologicalParamManualParts,
+} from "../model/technological-params-manual-value";
+import {
     buildTechnologicalParamsDraft,
     buildSavedPresserState,
     createDefaultManualInputMeta,
@@ -63,9 +69,64 @@ type OrderExecutionTechnologicalParamsPanelProps = {
 const standardCellClassName = "bg-emerald-500/15 text-center tabular-nums";
 /** Текущее значение — оранжевый/янтарный фон (тон warning / amber из kit Informer). */
 const currentValueCellClassName = "bg-amber-500/15 text-center tabular-nums font-medium";
-const manualInputClassName = "h-8 text-center text-[12px] tabular-nums";
+/** Колонка «Текущее значение» / ручной ввод — фиксированная ширина. */
+const currentValueColumnClassName = "w-[450px] min-w-[450px] max-w-[450px]";
+const manualInputClassName = "h-8 w-full text-center text-[12px] tabular-nums";
+const manualPartInputClassName = cn(manualInputClassName, "min-w-0 flex-1 px-1");
 const historyValueCellClassName = "text-center tabular-nums";
 const bodyCellClassName = cn(dataTableBodyCellClassName, "text-center");
+
+function ManualCompositeValueInput({
+    partsCount,
+    value,
+    onChange,
+    ariaLabel,
+}: {
+    partsCount: number;
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel: string;
+}) {
+    if (partsCount <= 1) {
+        return (
+            <Input
+                className={manualInputClassName}
+                value={value}
+                onChange={(event) => onChange(sanitizeTechnologicalParamNumericInput(event.target.value))}
+                inputMode="decimal"
+                aria-label={ariaLabel}
+            />
+        );
+    }
+
+    const parts = splitTechnologicalParamManualParts(value, partsCount);
+
+    return (
+        <div className="flex w-full items-center justify-center gap-1" role="group" aria-label={ariaLabel}>
+            {parts.map((part, index) => (
+                <div key={`manual-part-${index}`} className="flex min-w-0 flex-1 items-center gap-1">
+                    {index > 0 ? (
+                        <span className="shrink-0 text-muted-foreground" aria-hidden>
+                            -
+                        </span>
+                    ) : null}
+                    <Input
+                        className={manualPartInputClassName}
+                        value={part}
+                        onChange={(event) => {
+                            const nextParts = [...parts];
+                            nextParts[index] = sanitizeTechnologicalParamNumericInput(event.target.value);
+                            onChange(joinTechnologicalParamManualParts(nextParts));
+                        }}
+                        inputMode="decimal"
+                        aria-label={`${ariaLabel}, значение ${index + 1} из ${partsCount}`}
+                        placeholder="…"
+                    />
+                </div>
+            ))}
+        </div>
+    );
+}
 
 function TechnologicalParamsSectionTitle({ iconName, title }: { iconName: string; title: string }) {
     return (
@@ -84,6 +145,7 @@ type MeasurableRow = {
     stompStandardFieldKey?: TechnologicalParamTagKey;
     fallbackCurrent: string;
     alert?: boolean;
+    manualOnly?: boolean;
 };
 
 type HistoryColumnMeta = {
@@ -140,7 +202,13 @@ function DynamicHeaderGroupCells({ manualEntry }: { manualEntry: boolean }) {
         return (
             <>
                 <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")} colSpan={3} />
-                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>
+                <TableHead
+                    className={cn(
+                        dataTableStickyHeadCellClassName,
+                        currentValueColumnClassName,
+                        "text-center",
+                    )}
+                >
                     Текущее значение
                 </TableHead>
             </>
@@ -150,8 +218,11 @@ function DynamicHeaderGroupCells({ manualEntry }: { manualEntry: boolean }) {
     return (
         <>
             <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Старт</TableHead>
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")} colSpan={2} />
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>
+            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Срез 1</TableHead>
+            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Срез 2</TableHead>
+            <TableHead
+                className={cn(dataTableStickyHeadCellClassName, currentValueColumnClassName, "text-center")}
+            >
                 Текущее значение
             </TableHead>
         </>
@@ -214,7 +285,13 @@ function DynamicHeaderMetaCells({
                         <HistoryColumnHeader meta={meta} />
                     </TableHead>
                 ))}
-                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-36 text-center align-top")}>
+                <TableHead
+                    className={cn(
+                        dataTableStickyHeadCellClassName,
+                        currentValueColumnClassName,
+                        "text-center align-top",
+                    )}
+                >
                     {manualInputMeta && onManualInputMetaChange ? (
                         <ManualInputColumnHeader meta={manualInputMeta} onMetaChange={onManualInputMetaChange} />
                     ) : null}
@@ -236,7 +313,7 @@ function DynamicHeaderMetaCells({
                     <HistoryColumnHeader meta={meta} />
                 </TableHead>
             ))}
-            <TableHead className={dataTableStickyHeadCellClassName} />
+            <TableHead className={cn(dataTableStickyHeadCellClassName, currentValueColumnClassName)} />
         </>
     );
 }
@@ -279,6 +356,8 @@ function DynamicValueCells({
     manualValue,
     onManualValueChange,
     currentValue,
+    standardValue,
+    partsCount = 1,
 }: {
     row: MeasurableRow;
     manualEntry: boolean;
@@ -286,8 +365,11 @@ function DynamicValueCells({
     manualValue: string;
     onManualValueChange: (value: string) => void;
     currentValue: string;
+    standardValue: string;
+    partsCount?: number;
 }) {
-    const canManualInput = row.standard.trim() !== "" && row.standard !== "—";
+    const canManualInput =
+        Boolean(row.manualOnly) || (standardValue.trim() !== "" && standardValue !== "—");
 
     if (manualEntry) {
         const historyCells = padHistoryEntries(history, 3);
@@ -295,14 +377,13 @@ function DynamicValueCells({
         return (
             <>
                 <HistoryValueCells entries={historyCells} />
-                <TableCell className={cn(bodyCellClassName, currentValueCellClassName)}>
+                <TableCell className={cn(bodyCellClassName, currentValueCellClassName, currentValueColumnClassName)}>
                     {canManualInput ? (
-                        <Input
-                            className={manualInputClassName}
+                        <ManualCompositeValueInput
+                            partsCount={partsCount}
                             value={manualValue}
-                            onChange={(event) => onManualValueChange(event.target.value)}
-                            inputMode="decimal"
-                            aria-label={`Текущее значение: ${row.id}`}
+                            onChange={onManualValueChange}
+                            ariaLabel={`Текущее значение: ${row.id}`}
                         />
                     ) : (
                         "—"
@@ -319,7 +400,9 @@ function DynamicValueCells({
         <>
             <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>{startValue}</TableCell>
             <HistoryValueCells entries={historyCells} />
-            <TableCell className={cn(bodyCellClassName, currentValueCellClassName)}>{currentValue}</TableCell>
+            <TableCell className={cn(bodyCellClassName, currentValueCellClassName, currentValueColumnClassName)}>
+                {currentValue}
+            </TableCell>
         </>
     );
 }
@@ -385,7 +468,17 @@ function PrintingSectionsTable({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {rows.map((row) => (
+                    {rows.map((row) => {
+                        const currentValue = resolveCurrentValue(row);
+                        const standardValue = resolveStandardValue(row);
+                        const partsCount = resolveTechnologicalParamPartsCount({
+                            stompFieldKey: row.stompFieldKey,
+                            stompStandardFieldKey: row.stompStandardFieldKey,
+                            standardValue,
+                            currentValue,
+                        });
+
+                        return (
                         <TableRow
                             key={row.id}
                             className={
@@ -414,7 +507,7 @@ function PrintingSectionsTable({
                                 )}
                             </TableCell>
                             <TableCell className={cn(bodyCellClassName, standardCellClassName)}>
-                                {resolveStandardValue(row) || "—"}
+                                {standardValue || "—"}
                             </TableCell>
                             <TableCell className={cn(bodyCellClassName, "tabular-nums")}>
                                 {row.deviationPm}
@@ -425,10 +518,13 @@ function PrintingSectionsTable({
                                 history={historyByRowId[row.id] ?? []}
                                 manualValue={manualValues[row.id] ?? ""}
                                 onManualValueChange={(value) => onManualValueChange(row.id, value)}
-                                currentValue={resolveCurrentValue(row)}
+                                currentValue={currentValue}
+                                standardValue={standardValue}
+                                partsCount={partsCount}
                             />
                         </TableRow>
-                    ))}
+                        );
+                    })}
                 </TableBody>
             </Table>
         </section>
@@ -512,6 +608,7 @@ function ProcessParamsTable({
                                 manualValue={manualValues[row.id] ?? ""}
                                 onManualValueChange={(value) => onManualValueChange(row.id, value)}
                                 currentValue={resolveCurrentValue(row)}
+                                standardValue={resolveStandardValue(row)}
                             />
                         </TableRow>
                     ))}
@@ -590,6 +687,7 @@ function SpeedTable({
                             manualValue={manualValue}
                             onManualValueChange={onManualValueChange}
                             currentValue={resolveCurrentValue(row)}
+                            standardValue={resolveStandardValue(row)}
                         />
                     </TableRow>
                 </TableBody>
@@ -647,11 +745,11 @@ export function OrderExecutionTechnologicalParamsPanel({
 
     const currentRollNumber = useMemo(() => {
         if (!stompState.isStompConnected || !stompState.hasReceivedTagsData) {
-            return "002672230  1";
+            return "";
         }
 
         const reel = stompState.tagsSnapshot.fields.reel_countmeter;
-        return reel === undefined || reel === null || reel === "" ? "002672230  1" : String(reel);
+        return reel === undefined || reel === null || reel === "" ? "" : String(reel);
     }, [stompState]);
 
     const handleManualEntryChange = (checked: boolean) => {
