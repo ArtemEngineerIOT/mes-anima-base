@@ -1,7 +1,6 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { useMaterialsWriteoff } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff";
-import { useOrderExecutionMachineStompState } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
-import { resolveMaterialsWriteoffMachinePanel } from "@/features/operator/order-execution/model/machine-stomp/resolve-materials-writeoff-machine-panel";
+import { useMaterialsWriteoffRawEvent } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff-raw-event";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { MaterialsWriteoffFormPanel } from "@/features/operator/order-execution/ui/materials-writeoff-form-panel";
 import { MaterialsWriteoffPresenceTable } from "@/features/operator/order-execution/ui/materials-writeoff-presence-table";
@@ -18,8 +17,6 @@ type OrderExecutionMaterialsWriteoffProps = {
 };
 
 export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: OrderExecutionMaterialsWriteoffProps) {
-    const machineStompState = useOrderExecutionMachineStompState();
-    const machineDataPanel = resolveMaterialsWriteoffMachinePanel(machineStompState);
     const {
         barcode,
         setBarcode,
@@ -36,8 +33,8 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         scanBanner,
         isSearching,
         searchError,
-        expandedOpId,
-        setExpandedOpId,
+        expandedOpIds,
+        toggleExpandedOpId,
         search,
         canSearch,
         writeoffForm,
@@ -50,6 +47,7 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         movingToUnwindRowId,
         moveToUnwindError,
         selectForWriteoff,
+        applyRawEventPrefill,
         canCalculateWeight,
         isReflectReturnEnabled,
         isFullWriteoffEnabled,
@@ -67,16 +65,37 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         writeoffWeightError,
         showWriteoffFlow,
         stageRegistry,
+        refreshWriteoffTables,
     } = useMaterialsWriteoff({ workAreaId, enabled });
 
-    useEffect(() => {
-        if (!enabled || stageRegistry.isLoading) {
-            return;
+    const {
+        rawEvent,
+        rows: rawEventRows,
+        isLoading: isRawEventLoading,
+        error: rawEventError,
+        discardEventRoll,
+        isDiscarding,
+        discardError,
+        acceptRawFromEvent,
+        isAccepting,
+        acceptError,
+    } = useMaterialsWriteoffRawEvent({
+        workAreaId,
+        enabled,
+        onAcceptPrefill: applyRawEventPrefill,
+        onResolved: refreshWriteoffTables,
+    });
+
+    const rawEventPanelTitle = useMemo(() => {
+        if (!rawEvent.currentEvent) {
+            return rawEvent.plateTitle || "Событие с машины";
         }
 
-        const firstExpandable = stageRegistry.stageOperations.find((op) => op.details);
-        setExpandedOpId(firstExpandable?.id ?? null);
-    }, [enabled, stageRegistry.isLoading, stageRegistry.stageOperations, setExpandedOpId]);
+        return (
+            [rawEvent.plateTitle, rawEvent.currentEvent.eventCodeLabel].filter(Boolean).join(" · ") ||
+            "Событие с машины"
+        );
+    }, [rawEvent.currentEvent, rawEvent.plateTitle]);
 
     const handleSearch = () => {
         void search();
@@ -169,11 +188,60 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                 onSelectForWriteoff={selectForWriteoff}
             />
 
-            {enabled ? (
+            {rawEventError ? (
+                <Informer
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Событие с машины"
+                    description={rawEventError}
+                />
+            ) : null}
+
+            {enabled && !isRawEventLoading && !rawEventError && rawEvent.currentEvent ? (
                 <MachineDataPanel
-                    rows={machineDataPanel.rows}
-                    updatedAt={machineDataPanel.updatedAt}
-                    tone={machineDataPanel.tone}
+                    title={rawEventPanelTitle}
+                    rows={rawEventRows}
+                    tone="warning"
+                    updatedAt={rawEvent.currentEvent.eventAt || null}
+                    updatedAtLabel="Зарегистрировано от"
+                    emptyText="Нет характеристик события"
+                    footer={
+                        <div className="flex flex-col items-end gap-2">
+                            {acceptError || discardError ? (
+                                <div className="w-full text-[12px] text-destructive">
+                                    {acceptError || discardError}
+                                </div>
+                            ) : null}
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    pending={isAccepting}
+                                    pendingLabel="Регистрация…"
+                                    disabled={isDiscarding || isAccepting}
+                                    onClick={() => {
+                                        void acceptRawFromEvent();
+                                    }}
+                                >
+                                    Зарегистрировать
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    pending={isDiscarding}
+                                    pendingLabel="Отклонение…"
+                                    disabled={isDiscarding || isAccepting}
+                                    onClick={() => {
+                                        void discardEventRoll();
+                                    }}
+                                >
+                                    Отклонить
+                                </Button>
+                            </div>
+                        </div>
+                    }
                 />
             ) : null}
 
@@ -220,8 +288,8 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
                 stageRegistryAsOf={stageRegistry.asOf}
                 printError={stageRegistry.printError}
                 printingMaterialRollId={stageRegistry.printingMaterialRollId}
-                expandedOpId={expandedOpId}
-                onExpandedOpIdChange={setExpandedOpId}
+                expandedOpIds={expandedOpIds}
+                onToggleExpandedOpId={toggleExpandedOpId}
                 onPrintReturnLabel={(materialRollId) => {
                     void stageRegistry.printReturnLabel(materialRollId);
                 }}

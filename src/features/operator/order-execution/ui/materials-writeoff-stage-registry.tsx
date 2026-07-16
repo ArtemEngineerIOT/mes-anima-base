@@ -20,8 +20,8 @@ type MaterialsWriteoffStageRegistryProps = {
     stageRegistryAsOf?: string | null;
     printError?: string | null;
     printingMaterialRollId?: string | null;
-    expandedOpId: string | null;
-    onExpandedOpIdChange: (id: string | null) => void;
+    expandedOpIds: ReadonlySet<string>;
+    onToggleExpandedOpId: (id: string) => void;
     onPrintReturnLabel: (materialRollId: string) => void;
 };
 
@@ -32,8 +32,8 @@ export function MaterialsWriteoffStageRegistry({
     stageRegistryAsOf = null,
     printError = null,
     printingMaterialRollId = null,
-    expandedOpId,
-    onExpandedOpIdChange,
+    expandedOpIds,
+    onToggleExpandedOpId,
     onPrintReturnLabel,
 }: MaterialsWriteoffStageRegistryProps) {
     return (
@@ -87,7 +87,7 @@ export function MaterialsWriteoffStageRegistry({
                                 </TableRow>
                             ) : (
                                 stageOperations.map((op) => {
-                                    const isExpanded = expandedOpId === op.id;
+                                    const isExpanded = expandedOpIds.has(op.id);
                                     return (
                                         <Fragment key={op.id}>
                                             <TableRow>
@@ -96,9 +96,7 @@ export function MaterialsWriteoffStageRegistry({
                                                         <button
                                                             type="button"
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent"
-                                                            onClick={() =>
-                                                                onExpandedOpIdChange(isExpanded ? null : op.id)
-                                                            }
+                                                            onClick={() => onToggleExpandedOpId(op.id)}
                                                             aria-label="toggle row"
                                                         >
                                                             <Icon

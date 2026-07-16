@@ -15,13 +15,13 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 import { Informer } from "@/shared/ui/kit/informer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
-import type { MachineId } from "../../model/types";
 import { useStageCompletion } from "../../model/use-stage-completion";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { OrderExecutionSuspendedStageModal } from "../modal/order-execution-suspended-stage-modal";
+import { StageCompletionPendingEventsTable } from "./stage-completion-pending-events-table";
 
 type OrderExecutionStageCompletionSectionProps = {
-    machineId: MachineId;
+    workAreaId?: string;
 };
 
 const blockTitleClass = cnSectionBlockTitle("pb-2");
@@ -30,28 +30,42 @@ function formatNumber(value: number): string {
     return value.toLocaleString("ru-RU");
 }
 
-export function OrderExecutionStageCompletionSection({ machineId }: OrderExecutionStageCompletionSectionProps) {
-    const m = useStageCompletion(machineId);
+export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecutionStageCompletionSectionProps) {
+    const [expanded, setExpanded] = useState(false);
+    const m = useStageCompletion({ workAreaId, enabled: expanded });
     const [suspendedModalOpen, setSuspendedModalOpen] = useState(false);
     const { snapshot } = m;
 
     const headerTone =
-        m.completionHints.length > 0 && !m.stageCompleted ? ("alert" as const) : m.stageCompleted ? ("success" as const) : undefined;
-    const headerCount =
-        m.stageCompleted
-            ? undefined
-            : m.completionHints.length > 0
-              ? m.completionHints.length
+        m.completionHints.length > 0 && !m.stageCompleted
+            ? ("alert" as const)
+            : m.stageCompleted
+              ? ("success" as const)
               : undefined;
+    const headerCount =
+        m.stageCompleted ? undefined : m.completionHints.length > 0 ? m.completionHints.length : undefined;
 
     const handleCompleteStageClick = () => {
         if (!m.canSubmitPrerequisites || m.stageCompleted) return;
-        if (snapshot.hasSuspendedStageOnMachine) {
-            setSuspendedModalOpen(true);
-            return;
-        }
-        m.tryFinalizeStage();
+        void m.tryFinalizeStage().then((result) => {
+            if (result.showSuspendedModal) {
+                setSuspendedModalOpen(true);
+            }
+        });
     };
+
+    const blockingDescription =
+        m.completionHints.length === 1
+            ? m.completionHints[0]
+            : m.completionHints.length > 1
+              ? (
+                    <ul className="list-disc space-y-1 pl-4">
+                        {m.completionHints.map((hint) => (
+                            <li key={hint}>{hint}</li>
+                        ))}
+                    </ul>
+                )
+              : "Завершение этапа сейчас недоступно.";
 
     return (
         <>
@@ -61,8 +75,19 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                 tone={headerTone}
                 count={headerCount}
                 keepMounted
+                onExpandedChange={setExpanded}
             >
                 <div className="flex flex-col gap-5">
+                    {m.initError ? (
+                        <Informer
+                            tone="alert"
+                            variant="bordered"
+                            size="s"
+                            title="Ошибка загрузки"
+                            description={m.initError}
+                        />
+                    ) : null}
+
                     {m.stageCompleted ? (
                         <Informer
                             tone="success"
@@ -86,7 +111,9 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                                         <TableHead className={dataTableStickyHeadCellClassName}>Номенклатура</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Номенклатура</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Серия</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Количество</TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                            Количество
+                                        </TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм.</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Машина</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Статус</TableHead>
@@ -98,13 +125,15 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                                         <TableRow
                                             key={row.id}
                                             className={
-                                                row.status === "Заблокирован"
+                                                row.blocked
                                                     ? "!bg-destructive/15 hover:!bg-destructive/25 dark:!bg-destructive/20"
                                                     : undefined
                                             }
                                         >
                                             <TableCell className={dataTableBodyCellClassName}>{row.material}</TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.nomenclature}</TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>
+                                                {row.nomenclature}
+                                            </TableCell>
                                             <TableCell className={dataTableBodyCellClassName}>{row.series}</TableCell>
                                             <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
                                                 {formatNumber(row.quantity)}
@@ -128,12 +157,20 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                                     <TableRow>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Артикул</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Номен.</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-center")}>Перемотка</TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-center")}>
+                                            Перемотка
+                                        </TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Серия</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Нетто</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Брутто</TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                            Нетто
+                                        </TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                            Брутто
+                                        </TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 1</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Кол-во 1</TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                            Кол-во 1
+                                        </TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>FR</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -148,7 +185,9 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                                             }
                                         >
                                             <TableCell className={dataTableBodyCellClassName}>{row.article}</TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.nomenclature}</TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>
+                                                {row.nomenclature}
+                                            </TableCell>
                                             <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
                                                 <input
                                                     type="checkbox"
@@ -178,6 +217,10 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                         </div>
                     </div>
 
+                    <div className="text-right text-[12px] font-bold uppercase text-foreground">
+                        Расчётный брак: {snapshot.defectPercent}%
+                    </div>
+
                     <div>
                         <div className={blockTitleClass}>Журнал событий</div>
                         <div className={dataTableScrollViewportClassName}>
@@ -188,74 +231,108 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                                         <TableHead className={dataTableStickyHeadCellClassName}>Код события</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Начало</TableHead>
                                         <TableHead className={dataTableStickyHeadCellClassName}>Конец</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Метраж</TableHead>
+                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
+                                            Метраж
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {snapshot.eventJournal.map((row) => {
-                                        const isExpanded = m.expandedEventId === row.id;
+                                        const isExpanded = m.expandedEventIds.has(row.id);
+                                        const details = row.details ?? [];
                                         return (
                                             <Fragment key={row.id}>
                                                 <TableRow>
                                                     <TableCell className={cn(dataTableBodyCellClassName, "w-9")}>
-                                                        {row.details ? (
-                                                            <button
-                                                                type="button"
-                                                                className="inline-flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent"
-                                                                onClick={() => m.setExpandedEventId(isExpanded ? null : row.id)}
-                                                                aria-label="Развернуть событие"
-                                                            >
-                                                                <Icon
-                                                                    name="expand_more"
-                                                                    size="md"
-                                                                    className={cn(
-                                                                        "text-muted-foreground transition-transform",
-                                                                        isExpanded ? "rotate-180" : "rotate-0",
-                                                                    )}
-                                                                />
-                                                            </button>
-                                                        ) : null}
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent"
+                                                            onClick={() => m.toggleExpandedEventId(row.id)}
+                                                            aria-label={
+                                                                isExpanded ? "Свернуть событие" : "Развернуть событие"
+                                                            }
+                                                        >
+                                                            <Icon
+                                                                name="expand_more"
+                                                                size="md"
+                                                                className={cn(
+                                                                    "text-muted-foreground transition-transform",
+                                                                    isExpanded ? "rotate-180" : "rotate-0",
+                                                                )}
+                                                            />
+                                                        </button>
                                                     </TableCell>
-                                                    <TableCell className={dataTableBodyCellClassName}>{row.eventCode}</TableCell>
+                                                    <TableCell className={dataTableBodyCellClassName}>
+                                                        {row.eventCode}
+                                                    </TableCell>
                                                     <TableCell className={dataTableBodyCellClassName}>{row.start}</TableCell>
                                                     <TableCell className={dataTableBodyCellClassName}>{row.end}</TableCell>
                                                     <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
                                                         {formatNumber(row.meterage)}
                                                     </TableCell>
                                                 </TableRow>
-                                                {row.details && isExpanded ? (
+                                                {isExpanded ? (
                                                     <TableRow key={`${row.id}-details`} className="bg-muted/20">
                                                         <TableCell className={dataTableBodyCellClassName} />
                                                         <TableCell colSpan={4} className="p-0">
                                                             <div className="px-20 py-2">
                                                                 <div className={dataTableScrollViewportClassName}>
-                                                                    <Table className={cn(dataTableShellClassName, "border-0 text-[12px]")}>
+                                                                    <Table
+                                                                        className={cn(
+                                                                            dataTableShellClassName,
+                                                                            "border-0 text-[12px]",
+                                                                        )}
+                                                                    >
                                                                         <TableHeader className="bg-muted/40">
                                                                             <TableRow>
-                                                                                <TableHead className={dataTableStickyHeadCellOnBackgroundClassName}>
+                                                                                <TableHead
+                                                                                    className={
+                                                                                        dataTableStickyHeadCellOnBackgroundClassName
+                                                                                    }
+                                                                                >
                                                                                     Параметр
                                                                                 </TableHead>
-                                                                                <TableHead className={dataTableStickyHeadCellOnBackgroundClassName}>
+                                                                                <TableHead
+                                                                                    className={
+                                                                                        dataTableStickyHeadCellOnBackgroundClassName
+                                                                                    }
+                                                                                >
                                                                                     Значение
                                                                                 </TableHead>
                                                                             </TableRow>
                                                                         </TableHeader>
                                                                         <TableBody>
-                                                                            {row.details.map((detail) => (
-                                                                                <TableRow key={detail.parameter}>
+                                                                            {details.length > 0 ? (
+                                                                                details.map((detail) => (
+                                                                                    <TableRow key={detail.parameter}>
+                                                                                        <TableCell
+                                                                                            className={cn(
+                                                                                                dataTableBodyCellClassName,
+                                                                                                "text-muted-foreground",
+                                                                                            )}
+                                                                                        >
+                                                                                            {detail.parameter}
+                                                                                        </TableCell>
+                                                                                        <TableCell
+                                                                                            className={dataTableBodyCellClassName}
+                                                                                        >
+                                                                                            {detail.value}
+                                                                                        </TableCell>
+                                                                                    </TableRow>
+                                                                                ))
+                                                                            ) : (
+                                                                                <TableRow>
                                                                                     <TableCell
+                                                                                        colSpan={2}
                                                                                         className={cn(
                                                                                             dataTableBodyCellClassName,
-                                                                                            "text-muted-foreground",
+                                                                                            "text-center text-muted-foreground",
                                                                                         )}
                                                                                     >
-                                                                                        {detail.parameter}
-                                                                                    </TableCell>
-                                                                                    <TableCell className={dataTableBodyCellClassName}>
-                                                                                        {detail.value}
+                                                                                        Нет деталей
                                                                                     </TableCell>
                                                                                 </TableRow>
-                                                                            ))}
+                                                                            )}
                                                                         </TableBody>
                                                                     </Table>
                                                                 </div>
@@ -274,52 +351,35 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                         </div>
                     </div>
 
-                    <div className="text-right text-[12px] font-bold uppercase text-foreground">
-                        Расчётный брак: {snapshot.defectPercent}%
-                    </div>
-
                     {!m.stageCompleted && m.completionHints.length > 0 ? (
                         <Informer
                             tone="warning"
                             variant="filled"
                             size="s"
-                            title="Невозможно завершить этап. Есть необработанные события"
-                            description="Опишите все события для закрытия производственного этапа."
+                            title="Невозможно завершить этап"
+                            description={blockingDescription}
                         />
                     ) : null}
 
-                    <div>
-                        <div className={blockTitleClass}>Необработанные события</div>
-                        <div className={dataTableScrollViewportClassName}>
-                            <Table className={cn(dataTableShellClassName, "min-w-[520px]", "text-[12px]")}>
-                                <TableHeader className="bg-muted/40">
-                                    <TableRow>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Сигнал с машины</TableHead>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Начало</TableHead>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Завершение</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {snapshot.pendingEvents.map((row) => (
-                                        <TableRow key={row.id}>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.signal}</TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.start}</TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.end}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
+                    <StageCompletionPendingEventsTable rows={snapshot.pendingEvents} />
 
                     <div className="grid gap-2">
                         <div className={cn(dataTableHeadCellClassName, "px-0")}>Комментарий</div>
+                        {m.submitError ? (
+                            <Informer
+                                tone="alert"
+                                variant="bordered"
+                                size="s"
+                                title="Ошибка завершения этапа"
+                                description={m.submitError}
+                            />
+                        ) : null}
                         <textarea
                             className="min-h-16 w-full rounded-sm border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             placeholder="Заполните при необходимости"
                             value={m.comment}
                             onChange={(event) => m.setComment(event.target.value)}
-                            disabled={m.stageCompleted}
+                            disabled={m.stageCompleted || m.isSubmitting}
                         />
                     </div>
 
@@ -328,6 +388,8 @@ export function OrderExecutionStageCompletionSection({ machineId }: OrderExecuti
                             type="button"
                             size="sm"
                             onClick={handleCompleteStageClick}
+                            pending={m.isSubmitting}
+                            pendingLabel="Завершение…"
                             disabled={!m.canSubmitPrerequisites || m.stageCompleted}
                         >
                             Завершить этап

@@ -32,7 +32,6 @@ export function OrderExecutionEventRegistrationSection({
         goNext,
         goBack,
         registerEvent,
-        isLoading,
         loadError,
         isWizardDisabled,
     } = registration;
@@ -51,10 +50,6 @@ export function OrderExecutionEventRegistrationSection({
             <div className="grid gap-4">
                 {loadError ? (
                     <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={loadError} />
-                ) : null}
-
-                {isLoading ? (
-                    <Informer tone="system" variant="bordered" size="s" title="Загрузка данных регистрации события…" />
                 ) : null}
 
                 <MachineDataPanel

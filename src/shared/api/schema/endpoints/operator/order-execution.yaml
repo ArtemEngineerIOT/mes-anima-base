@@ -251,6 +251,144 @@ postSubmitStageLkm:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
+postEventReleaseProduction:
+    summary: Очередь событий выпуска с машины (UI-61)
+    description: Первый запрос при раскрытии блока «Выпуск» — плашка «Событие с машины»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Очередь событий выпуска (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseProductionEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postEventRollWriteOff:
+    summary: Очередь событий списания сырья с машины (UI-61a)
+    description: Первый запрос при раскрытии блока «Материалы. Списание/возврат» — плашка «Событие с машины»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Очередь событий списания (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseProductionEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postDiscardEventRoll:
+    summary: Отклонить событие списания сырья с машины (UI-61a)
+    description: Кнопка «Отклонить» на плашке списания — discardEventRoll
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventRequest"
+    responses:
+        "200":
+            description: Событие отклонено (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postAcceptRawFromEvent:
+    summary: Принять событие списания сырья с машины (UI-61a)
+    description: Кнопка «Зарегистрировать» — acceptRawFromEvent (prefill формы списания)
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptProdFromEventRequest"
+    responses:
+        "200":
+            description: Событие принято, prefill для формы списания (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptRawFromEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postDiscardEvent:
+    summary: Отклонить событие выпуска с машины (UI-61)
+    description: Кнопка «Отклонить» на плашке «Событие с машины» — discardEvent
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventRequest"
+    responses:
+        "200":
+            description: Событие отклонено (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postAcceptProdFromEvent:
+    summary: Принять событие выпуска продукции с машины (UI-61)
+    description: Кнопка «Зарегистрировать» при register_action PREFILL_PROD — acceptProdFromEvent
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptProdFromEventRequest"
+    responses:
+        "200":
+            description: Событие принято, prefill для формы (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptProdFromEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
 postGetReleaseFormInit:
     summary: Init формы выпуска по этапу
     description: Раскрытие блока «Выпуск» — данные по серии и склады назначения
@@ -637,6 +775,52 @@ postRegisterProductionEvent:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProductionEventRegisterResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postOrderStageCompletionInit:
+    summary: Init экрана завершения этапа (SCR-08 / UC-16)
+    description: Первый запрос при раскрытии блока «Завершить этап» — сводка этапа и can_complete
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Init завершения этапа (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageCompletionInitResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postOrderStageCompletionSubmit:
+    summary: Завершение этапа (SCR-08 / UC-16)
+    description: Кнопка «Завершить этап» — orderStageCompletionSubmit
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageCompletionSubmitRequest"
+    responses:
+        "200":
+            description: Этап завершён или отказ COMPLETION_NOT_ALLOWED
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageCompletionSubmitResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

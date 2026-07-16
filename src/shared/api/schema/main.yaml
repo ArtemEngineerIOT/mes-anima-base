@@ -122,6 +122,30 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postSubmitStageLkm"
 
+    /v1/contexts/users.admin.models.rest/functions/eventReleaseProduction:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postEventReleaseProduction"
+
+    /v1/contexts/users.admin.models.rest/functions/eventRollWriteOff:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postEventRollWriteOff"
+
+    /v1/contexts/users.admin.models.rest/functions/discardEventRoll:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postDiscardEventRoll"
+
+    /v1/contexts/users.admin.models.rest/functions/acceptRawFromEvent:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postAcceptRawFromEvent"
+
+    /v1/contexts/users.admin.models.rest/functions/discardEvent:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postDiscardEvent"
+
+    /v1/contexts/users.admin.models.rest/functions/acceptProdFromEvent:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postAcceptProdFromEvent"
+
     /v1/contexts/users.admin.models.rest/functions/getReleaseFormInit:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetReleaseFormInit"
@@ -189,6 +213,14 @@ paths:
     /v1/contexts/users.admin.models.rest/functions/registerProductionEvent:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postRegisterProductionEvent"
+
+    /v1/contexts/users.admin.models.rest/functions/orderStageCompletionInit:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postOrderStageCompletionInit"
+
+    /v1/contexts/users.admin.models.rest/functions/orderStageCompletionSubmit:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postOrderStageCompletionSubmit"
 
     # /task:
     #     $ref: "./endpoints/summary/task.yaml#/createTask"

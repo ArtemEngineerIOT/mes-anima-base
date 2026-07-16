@@ -89,7 +89,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
     const [scanBanner, setScanBanner] = useState<ScanBannerState | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
-    const [expandedOpId, setExpandedOpId] = useState<string | null>(null);
+    const [expandedOpIds, setExpandedOpIds] = useState<ReadonlySet<string>>(() => new Set());
     const [presenceRefreshKey, setPresenceRefreshKey] = useState(0);
     const [stageRegistryRefreshKey, setStageRegistryRefreshKey] = useState(0);
     const [writeoffForm, setWriteoffForm] = useState<MaterialsWriteoffFormState>(EMPTY_MATERIALS_WRITEOFF_FORM);
@@ -238,6 +238,18 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         [installationPlace, presenceRows, session, workAreaId],
     );
 
+    const toggleExpandedOpId = useCallback((opId: string) => {
+        setExpandedOpIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(opId)) {
+                next.delete(opId);
+            } else {
+                next.add(opId);
+            }
+            return next;
+        });
+    }, []);
+
     const search = useCallback(async () => {
         await searchByBarcode(barcode);
     }, [barcode, searchByBarcode]);
@@ -351,6 +363,40 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             reset();
         },
         [reset, returnWarehouses.warehouseOptions],
+    );
+
+    const applyRawEventPrefill = useCallback(
+        (prefill: {
+            lengthM: number | null;
+            weightKg: number | null;
+            materialRollId: string;
+            barcode: string;
+        }) => {
+            const materialRollId = prefill.materialRollId.trim();
+            const barcode = prefill.barcode.trim();
+            const matchedRoll =
+                presenceRows.find(
+                    (row) =>
+                        (materialRollId && row.materialRollId.trim() === materialRollId) ||
+                        (barcode && row.barcode.trim() === barcode),
+                ) ?? null;
+
+            if (matchedRoll) {
+                setSelectedWriteoffRoll(matchedRoll);
+            }
+
+            setWriteoffForm((prev) => ({
+                ...prev,
+                meters:
+                    prefill.lengthM != null
+                        ? sanitizeWriteoffMetersInput(String(prefill.lengthM))
+                        : prev.meters,
+                weight: prefill.weightKg != null ? String(prefill.weightKg) : prev.weight,
+                warehouse: resolveDefaultWarehouse(prev.warehouse, returnWarehouses.warehouseOptions),
+            }));
+            reset();
+        },
+        [presenceRows, reset, returnWarehouses.warehouseOptions],
     );
 
     useEffect(() => {
@@ -585,6 +631,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         movingToUnwindRowId,
         moveToUnwindError,
         selectForWriteoff,
+        applyRawEventPrefill,
         canCalculateWeight,
         isReflectReturnEnabled,
         isFullWriteoffEnabled,
@@ -604,9 +651,10 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
         stageRegistry,
         isSearching,
         searchError,
-        expandedOpId,
-        setExpandedOpId,
+        expandedOpIds,
+        toggleExpandedOpId,
         search,
         canSearch: Boolean(workAreaId?.trim()) && !isSearching,
+        refreshWriteoffTables,
     };
 }
