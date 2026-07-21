@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { useRelease } from "../model/release/use-release";
 import { Button } from "@/shared/ui/kit/button";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Informer } from "@/shared/ui/kit/informer";
@@ -9,9 +11,13 @@ import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
+    dataTableHeadCellClassName,
+    dataTableInsetShellClassName,
     dataTableScrollViewportClassName,
     dataTableShellClassName,
     dataTableStickyHeadCellClassName,
+    dataTableViewportFooterClassName,
+    dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -69,6 +75,14 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
             })) ?? [],
         [productionEvent.currentEvent],
     );
+
+    const {
+        pageItems: batchPageItems,
+        pagination: batchPagination,
+        pageSize: batchPageSize,
+        setPageSize: setBatchPageSize,
+        setPage: setBatchPage,
+    } = useDataTablePagination(batchRolls, { initialPageSize: 10 });
 
     if (!enabled) {
         return null;
@@ -240,91 +254,118 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                 </label>
             </div>
 
-            <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3 pb-2">
+            <div className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
                     <div className={cnSectionBlockTitle()}>Выпуски партии</div>
                     {batchAsOf ? (
                         <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {batchAsOf}</span>
                     ) : null}
                 </div>
                 {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
-                <div className={dataTableScrollViewportClassName}>
-                    <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                        <TableHeader className="bg-muted/40">
-                            <TableRow>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Штрихкод</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[200px]")}>
-                                    Номенклатура
-                                </TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
-                                    Кол-во 1
-                                </TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 1</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
-                                    Кол-во 2
-                                </TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 2</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-12 text-right")} />
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {batchRolls.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={7}
-                                        className={cn(dataTableBodyCellClassName, "text-center text-muted-foreground")}
-                                    >
-                                        Нет выпусков партии
-                                    </TableCell>
+                <div className={dataTableViewportShellClassName}>
+                    <div className="overflow-x-auto min-w-0">
+                        <Table
+                            className={cn(
+                                dataTableInsetShellClassName,
+                                "min-w-[720px] border-separate border-spacing-0 text-[12px]",
+                            )}
+                        >
+                            <TableHeader>
+                                <TableRow className="hover:!bg-transparent">
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                                        Штрихкод
+                                    </TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "min-w-[200px]")}>
+                                        Номенклатура
+                                    </TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                        Кол-во 1
+                                    </TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм. 1</TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                        Кол-во 2
+                                    </TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм. 2</TableHead>
+                                    <TableHead
+                                        className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-12 text-right")}
+                                        aria-label="Печать этикетки"
+                                    />
                                 </TableRow>
-                            ) : (
-                                batchRolls.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        className={cn(row.blocked && "bg-destructive/10 text-destructive")}
-                                    >
-                                        <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
-                                        <TableCell
-                                            className={cn(dataTableBodyCellClassName, "max-w-[280px] truncate")}
-                                            title={row.nomenclature}
+                            </TableHeader>
+                            <TableBody>
+                                {batchPageItems.length > 0 ? (
+                                    batchPageItems.map((row) => (
+                                        <TableRow
+                                            key={row.id}
+                                            className={cn(row.blocked && "bg-destructive/10 text-destructive")}
                                         >
-                                            {row.nomenclature}
-                                        </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {row.qty1}
-                                        </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.unit1}</TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {row.qty2}
-                                        </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.unit2}</TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            <div className="flex justify-end">
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon-sm"
-                                                    className="size-7 shrink-0"
-                                                    disabled={
-                                                        isLoading ||
-                                                        Boolean(error) ||
-                                                        !row.materialProductionReleaseId ||
-                                                        printingReleaseId === row.materialProductionReleaseId
-                                                    }
-                                                    aria-label={`Печать этикетки: ${row.barcode}`}
-                                                    onClick={() => {
-                                                        void printReleaseLabel(row.materialProductionReleaseId);
-                                                    }}
-                                                >
-                                                    <Icon name="print" size="sm" />
-                                                </Button>
-                                            </div>
+                                            <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
+                                            <TableCell
+                                                className={cn(dataTableBodyCellClassName, "max-w-[280px] truncate")}
+                                                title={row.nomenclature}
+                                            >
+                                                {row.nomenclature}
+                                            </TableCell>
+                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                {row.qty1}
+                                            </TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>{row.unit1}</TableCell>
+                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                {row.qty2}
+                                            </TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>{row.unit2}</TableCell>
+                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon-sm"
+                                                        className="size-7 shrink-0"
+                                                        disabled={
+                                                            isLoading ||
+                                                            Boolean(error) ||
+                                                            !row.materialProductionReleaseId ||
+                                                            printingReleaseId === row.materialProductionReleaseId
+                                                        }
+                                                        aria-label={`Печать этикетки: ${row.barcode}`}
+                                                        onClick={() => {
+                                                            void printReleaseLabel(row.materialProductionReleaseId);
+                                                        }}
+                                                    >
+                                                        <Icon name="print" size="sm" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "py-6 text-center text-muted-foreground",
+                                            )}
+                                        >
+                                            Нет выпусков партии
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className={dataTableViewportFooterClassName}>
+                        <DataTablePaginationFooter
+                            totalCount={batchPagination.totalCount}
+                            rangeStart={batchPagination.rangeStart}
+                            rangeEnd={batchPagination.rangeEnd}
+                            page={batchPagination.page}
+                            totalPages={batchPagination.totalPages}
+                            pageSize={batchPageSize}
+                            onPageChange={setBatchPage}
+                            onPageSizeChange={setBatchPageSize}
+                        />
+                    </div>
                 </div>
             </div>
 

@@ -1,9 +1,13 @@
+import { useRef } from "react";
+
 import { useOrderExecution } from "@/features/operator/order-execution/model/use-order-execution";
 import { OrderExecutionMachineStompProvider } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
+import { useStageProgress } from "@/features/operator/order-execution/model/stage-progress/use-stage-progress";
 import { OrderExecutionEmpty } from "@/features/operator/order-execution/ui/order-execution-empty";
 import { OrderExecutionFilters } from "@/features/operator/order-execution/ui/order-execution-filters";
 import { OrderExecutionMonitoring } from "@/features/operator/order-execution/ui/order-execution-monitoring";
 import { OrderExecutionOperatorPanel } from "@/features/operator/order-execution/ui/order-execution-operator-panel";
+import { useMaterialsFrontSemiFinishedRollReleasedSubscription } from "@/shared/api/websocket";
 import { Informer } from "@/shared/ui/kit/informer";
 
 function OrderExecutionPage() {
@@ -18,7 +22,23 @@ function OrderExecutionPage() {
     } = useOrderExecution();
 
     const showAssignedStage = !isMachineDataLoading && current.hasAssignedStage;
+    const workAreaId = showAssignedStage ? current.workAreaId : undefined;
     const jobInfo = showAssignedStage ? current.operator.jobInfo : null;
+    const lineMetersSilentReloadRef = useRef<(() => void) | null>(null);
+
+    const { progressInfo, reload: reloadStageProgress } = useStageProgress({
+        workAreaId,
+        enabled: showAssignedStage,
+    });
+
+    useMaterialsFrontSemiFinishedRollReleasedSubscription({
+        enabled: Boolean(workAreaId?.trim()),
+        workAreaId,
+        onEvent: () => {
+            void reloadStageProgress({ silent: true });
+            lineMetersSilentReloadRef.current?.();
+        },
+    });
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -28,6 +48,7 @@ function OrderExecutionPage() {
                 selectedMachine={selectedMachine}
                 onMachineChange={setSelectedMachine}
                 jobInfo={jobInfo}
+                progressInfo={progressInfo}
             />
 
             {fetchError && (
@@ -48,6 +69,7 @@ function OrderExecutionPage() {
                             <OrderExecutionMonitoring
                                 machineId={current.machineId}
                                 workAreaId={current.workAreaId}
+                                lineMetersSilentReloadRef={lineMetersSilentReloadRef}
                             />
                         </div>
                         <OrderExecutionOperatorPanel

@@ -1,3 +1,5 @@
+import { useEffect, type MutableRefObject } from "react";
+
 import { useMonitoringLineMeters } from "@/features/operator/order-execution/model/monitoring/use-monitoring-line-meters";
 import { useMonitoringRollTables } from "@/features/operator/order-execution/model/monitoring/use-monitoring-roll-tables";
 import { useMonitoringStageEvents } from "@/features/operator/order-execution/model/monitoring/use-monitoring-stage-events";
@@ -26,18 +28,33 @@ type OrderExecutionMonitoringContentProps = {
     machineId: MachineId;
     workAreaId?: string;
     showShowAllButton?: boolean;
+    /** Регистрирует silent-reload summary для единой STOMP-подписки на странице */
+    lineMetersSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function OrderExecutionMonitoringContent({
     machineId,
     workAreaId,
     showShowAllButton = false,
+    lineMetersSilentReloadRef,
 }: OrderExecutionMonitoringContentProps) {
     const machineStompState = useOrderExecutionMachineStompState();
     const machineParams = resolveMonitoringMachineParams(machineStompState);
-    const { lineMeters, isLoading: isLineMetersLoading, error: lineMetersError } = useMonitoringLineMeters({
+    const { lineMeters, isLoading: isLineMetersLoading, error: lineMetersError, reload } = useMonitoringLineMeters({
         workAreaId,
     });
+
+    useEffect(() => {
+        if (!lineMetersSilentReloadRef) {
+            return;
+        }
+        lineMetersSilentReloadRef.current = () => {
+            void reload({ silent: true });
+        };
+        return () => {
+            lineMetersSilentReloadRef.current = null;
+        };
+    }, [lineMetersSilentReloadRef, reload]);
     const {
         rollTables,
         isLoading: isRollTablesLoading,
@@ -253,14 +270,14 @@ export function OrderExecutionMonitoringContent({
                 <div className={cnSectionBlockTitle("pb-2")}>События по этапу</div>
                 <OrderExecutionSimpleTable
                     columns={[
-                        { key: "label", label: "Дата" },
-                        { key: "uom", label: "Ед.изм", align: "center" },
+                        { key: "label", label: "Наименование" },
                         { key: "quantity", label: "Кол-во", align: "right" },
+                        { key: "uom", label: "Ед.изм.", align: "center" },
                     ]}
                     rows={stageEvents.map((event) => ({
                         label: event.label,
-                        uom: isStageEventsLoading ? "…" : event.uom,
                         quantity: formatStageEventQuantity(event.quantity),
+                        uom: isStageEventsLoading ? "…" : event.uom,
                     }))}
                     emptyText={isStageEventsLoading ? "Загрузка…" : "Нет данных"}
                 />

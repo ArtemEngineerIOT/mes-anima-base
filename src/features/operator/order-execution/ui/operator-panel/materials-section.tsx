@@ -1,19 +1,32 @@
 import { useState } from "react";
+
+import { useRollWriteOffEventsSummary } from "../../model/materials-writeoff/raw-events-summary/use-roll-write-off-events-summary";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { OrderExecutionMaterialsWriteoff } from "../order-execution-materials-writeoff";
 
 type OrderExecutionMaterialsSectionProps = {
     workAreaId?: string;
+    eventsSummaryEnabled: boolean;
 };
 
-export function OrderExecutionMaterialsSection({ workAreaId }: OrderExecutionMaterialsSectionProps) {
+export function OrderExecutionMaterialsSection({
+    workAreaId,
+    eventsSummaryEnabled,
+}: OrderExecutionMaterialsSectionProps) {
     const [expanded, setExpanded] = useState(false);
+    const { totalCount } = useRollWriteOffEventsSummary({
+        workAreaId,
+        enabled: eventsSummaryEnabled,
+    });
+
+    const headerTone = totalCount > 0 ? "warning" : "success";
 
     return (
         <OrderExecutionCollapsibleSection
             title="Материалы. Списание/возврат"
             defaultOpen={false}
-            tone="warning"
+            tone={headerTone}
+            count={totalCount > 0 ? totalCount : undefined}
             keepMounted
             onExpandedChange={setExpanded}
         >

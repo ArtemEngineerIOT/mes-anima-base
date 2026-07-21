@@ -435,6 +435,134 @@ postGetBatchReleases:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
+postGetEventsSummary:
+    summary: Сводка событий выпуска (SCR-06 / UC-25)
+    description: >
+        BFF `users.admin.models.rollReleaseProductionEventQueue.getEventsSummary`.
+        Badge в заголовке блока «Выпуск». Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Сводка событий выпуска (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseProductionEventsSummaryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetRollEventsSummary:
+    summary: Сводка событий списания (SCR-04 / UC-15)
+    description: >
+        BFF `users.admin.models.rollWriteOffRawEventQueue.getEventsSummary`
+        (REST: `getRollEventsSummary`). Badge в заголовке блока «Материалы. Списание/возврат».
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Сводка событий списания (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionRollWriteOffEventsSummaryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetLastProcessParamsSlices:
+    summary: Три последних среза ТП (JB Process control)
+    description: >
+        BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`.
+        Колонки-справка на экране «Технологические параметры машины».
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Срезы ТП (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionLastProcessParamsSlicesResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetProcessControl:
+    summary: Контроль процесса (чеклист JB)
+    description: >
+        BFF `users.admin.models.processControlJbBff.getProcessControl`.
+        Данные формы чеклиста в `result.encoded_data` (JSON).
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Контроль процесса (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionProcessControlResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postSaveProcessControl:
+    summary: Сохранение контроля процесса (чеклист JB)
+    description: >
+        BFF `users.admin.models.processControlJbBff.saveProcessControl`.
+        Тело: `[{ workAreaId, payloadJson, operatorRef }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSaveProcessControlRequest"
+    responses:
+        "200":
+            description: Сохранение контроля процесса (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSaveProcessControlResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
 postListStageInputRollsForWorkArea:
     summary: Входные рулоны этапа для блокировки
     description: Раскрытие блока «Выпуск» — таблица входных рулонов
@@ -683,6 +811,58 @@ postGetArmExecutionMonitoringStageEvents:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionMonitoringStageEventsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetProgress:
+    summary: Прогресс этапа по метражу (SCR-00 / UC-25)
+    description: >
+        BFF `users.admin.models.armExecutionStageProgress.getProgress`.
+        План / выпуск / остаток / % — для шапки «Исполнение заказа».
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Прогресс этапа (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionStageProgressResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetUnprocessedSignalsSummary:
+    summary: Сводка необработанных сигналов (SCR-07 / UC-25)
+    description: >
+        BFF `users.admin.models.productionEventWizard.getUnprocessedSignalsSummary`.
+        Плашка «Сигналы с машины» в блоке «Регистрация события».
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Сводка сигналов (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionUnprocessedSignalsSummaryResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

@@ -10,6 +10,8 @@ export function OrderExecutionCollapsibleSection({
     defaultOpen = true,
     tone,
     count,
+    updatedAt,
+    updatedAtLabel = "Обновлено",
     keepMounted = false,
     onExpandedChange,
     children,
@@ -20,6 +22,9 @@ export function OrderExecutionCollapsibleSection({
     tone?: InformerTone;
     /** Отображается отдельно от иконки, в тех же цветах что и иконка */
     count?: number;
+    /** Время последнего обновления в правой части заголовка */
+    updatedAt?: string | null;
+    updatedAtLabel?: string;
     /** Не размонтировать содержимое при сворачивании — сохраняет ввод и состояние формы */
     keepMounted?: boolean;
     onExpandedChange?: (expanded: boolean) => void;
@@ -119,6 +124,10 @@ export function OrderExecutionCollapsibleSection({
                                 </span>
                             ) : null}
                         </div>
+                    ) : updatedAt?.trim() ? (
+                        <span className="shrink-0 text-[12px] leading-none text-muted-foreground">
+                            {updatedAtLabel}: {updatedAt.trim()}
+                        </span>
                     ) : null}
                 </div>
             </CardHeader>

@@ -1651,6 +1651,208 @@ components:
                               items:
                                   $ref: "#/components/schemas/OrderExecutionReleaseBatchReleasesResultItem"
 
+        OrderExecutionReleaseProductionEventsSummaryResultItem:
+            type: object
+            description: Элемент result getEventsSummary (SCR-06 / UC-25)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                last_event_at:
+                    type: string
+                    nullable: true
+                last_event_name:
+                    type: string
+                    nullable: true
+                last_event_description:
+                    type: string
+                    nullable: true
+                last_event_length_m:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionReleaseProductionEventsSummaryResponse:
+            type: array
+            minItems: 1
+            description: Ответ getEventsSummary (SCR-06 / UC-25)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventsSummaryResultItem"
+
+        OrderExecutionRollWriteOffEventsSummaryResultItem:
+            type: object
+            description: Элемент result getRollEventsSummary (SCR-04 / UC-15)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                last_event_at:
+                    type: string
+                    nullable: true
+                last_event_name:
+                    type: string
+                    nullable: true
+                last_event_description:
+                    type: string
+                    nullable: true
+                last_event_length_m:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionRollWriteOffEventsSummaryResponse:
+            type: array
+            minItems: 1
+            description: Ответ getRollEventsSummary (SCR-04 / UC-15)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionRollWriteOffEventsSummaryResultItem"
+
+        OrderExecutionLastProcessParamsSliceRow:
+            type: object
+            description: Строка result getLastProcessParamsSlices (JB Process control)
+            properties:
+                slice_no:
+                    type: integer
+                    nullable: true
+                external_series_key:
+                    type: string
+                    nullable: true
+                param_code:
+                    type: string
+                    nullable: true
+                value:
+                    type: string
+                    nullable: true
+                material_roll_id:
+                    type: string
+                    nullable: true
+                updated_at:
+                    type: string
+                    nullable: true
+                    description: Время последнего изменения среза (`yyyy-MM-dd HH:mm:ss`)
+                captured_at:
+                    type: string
+                    nullable: true
+                recorded_at:
+                    type: string
+                    nullable: true
+                checked_at:
+                    type: string
+                    nullable: true
+                origin:
+                    type: string
+                    nullable: true
+                source:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionLastProcessParamsSlicesResponse:
+            type: array
+            minItems: 1
+            description: Ответ getLastProcessParamsSlices (JB Process control)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionLastProcessParamsSliceRow"
+
+        OrderExecutionProcessControlResultItem:
+            type: object
+            description: Элемент result getProcessControl (JB Process control)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                encoded_data:
+                    type: string
+                    nullable: true
+                    description: JSON с `tables.checklist` и `tables.numeric_values`
+                updated_at:
+                    type: string
+                    nullable: true
+                status:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionProcessControlResponse:
+            type: array
+            minItems: 1
+            description: Ответ getProcessControl (JB Process control)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionProcessControlResultItem"
+
+        OrderExecutionSaveProcessControlRequestItem:
+            type: object
+            description: Запрос saveProcessControl (JB Process control)
+            properties:
+                workAreaId:
+                    type: string
+                    description: Идентификатор рабочей области этапа (`work_area_id`)
+                payloadJson:
+                    type: string
+                    description: >
+                        JSON-строка с `tables.checklist` и `tables.numeric_values`
+                        (`item_code`, `item_label`, `checked`, `value`, `presser_width`)
+                operatorRef:
+                    type: string
+                    description: Ссылка на оператора в MES (`operator_ref`, из сессии)
+            required:
+                - workAreaId
+                - payloadJson
+
+        OrderExecutionSaveProcessControlRequest:
+            type: array
+            minItems: 1
+            items:
+                $ref: "#/components/schemas/OrderExecutionSaveProcessControlRequestItem"
+
+        OrderExecutionSaveProcessControlResponse:
+            type: array
+            minItems: 1
+            description: Ответ saveProcessControl (JB Process control)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionProcessControlResultItem"
+
         OrderExecutionReleaseInputRollsResponse:
             type: array
             minItems: 1
@@ -1977,6 +2179,45 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionMonitoringStageEventsResultItem"
+
+        OrderExecutionStageProgressResultItem:
+            type: object
+            description: Элемент result getProgress (SCR-00 / UC-25)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                required_meterage_m:
+                    type: number
+                    nullable: true
+                    description: План, м
+                released_good_meterage_m:
+                    type: number
+                    nullable: true
+                    description: Выпуск (годный), м
+                remaining_meterage_m:
+                    type: number
+                    nullable: true
+                    description: Остаток, м
+                progress_percent:
+                    type: number
+                    nullable: true
+                    description: Прогресс, %
+            additionalProperties: true
+
+        OrderExecutionStageProgressResponse:
+            type: array
+            minItems: 1
+            description: Ответ getProgress (SCR-00 / UC-25)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionStageProgressResultItem"
 
         MaterialOrderPlanStagesRequestItem:
             type: object
@@ -2772,6 +3013,55 @@ components:
                         type: object
                         additionalProperties: true
             additionalProperties: true
+
+        OrderExecutionUnprocessedSignalsSummaryItem:
+            type: object
+            description: Элемент summary getUnprocessedSignalsSummary (SCR-07 / UC-25)
+            properties:
+                signal_name:
+                    type: string
+                    nullable: true
+                signal_description:
+                    type: string
+                    nullable: true
+                count:
+                    type: integer
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionUnprocessedSignalsSummaryResultItem:
+            type: object
+            description: Элемент result getUnprocessedSignalsSummary (SCR-07 / UC-25)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                last_event_at:
+                    type: string
+                    nullable: true
+                    description: Время последнего события (`yyyy-MM-dd HH:mm:ss` или пусто)
+                summary:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionUnprocessedSignalsSummaryItem"
+            additionalProperties: true
+
+        OrderExecutionUnprocessedSignalsSummaryResponse:
+            type: array
+            minItems: 1
+            description: Ответ getUnprocessedSignalsSummary (SCR-07 / UC-25)
+            items:
+                allOf:
+                    - $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
+                    - type: object
+                      properties:
+                          result:
+                              type: array
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionUnprocessedSignalsSummaryResultItem"
 
         OrderExecutionProductionEventWizardInitResponse:
             type: array
