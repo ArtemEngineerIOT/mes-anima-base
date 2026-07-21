@@ -16,12 +16,16 @@ type OrderExecutionOperatorPanelProps = {
     operator: MachineData["operator"];
     machineId: MachineId;
     workAreaId?: string;
+    onMonitoringSummaryReload?: () => void;
+    onReleaseProductionEventsSummaryChanged?: () => void;
 };
 
 export function OrderExecutionOperatorPanel({
     operator,
     machineId,
     workAreaId,
+    onMonitoringSummaryReload,
+    onReleaseProductionEventsSummaryChanged,
 }: OrderExecutionOperatorPanelProps) {
     const [eventRegistrationExpanded, setEventRegistrationExpanded] = useState(false);
     const [processJournalExpanded, setProcessJournalExpanded] = useState(false);
@@ -39,6 +43,7 @@ export function OrderExecutionOperatorPanel({
                 <OrderExecutionMaterialsSection
                     workAreaId={workAreaId}
                     eventsSummaryEnabled={Boolean(workAreaId?.trim())}
+                    onMonitoringSummaryReload={onMonitoringSummaryReload}
                 />
                 <OrderExecutionProcessControlSection workAreaId={workAreaId} />
                 <OrderExecutionProcessJournalSection onExpandedChange={setProcessJournalExpanded} />
@@ -50,6 +55,7 @@ export function OrderExecutionOperatorPanel({
                 <OrderExecutionReleaseSection
                     workAreaId={workAreaId}
                     eventsSummaryEnabled={Boolean(workAreaId?.trim())}
+                    onRelatedDataReload={onReleaseProductionEventsSummaryChanged}
                 />
 
                 <OrderExecutionStageCompletionSection workAreaId={workAreaId} />

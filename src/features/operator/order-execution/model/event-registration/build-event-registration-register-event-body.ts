@@ -155,7 +155,9 @@ export function buildEventRegistrationRegisterEventBody(
     params: EventRegistrationRegisterEventBodyParams,
 ): ApiSchemas["OrderExecutionProductionEventRegisterRequest"] {
     const { draft, scrapMode, selectedSignal, snapshot } = params;
-    const signalDateSource = selectedSignal?.detectedAt ?? selectedSignal?.endedAt;
+    const signalDateSource = [selectedSignal?.detectedAt, selectedSignal?.endedAt].find(
+        (value) => Boolean(value?.trim()) && value !== "—",
+    );
     const removeImmediately = scrapMode === "immediate";
     const eventCode = draft.eventCode == null ? "" : String(draft.eventCode);
 

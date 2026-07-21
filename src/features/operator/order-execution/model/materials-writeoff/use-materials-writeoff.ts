@@ -45,6 +45,8 @@ type ScanBannerState = {
 type UseMaterialsWriteoffOptions = {
     workAreaId?: string;
     enabled?: boolean;
+    /** После успешного возврата/полного списания — silent-reload мониторинга (summary + roll tables) */
+    onMonitoringSummaryReload?: () => void;
 };
 
 function buildWriteoffFormFromSelection(
@@ -76,9 +78,15 @@ function resolveDefaultWarehouse(
     return warehouseOptions[0]?.warehouseCode ?? "";
 }
 
-export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterialsWriteoffOptions) {
+export function useMaterialsWriteoff({
+    workAreaId,
+    enabled = true,
+    onMonitoringSummaryReload,
+}: UseMaterialsWriteoffOptions) {
     const { session } = useSession();
     const operatorRef = resolveMaterialsWriteoffOperatorRef(session);
+    const onMonitoringSummaryReloadRef = useRef(onMonitoringSummaryReload);
+    onMonitoringSummaryReloadRef.current = onMonitoringSummaryReload;
     const [barcode, setBarcode] = useState("");
     const [installationPlace, setInstallationPlace] = useState<MaterialsInstallationPlace>(
         DEFAULT_MATERIALS_INSTALLATION_PLACE,
@@ -499,6 +507,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             });
             mapSubmitPartialReturnPayload(payload);
             await refreshWriteoffTables();
+            onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
         } catch (error) {
             setReflectReturnError(error instanceof Error ? error.message : "Не удалось отразить возврат");
@@ -556,6 +565,7 @@ export function useMaterialsWriteoff({ workAreaId, enabled = true }: UseMaterial
             });
             mapSubmitFullWriteOffPayload(payload);
             await refreshWriteoffTables();
+            onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
         } catch (error) {
             setWriteOffFullyError(error instanceof Error ? error.message : "Не удалось списать материал полностью");

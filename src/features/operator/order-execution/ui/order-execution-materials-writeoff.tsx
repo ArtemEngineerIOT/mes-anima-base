@@ -14,9 +14,14 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 type OrderExecutionMaterialsWriteoffProps = {
     workAreaId?: string;
     enabled?: boolean;
+    onMonitoringSummaryReload?: () => void;
 };
 
-export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: OrderExecutionMaterialsWriteoffProps) {
+export function OrderExecutionMaterialsWriteoff({
+    workAreaId,
+    enabled = true,
+    onMonitoringSummaryReload,
+}: OrderExecutionMaterialsWriteoffProps) {
     const {
         barcode,
         setBarcode,
@@ -66,7 +71,7 @@ export function OrderExecutionMaterialsWriteoff({ workAreaId, enabled = true }: 
         showWriteoffFlow,
         stageRegistry,
         refreshWriteoffTables,
-    } = useMaterialsWriteoff({ workAreaId, enabled });
+    } = useMaterialsWriteoff({ workAreaId, enabled, onMonitoringSummaryReload });
 
     const {
         rawEvent,

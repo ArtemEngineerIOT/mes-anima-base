@@ -7,7 +7,6 @@ import { OrderExecutionEmpty } from "@/features/operator/order-execution/ui/orde
 import { OrderExecutionFilters } from "@/features/operator/order-execution/ui/order-execution-filters";
 import { OrderExecutionMonitoring } from "@/features/operator/order-execution/ui/order-execution-monitoring";
 import { OrderExecutionOperatorPanel } from "@/features/operator/order-execution/ui/order-execution-operator-panel";
-import { useMaterialsFrontSemiFinishedRollReleasedSubscription } from "@/shared/api/websocket";
 import { Informer } from "@/shared/ui/kit/informer";
 
 function OrderExecutionPage() {
@@ -25,20 +24,14 @@ function OrderExecutionPage() {
     const workAreaId = showAssignedStage ? current.workAreaId : undefined;
     const jobInfo = showAssignedStage ? current.operator.jobInfo : null;
     const lineMetersSilentReloadRef = useRef<(() => void) | null>(null);
+    const rollTablesSilentReloadRef = useRef<(() => void) | null>(null);
 
-    const { progressInfo, reload: reloadStageProgress } = useStageProgress({
+    const { progressInfo, reload: reloadProgress } = useStageProgress({
         workAreaId,
         enabled: showAssignedStage,
     });
-
-    useMaterialsFrontSemiFinishedRollReleasedSubscription({
-        enabled: Boolean(workAreaId?.trim()),
-        workAreaId,
-        onEvent: () => {
-            void reloadStageProgress({ silent: true });
-            lineMetersSilentReloadRef.current?.();
-        },
-    });
+    const reloadProgressRef = useRef(reloadProgress);
+    reloadProgressRef.current = reloadProgress;
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -70,12 +63,22 @@ function OrderExecutionPage() {
                                 machineId={current.machineId}
                                 workAreaId={current.workAreaId}
                                 lineMetersSilentReloadRef={lineMetersSilentReloadRef}
+                                rollTablesSilentReloadRef={rollTablesSilentReloadRef}
                             />
                         </div>
                         <OrderExecutionOperatorPanel
                             operator={current.operator}
                             machineId={current.machineId}
                             workAreaId={current.workAreaId}
+                            onMonitoringSummaryReload={() => {
+                                lineMetersSilentReloadRef.current?.();
+                                rollTablesSilentReloadRef.current?.();
+                            }}
+                            onReleaseProductionEventsSummaryChanged={() => {
+                                lineMetersSilentReloadRef.current?.();
+                                rollTablesSilentReloadRef.current?.();
+                                void reloadProgressRef.current({ silent: true });
+                            }}
                         />
                     </div>
                 </OrderExecutionMachineStompProvider>

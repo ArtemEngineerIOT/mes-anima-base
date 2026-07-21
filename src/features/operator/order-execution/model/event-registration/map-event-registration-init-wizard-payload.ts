@@ -84,9 +84,10 @@ function mapUnprocessedSignalRow(row: Record<string, unknown>): UnprocessedMachi
         return null;
     }
 
-    const description = pickString(row.signal_name ?? row.signalName ?? row.name) ?? "—";
-    const detectedAt = pickString(row.time_start ?? row.timeStart ?? row.detected_at ?? row.detectedAt) ?? "";
-    const endedAt = pickString(row.time_end ?? row.timeEnd ?? row.ended_at ?? row.endedAt) ?? detectedAt;
+    const description =
+        pickString(row.description ?? row.signal_description ?? row.signalDescription) ?? "—";
+    const detectedAt = pickString(row.time_start ?? row.timeStart ?? row.detected_at ?? row.detectedAt) ?? "—";
+    const endedAt = pickString(row.time_end ?? row.timeEnd ?? row.ended_at ?? row.endedAt) ?? "—";
 
     return {
         id,
@@ -269,7 +270,7 @@ export function mapEventRegistrationInitWizardPayload(
             ...fallback,
             eventCodes: eventCodes.length > 0 ? eventCodes : fallback.eventCodes,
             setupRunTags: setupRunTags.length > 0 ? setupRunTags : fallback.setupRunTags,
-            unprocessedEvents: unprocessedEvents.length > 0 ? unprocessedEvents : fallback.unprocessedEvents,
+            unprocessedEvents,
             rollOptions: rollOptions.length > 0 ? rollOptions : fallback.rollOptions,
             rollCatalog: rollCatalog.length > 0 ? rollCatalog : fallback.rollCatalog,
             scrapRollDefault,

@@ -7,16 +7,19 @@ import { OrderExecutionRelease } from "../order-execution-release";
 type OrderExecutionReleaseSectionProps = {
     workAreaId?: string;
     eventsSummaryEnabled: boolean;
+    onRelatedDataReload?: () => void;
 };
 
 export function OrderExecutionReleaseSection({
     workAreaId,
     eventsSummaryEnabled,
+    onRelatedDataReload,
 }: OrderExecutionReleaseSectionProps) {
     const [expanded, setExpanded] = useState(false);
     const { totalCount } = useProductionEventsSummary({
         workAreaId,
         enabled: eventsSummaryEnabled,
+        onRelatedDataReload,
     });
 
     const headerTone = totalCount > 0 ? "warning" : "success";

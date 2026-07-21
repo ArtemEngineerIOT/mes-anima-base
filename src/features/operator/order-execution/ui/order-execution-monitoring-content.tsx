@@ -28,8 +28,10 @@ type OrderExecutionMonitoringContentProps = {
     machineId: MachineId;
     workAreaId?: string;
     showShowAllButton?: boolean;
-    /** Регистрирует silent-reload summary для единой STOMP-подписки на странице */
+    /** Регистрирует silent-reload summary (getArmExecutionMonitoringSummary) */
     lineMetersSilentReloadRef?: MutableRefObject<(() => void) | null>;
+    /** Регистрирует silent-reload таблиц рулонов (getArmExecutionMonitoringRollTables) */
+    rollTablesSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function OrderExecutionMonitoringContent({
@@ -37,6 +39,7 @@ export function OrderExecutionMonitoringContent({
     workAreaId,
     showShowAllButton = false,
     lineMetersSilentReloadRef,
+    rollTablesSilentReloadRef,
 }: OrderExecutionMonitoringContentProps) {
     const machineStompState = useOrderExecutionMachineStompState();
     const machineParams = resolveMonitoringMachineParams(machineStompState);
@@ -59,7 +62,20 @@ export function OrderExecutionMonitoringContent({
         rollTables,
         isLoading: isRollTablesLoading,
         error: rollTablesError,
+        reload: reloadRollTables,
     } = useMonitoringRollTables({ workAreaId });
+
+    useEffect(() => {
+        if (!rollTablesSilentReloadRef) {
+            return;
+        }
+        rollTablesSilentReloadRef.current = () => {
+            void reloadRollTables({ silent: true });
+        };
+        return () => {
+            rollTablesSilentReloadRef.current = null;
+        };
+    }, [rollTablesSilentReloadRef, reloadRollTables]);
     const {
         stageEvents,
         isLoading: isStageEventsLoading,
