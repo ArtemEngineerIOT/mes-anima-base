@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
-import { useDowntimeFrontMachineSignalRegisteredSubscription } from "@/shared/api/websocket";
 
 import { mapUnprocessedSignalsSummaryPayload } from "./map-unprocessed-signals-summary-payload";
 import { UNPROCESSED_SIGNALS_SUMMARY_EMPTY, type UnprocessedSignalsSummarySnapshot } from "./types";
@@ -85,13 +84,6 @@ export function useUnprocessedSignalsSummary({ workAreaId, enabled = true }: Use
 
         void load();
     }, [enabled, load, resetState]);
-
-    useDowntimeFrontMachineSignalRegisteredSubscription({
-        enabled: enabled && Boolean(workAreaId?.trim()),
-        onEvent: () => {
-            void load({ silent: true });
-        },
-    });
 
     return {
         snapshot,

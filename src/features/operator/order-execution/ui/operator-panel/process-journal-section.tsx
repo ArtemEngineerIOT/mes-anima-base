@@ -3,14 +3,15 @@ import { Fragment, useMemo, useState } from "react";
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
-import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Informer } from "@/shared/ui/kit/informer";
 import {
     dataTableBodyCellClassName,
     dataTableHeadCellClassName,
     dataTableInsetShellClassName,
-    dataTableSplitScrollBodyClassName,
+    dataTableViewportFooterClassName,
+    dataTableViewportShellClassName,
+    type DataTablePageSize,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -57,7 +58,7 @@ export function OrderExecutionProcessJournalSection({
         setPage(page);
     };
 
-    const handlePageSizeChange = (nextPageSize: number) => {
+    const handlePageSizeChange = (nextPageSize: DataTablePageSize) => {
         setExpandedRowId(null);
         setPageSize(nextPageSize);
     };
@@ -77,43 +78,29 @@ export function OrderExecutionProcessJournalSection({
                     <Informer tone="system" variant="bordered" size="s" title="Загрузка журнала процесса…" />
                 ) : null}
 
-                <DataTableViewport
-                    layout="fixed"
-                    visibleBodyRows={pageSize}
-                    footer={
-                        <DataTablePaginationFooter
-                            totalCount={pagination.totalCount}
-                            rangeStart={pagination.rangeStart}
-                            rangeEnd={pagination.rangeEnd}
-                            page={pagination.page}
-                            totalPages={pagination.totalPages}
-                            pageSize={pageSize}
-                            onPageChange={handlePageChange}
-                            onPageSizeChange={handlePageSizeChange}
-                        />
-                    }
-                >
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "min-w-[640px] border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
-                        <TableHeader>
-                            <TableRow className="hover:!bg-transparent">
-                                <TableHead
-                                    className={cn(dataTableHeadCellClassName, "bg-muted/40", expandColumnClassName)}
-                                    aria-label="Детали события"
-                                />
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Код события</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Конец</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                    Метраж
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody className={dataTableSplitScrollBodyClassName}>
+                <div className={dataTableViewportShellClassName}>
+                    <div className="min-w-0 overflow-x-auto">
+                        <Table
+                            className={cn(
+                                dataTableInsetShellClassName,
+                                "min-w-[640px] border-separate border-spacing-0 text-[12px]",
+                            )}
+                        >
+                            <TableHeader>
+                                <TableRow className="hover:!bg-transparent">
+                                    <TableHead
+                                        className={cn(dataTableHeadCellClassName, "bg-muted/40", expandColumnClassName)}
+                                        aria-label="Детали события"
+                                    />
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Код события</TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Конец</TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                        Метраж
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                             {pageItems.length > 0 ? (
                                 pageItems.map((row) => {
                                     const isExpanded = expandedRowId === row.id;
@@ -217,9 +204,22 @@ export function OrderExecutionProcessJournalSection({
                                     </TableCell>
                                 </TableRow>
                             )}
-                        </TableBody>
-                    </Table>
-                </DataTableViewport>
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className={dataTableViewportFooterClassName}>
+                        <DataTablePaginationFooter
+                            totalCount={pagination.totalCount}
+                            rangeStart={pagination.rangeStart}
+                            rangeEnd={pagination.rangeEnd}
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            pageSize={pageSize}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    </div>
+                </div>
 
                 <div className="text-right text-[12px] font-bold uppercase text-foreground">
                     Метраж. Итого: {totalLengthLabel}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
-import { useMaterialsFrontMachineRawReleaseRegisteredSubscription } from "@/shared/api/websocket";
+import { useMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscription } from "@/shared/api/websocket";
 
 import { mapRollWriteOffEventsSummaryPayload } from "./map-roll-write-off-events-summary-payload";
 import { ROLL_WRITE_OFF_EVENTS_SUMMARY_EMPTY, type RollWriteOffEventsSummarySnapshot } from "./types";
@@ -68,7 +68,7 @@ export function useRollWriteOffEventsSummary({
         void load();
     }, [enabled, load, resetState]);
 
-    useMaterialsFrontMachineRawReleaseRegisteredSubscription({
+    useMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscription({
         enabled: enabled && Boolean(workAreaId?.trim()),
         onEvent: () => {
             void load({ silent: true });

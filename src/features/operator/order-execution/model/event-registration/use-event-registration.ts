@@ -397,17 +397,17 @@ export function useEventRegistration({
                 signalIds: [signalId],
                 comment: trimmedComment,
             });
-            const mapped = mapEventRegistrationDiscardSignalsPayload(payload, unprocessed);
-            setUnprocessed(mapped.unprocessedEvents);
+            mapEventRegistrationDiscardSignalsPayload(payload);
             setSelectedUnprocessedId(null);
             setDeleteComment("");
             lastAppliedSignalIdRef.current = null;
+            await load();
         } catch (error) {
             setDiscardError(
                 error instanceof Error ? error.message : "Не удалось удалить необработанные сигналы",
             );
         }
-    }, [deleteComment, selectedUnprocessedId, unprocessed, workAreaId]);
+    }, [deleteComment, load, selectedUnprocessedId, workAreaId]);
 
     const canDeleteSelectedSignals =
         deleteComment.trim().length > 0 && Boolean(selectedUnprocessedId) && !isDiscardSignalsPending;

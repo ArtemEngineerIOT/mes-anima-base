@@ -145,7 +145,7 @@ function mapUnprocessedEvent(row: Record<string, unknown>, index: number): Stage
     const signalId = pickString(row.signal_id ?? row.signalId);
     return {
         id: signalId || `pending-${index}`,
-        signal: displayOrDash(pickString(row.signal_name ?? row.signalName)),
+        signal: displayOrDash(pickString(row.signal_description)),
         start: displayOrDash(pickString(row.time_start ?? row.timeStart)),
         end: displayOrDash(pickString(row.time_end ?? row.timeEnd)),
     };

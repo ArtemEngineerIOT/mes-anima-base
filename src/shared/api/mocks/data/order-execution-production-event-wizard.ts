@@ -65,7 +65,7 @@ export function buildMockProductionEventWizardInitResponse(
                     unprocessed_signals: [
                         {
                             signal_id: "ue-1",
-                            signal_name: "Удар ножа",
+                            description: "Удар ножа",
                             time_start: "03-11-2028 10:15:00",
                             time_end: "03-11-2028 10:15:12",
                             length_start_m: "1240",
@@ -73,7 +73,7 @@ export function buildMockProductionEventWizardInitResponse(
                         },
                         {
                             signal_id: "ue-2",
-                            signal_name: "Удар ножа",
+                            description: "Удар ножа",
                             time_start: "03-11-2028 10:10:00",
                             time_end: "03-11-2028 10:10:08",
                             length_start_m: "1180",

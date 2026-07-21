@@ -1,21 +1,23 @@
 import { useEffect, useRef } from "react";
 
 import { webSocket, type IncomingMessage } from "./index";
-import { DOWNTIME_FRONT_MACHINE_SIGNAL_REGISTERED_STOMP_DESTINATION } from "./downtime-front-machine-signal-registered-destination";
+import {
+    MATERIALS_FRONT_ROLL_WRITE_OFF_RAW_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION,
+} from "./materials-front-roll-write-off-raw-events-summary-changed-destination";
 
-type UseDowntimeFrontMachineSignalRegisteredSubscriptionOptions = {
+type UseMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscriptionOptions = {
     enabled: boolean;
     onEvent: () => void;
 };
 
 /**
- * STOMP подписка на `machineSignalRegistered`.
- * Payload содержит только `registered_at` — при событии на экране с этапом перезагружаем сводку.
+ * STOMP подписка на `rollWriteOffRawEventsSummaryChanged`.
+ * Payload содержит только `changed_at` — при событии перезагружаем summary списания (SCR-04).
  */
-export function useDowntimeFrontMachineSignalRegisteredSubscription({
+export function useMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscription({
     enabled,
     onEvent,
-}: UseDowntimeFrontMachineSignalRegisteredSubscriptionOptions) {
+}: UseMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscriptionOptions) {
     const onEventRef = useRef(onEvent);
     onEventRef.current = onEvent;
 
@@ -32,7 +34,10 @@ export function useDowntimeFrontMachineSignalRegisteredSubscription({
                 return;
             }
 
-            if (message.headers.destination !== DOWNTIME_FRONT_MACHINE_SIGNAL_REGISTERED_STOMP_DESTINATION) {
+            if (
+                message.headers.destination !==
+                MATERIALS_FRONT_ROLL_WRITE_OFF_RAW_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION
+            ) {
                 return;
             }
 
@@ -40,7 +45,7 @@ export function useDowntimeFrontMachineSignalRegisteredSubscription({
         });
 
         void webSocket.subscribe({
-            destination: DOWNTIME_FRONT_MACHINE_SIGNAL_REGISTERED_STOMP_DESTINATION,
+            destination: MATERIALS_FRONT_ROLL_WRITE_OFF_RAW_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION,
         }).then((id) => {
             if (disposed) {
                 if (id) {

@@ -123,21 +123,21 @@ export function buildMockOrderStageCompletionInitResponse(
                     unprocessed_events: [
                         {
                             signal_id: "866",
-                            signal_name: "outSplice",
+                            signal_description: "Стык на размотке",
                             event_code: "",
                             time_start: "2026-07-15 16:54:39",
                             time_end: "",
                         },
                         {
                             signal_id: "868",
-                            signal_name: "inSplice",
+                            signal_description: "Стык на намотке",
                             event_code: "",
                             time_start: "2026-07-15 17:22:48",
                             time_end: "",
                         },
                         {
                             signal_id: "994",
-                            signal_name: "setBraking",
+                            signal_description: "Торможение",
                             event_code: "",
                             time_start: "2026-07-16 15:25:18",
                             time_end: "",

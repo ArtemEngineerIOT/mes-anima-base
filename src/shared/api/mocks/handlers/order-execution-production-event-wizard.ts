@@ -8,7 +8,7 @@ import { buildMockProductionEventWizardInitResponse } from "../data/order-execut
 
 type UnprocessedSignalRow = {
     signal_id: string;
-    signal_name: string;
+    description: string;
     time_start: string;
     time_end: string;
     length_start_m?: string;
@@ -104,9 +104,11 @@ export const orderExecutionProductionEventWizardHandlers = [
         }
 
         const response = buildMockProductionEventWizardInitResponse(workAreaId);
-        const seeded =
-            (response[0]?.result?.[0]?.unprocessed_signals as UnprocessedSignalRow[] | undefined) ?? [];
-        unprocessedSignalsByWorkArea.set(workAreaId, [...seeded]);
+        const current = getUnprocessedSignals(workAreaId);
+        const resultItem = response[0]?.result?.[0];
+        if (resultItem) {
+            resultItem.unprocessed_signals = current;
+        }
 
         return HttpResponse.json(response);
     }),

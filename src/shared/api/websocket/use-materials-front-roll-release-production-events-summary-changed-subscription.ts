@@ -1,21 +1,24 @@
 import { useEffect, useRef } from "react";
 
 import { webSocket, type IncomingMessage } from "./index";
-import { MATERIALS_FRONT_MACHINE_RAW_RELEASE_REGISTERED_STOMP_DESTINATION } from "./materials-front-machine-raw-release-registered-destination";
+import {
+    MATERIALS_FRONT_ROLL_RELEASE_PRODUCTION_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION,
+} from "./materials-front-roll-release-production-events-summary-changed-destination";
 
-type UseMaterialsFrontMachineRawReleaseRegisteredSubscriptionOptions = {
+type UseMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscriptionOptions = {
     enabled: boolean;
     onEvent: () => void;
 };
 
 /**
- * STOMP подписка на `machineRawReleaseRegistered`.
- * Payload содержит только `registered_at` — при событии на экране с этапом перезагружаем сводку.
+ * STOMP подписка на `rollReleaseProductionEventsSummaryChanged`.
+ * Payload содержит только `changed_at` — при событии перезагружаем summary выпуска
+ * и связанные данные мониторинга / прогресса (SCR-06).
  */
-export function useMaterialsFrontMachineRawReleaseRegisteredSubscription({
+export function useMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscription({
     enabled,
     onEvent,
-}: UseMaterialsFrontMachineRawReleaseRegisteredSubscriptionOptions) {
+}: UseMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscriptionOptions) {
     const onEventRef = useRef(onEvent);
     onEventRef.current = onEvent;
 
@@ -32,7 +35,10 @@ export function useMaterialsFrontMachineRawReleaseRegisteredSubscription({
                 return;
             }
 
-            if (message.headers.destination !== MATERIALS_FRONT_MACHINE_RAW_RELEASE_REGISTERED_STOMP_DESTINATION) {
+            if (
+                message.headers.destination !==
+                MATERIALS_FRONT_ROLL_RELEASE_PRODUCTION_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION
+            ) {
                 return;
             }
 
@@ -40,7 +46,7 @@ export function useMaterialsFrontMachineRawReleaseRegisteredSubscription({
         });
 
         void webSocket.subscribe({
-            destination: MATERIALS_FRONT_MACHINE_RAW_RELEASE_REGISTERED_STOMP_DESTINATION,
+            destination: MATERIALS_FRONT_ROLL_RELEASE_PRODUCTION_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION,
         }).then((id) => {
             if (disposed) {
                 if (id) {

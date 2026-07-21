@@ -7,11 +7,13 @@ import { OrderExecutionMaterialsWriteoff } from "../order-execution-materials-wr
 type OrderExecutionMaterialsSectionProps = {
     workAreaId?: string;
     eventsSummaryEnabled: boolean;
+    onMonitoringSummaryReload?: () => void;
 };
 
 export function OrderExecutionMaterialsSection({
     workAreaId,
     eventsSummaryEnabled,
+    onMonitoringSummaryReload,
 }: OrderExecutionMaterialsSectionProps) {
     const [expanded, setExpanded] = useState(false);
     const { totalCount } = useRollWriteOffEventsSummary({
@@ -30,7 +32,11 @@ export function OrderExecutionMaterialsSection({
             keepMounted
             onExpandedChange={setExpanded}
         >
-            <OrderExecutionMaterialsWriteoff workAreaId={workAreaId} enabled={expanded} />
+            <OrderExecutionMaterialsWriteoff
+                workAreaId={workAreaId}
+                enabled={expanded}
+                onMonitoringSummaryReload={onMonitoringSummaryReload}
+            />
         </OrderExecutionCollapsibleSection>
     );
 }

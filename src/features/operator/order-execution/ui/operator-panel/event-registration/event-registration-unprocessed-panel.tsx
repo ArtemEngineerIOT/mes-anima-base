@@ -79,7 +79,7 @@ export function EventRegistrationUnprocessedPanel({
                                 className={cn(dataTableHeadCellClassName, "bg-muted/40", selectionColumnClassName)}
                                 aria-label="Выбор сигнала"
                             />
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Имя</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Описание</TableHead>
                             <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
                             <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Завершение</TableHead>
                         </TableRow>
