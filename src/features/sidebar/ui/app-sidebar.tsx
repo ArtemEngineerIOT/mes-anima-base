@@ -4,6 +4,14 @@ import { cn } from "@/shared/lib/css";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/shared/ui/kit/button";
 
+/** Натуральный размер логотипа в меню (`mainLogo.svg`). */
+const MENU_LOGO_WIDTH_PX = 62;
+const MENU_LOGO_HEIGHT_PX = 32;
+const MENU_SIDEBAR_HORIZONTAL_PADDING_PX = 12;
+const MENU_SIDEBAR_COLLAPSED_WIDTH_PX = MENU_LOGO_WIDTH_PX + MENU_SIDEBAR_HORIZONTAL_PADDING_PX * 2;
+
+const menuLogoClassName = "h-[32px] w-[62px] shrink-0 object-contain object-left";
+
 export function AppSidebar({
     collapsed,
     onToggle,
@@ -20,8 +28,9 @@ export function AppSidebar({
         <aside
             className={cn(
                 "flex h-full min-h-0 shrink-0 flex-col rounded-sm border bg-background shadow-sm",
-                collapsed ? "w-[60px]" : "w-[250px]",
+                !collapsed && "w-[250px]",
             )}
+            style={collapsed ? { width: MENU_SIDEBAR_COLLAPSED_WIDTH_PX } : undefined}
         >
             <div
                 className={cn(
@@ -29,11 +38,13 @@ export function AppSidebar({
                     collapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between",
                 )}
             >
-                <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
+                <div className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "flex-1 gap-3")}>
                     <img
-                        src="/assets/logoMenu.svg"
+                        src="/assets/mainLogo.svg"
                         alt="MES"
-                        className={cn("shrink-0", collapsed ? "h-7 w-7" : "h-8 w-8")}
+                        width={MENU_LOGO_WIDTH_PX}
+                        height={MENU_LOGO_HEIGHT_PX}
+                        className={menuLogoClassName}
                     />
                 </div>
                 <Button variant="ghost" size="icon" onClick={onToggle} aria-label="toggle sidebar">

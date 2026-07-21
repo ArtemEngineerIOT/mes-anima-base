@@ -154,6 +154,26 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetBatchReleases"
 
+    /v1/contexts/users.admin.models.rest/functions/getEventsSummary:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetEventsSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/getRollEventsSummary:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetRollEventsSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/getLastProcessParamsSlices:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetLastProcessParamsSlices"
+
+    /v1/contexts/users.admin.models.rest/functions/getProcessControl:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetProcessControl"
+
+    /v1/contexts/users.admin.models.rest/functions/saveProcessControl:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postSaveProcessControl"
+
     /v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postListStageInputRollsForWorkArea"
@@ -197,6 +217,14 @@ paths:
     /v1/contexts/users.admin.models.rest/functions/getArmExecutionMonitoringStageEvents:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetArmExecutionMonitoringStageEvents"
+
+    /v1/contexts/users.admin.models.rest/functions/getProgress:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetProgress"
+
+    /v1/contexts/users.admin.models.rest/functions/getUnprocessedSignalsSummary:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetUnprocessedSignalsSummary"
 
     /v1/contexts/users.admin.models.rest/functions/initProductionEventWizard:
         post:

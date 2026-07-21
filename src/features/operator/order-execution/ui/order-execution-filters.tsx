@@ -9,7 +9,10 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 
 import type { ProductionPlanMachine } from "@/features/operator/production-plan/model/types";
 
+import type { StageProgressInfoItem } from "../model/stage-progress/types";
 import type { MachineData } from "../model/types";
+
+type JobInfoItem = { key: string; value: string };
 
 type OrderExecutionFiltersProps = {
     machineOptions: ProductionPlanMachine[];
@@ -18,13 +21,15 @@ type OrderExecutionFiltersProps = {
     onMachineChange: (resourceCode: string) => void;
     /** Если этапа нет — блок с данными заказа не показываем */
     jobInfo: MachineData["operator"]["jobInfo"] | null;
+    /** План / выпуск / остаток / прогресс (getProgress) */
+    progressInfo?: StageProgressInfoItem[] | null;
 };
 
 function OrderExecutionJobInfoStrip({
-    jobInfo,
+    items,
     className,
 }: {
-    jobInfo: NonNullable<MachineData["operator"]["jobInfo"]>;
+    items: JobInfoItem[];
     className?: string;
 }) {
     return (
@@ -34,7 +39,7 @@ function OrderExecutionJobInfoStrip({
                 className,
             )}
         >
-            {jobInfo.map((it) => (
+            {items.map((it) => (
                 <div key={it.key} className="flex shrink-0 items-baseline gap-x-1">
                     <dt className={cnSectionBlockTitle()}>{it.key}:</dt>
                     <dd className="whitespace-nowrap text-[12px] font-medium leading-[1.5] text-foreground">
@@ -52,9 +57,11 @@ export function OrderExecutionFilters({
     selectedMachine,
     onMachineChange,
     jobInfo,
+    progressInfo,
 }: OrderExecutionFiltersProps) {
     const [collapsed, setCollapsed] = useState(false);
-    const hasJobInfo = Boolean(jobInfo && jobInfo.length > 0);
+    const stripItems: JobInfoItem[] = [...(jobInfo ?? []), ...(progressInfo ?? [])];
+    const hasStrip = stripItems.length > 0;
 
     const toggleButton = (
         <Button
@@ -74,8 +81,8 @@ export function OrderExecutionFilters({
         return (
             <Card className="shrink-0 gap-0 py-0 shadow-sm">
                 <div className="flex min-w-0 items-center gap-2 px-3 py-2">
-                    {hasJobInfo && jobInfo ? (
-                        <OrderExecutionJobInfoStrip jobInfo={jobInfo} />
+                    {hasStrip ? (
+                        <OrderExecutionJobInfoStrip items={stripItems} />
                     ) : (
                         <span className="min-w-0 flex-1 text-[12px] text-muted-foreground">Фильтр свёрнут</span>
                     )}
@@ -118,9 +125,9 @@ export function OrderExecutionFilters({
                 </div>
             </CardContent>
 
-            {hasJobInfo && jobInfo && (
+            {hasStrip && (
                 <div className="border-t border-border px-4 pb-3 pt-3">
-                    <OrderExecutionJobInfoStrip jobInfo={jobInfo} />
+                    <OrderExecutionJobInfoStrip items={stripItems} />
                 </div>
             )}
         </Card>

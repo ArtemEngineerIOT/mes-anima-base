@@ -1,20 +1,32 @@
 import { useState } from "react";
 
+import { useProductionEventsSummary } from "../../model/release/production-events-summary/use-production-events-summary";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { OrderExecutionRelease } from "../order-execution-release";
 
 type OrderExecutionReleaseSectionProps = {
     workAreaId?: string;
+    eventsSummaryEnabled: boolean;
 };
 
-export function OrderExecutionReleaseSection({ workAreaId }: OrderExecutionReleaseSectionProps) {
+export function OrderExecutionReleaseSection({
+    workAreaId,
+    eventsSummaryEnabled,
+}: OrderExecutionReleaseSectionProps) {
     const [expanded, setExpanded] = useState(false);
+    const { totalCount } = useProductionEventsSummary({
+        workAreaId,
+        enabled: eventsSummaryEnabled,
+    });
+
+    const headerTone = totalCount > 0 ? "warning" : "success";
 
     return (
         <OrderExecutionCollapsibleSection
             title="Выпуск"
             defaultOpen={false}
-            tone="success"
+            tone={headerTone}
+            count={totalCount > 0 ? totalCount : undefined}
             keepMounted
             onExpandedChange={setExpanded}
         >

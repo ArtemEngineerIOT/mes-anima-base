@@ -15,6 +15,10 @@ import { submitStageLkmHandlers } from "./handlers/submit-stage-lkm";
 import { orderExecutionReleaseHandlers } from "./handlers/order-execution-release";
 import { orderExecutionEventRollWriteOffHandlers } from "./handlers/order-execution-event-roll-write-off";
 import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-monitoring";
+import { orderExecutionStageProgressHandlers } from "./handlers/order-execution-stage-progress";
+import { orderExecutionUnprocessedSignalsSummaryHandlers } from "./handlers/order-execution-unprocessed-signals-summary";
+import { orderExecutionLastProcessParamsSlicesHandlers } from "./handlers/order-execution-last-process-params-slices";
+import { orderExecutionProcessControlHandlers } from "./handlers/order-execution-process-control";
 import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
 import { orderExecutionListCylindersReportHandlers } from "./handlers/order-execution-list-cylinders-report";
 import { orderExecutionStageInfoReportHandlers } from "./handlers/order-execution-stage-info-report";
@@ -61,6 +65,10 @@ export const worker = setupWorker(
     ...orderExecutionReleaseHandlers,
     ...orderExecutionEventRollWriteOffHandlers,
     ...orderExecutionMonitoringHandlers,
+    ...orderExecutionStageProgressHandlers,
+    ...orderExecutionUnprocessedSignalsSummaryHandlers,
+    ...orderExecutionLastProcessParamsSlicesHandlers,
+    ...orderExecutionProcessControlHandlers,
     ...orderExecutionProductionEventWizardHandlers,
     ...orderExecutionListCylindersReportHandlers,
     ...orderExecutionStageInfoReportHandlers,

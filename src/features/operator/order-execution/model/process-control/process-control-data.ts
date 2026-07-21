@@ -1,27 +1,16 @@
-import type { ProcessControlChecklistRow, ProcessControlFormState, ProcessControlInfoBlock } from "./types";
+import type { ProcessControlChecklistRow, ProcessControlInfoBlock } from "./types";
 
 export const PROCESS_CONTROL_CHECKLIST_ROWS: ProcessControlChecklistRow[] = [
-    { id: "metallic-ink-mixer", section: "Миксер на металлизированной краске включен" },
-    { id: "mirror-and-lens-clean", section: "Чистота зеркала и линзы световода проверены" },
-    { id: "cs-level-visual-check", section: "Визуальная проверка уровня CS в ёмкости" },
-    { id: "electrostatic-bars-position", section: "Положение электростатических планок" },
+    { id: "MIXER_METALLIC", section: "Миксер на металлизированной краске включен" },
+    { id: "LIGHTGUIDE_CLEAN", section: "Чистота зеркала и линзы световода проверены" },
+    { id: "CS_LEVEL", section: "Визуальная проверка уровня CS в ёмкости" },
+    { id: "ES_BARS", section: "Положение электростатических планок" },
     {
-        id: "camera-parameters-target",
+        id: "CAMERA_PARAMS",
         section: "Параметры камеры контроля соответствуют целевым значениям (проверка на старте)",
     },
+    { id: "DRAUGHT_GAUGES", section: "Тягонапоромеры", hasValue: true },
 ];
-
-export const PROCESS_CONTROL_INITIAL_FORM: ProcessControlFormState = {
-    replacedElementsCount: "3",
-    pressWidth: "520",
-    flags: {
-        "metallic-ink-mixer": true,
-        "mirror-and-lens-clean": false,
-        "cs-level-visual-check": false,
-        "electrostatic-bars-position": true,
-        "camera-parameters-target": false,
-    },
-};
 
 export const PROCESS_CONTROL_INFO_BLOCKS: ProcessControlInfoBlock[] = [
     {

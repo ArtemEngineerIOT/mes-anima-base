@@ -8,7 +8,12 @@ import {
     buildMockReleaseFormInitResponse,
     buildMockStageInputRollsResponse,
 } from "../data/order-execution-release";
-import { buildMockEventReleaseProductionResponse, buildMockDiscardEventResponse, buildMockAcceptProdFromEventResponse } from "../data/order-execution-release-production-event";
+import { buildMockReleaseProductionEventsSummaryResponse } from "../data/order-execution-release-production-events-summary";
+import {
+    buildMockEventReleaseProductionResponse,
+    buildMockDiscardEventResponse,
+    buildMockAcceptProdFromEventResponse,
+} from "../data/order-execution-release-production-event";
 
 function readWorkAreaId(body: { workAreaId?: string }[] | undefined): string {
     return body?.[0]?.workAreaId?.trim() ?? "";
@@ -122,5 +127,16 @@ export const orderExecutionReleaseHandlers = [
         }
 
         return HttpResponse.json(buildMockPrepareReleaseLabelResponse(workAreaId, materialProductionReleaseId));
+    }),
+
+    http.post("/v1/contexts/users.admin.models.rest/functions/getEventsSummary", async ({ request }) => {
+        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
+        const workAreaId = readWorkAreaId(body);
+
+        if (!workAreaId) {
+            return HttpResponse.json({ message: "Укажите workAreaId" }, { status: 400 });
+        }
+
+        return HttpResponse.json(buildMockReleaseProductionEventsSummaryResponse(workAreaId));
     }),
 ];

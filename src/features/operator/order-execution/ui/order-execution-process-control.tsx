@@ -11,20 +11,51 @@ import {
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
-import { useProcessControl } from "../model/process-control/use-process-control";
+import type { ProcessControlChecklistRow, ProcessControlFormState, ProcessControlInfoBlock } from "../model/process-control/types";
 
-export function OrderExecutionProcessControl() {
-    const {
-        form,
-        setReplacedElementsCount,
-        setPressWidth,
-        toggleFlag,
-        checklistRows,
-        infoBlocks,
-    } = useProcessControl();
+type OrderExecutionProcessControlProps = {
+    workAreaId?: string;
+    form: ProcessControlFormState;
+    setReplacedElementsCount: (value: string) => void;
+    setPressWidth: (value: string) => void;
+    toggleFlag: (rowId: string) => void;
+    setChecklistValue: (rowId: string, value: string) => void;
+    checklistRows: ProcessControlChecklistRow[];
+    infoBlocks: ProcessControlInfoBlock[];
+    isLoading: boolean;
+    isSaving: boolean;
+    error: string | null;
+    saveError: string | null;
+    save: () => Promise<void>;
+};
+
+export function OrderExecutionProcessControl({
+    workAreaId,
+    form,
+    setReplacedElementsCount,
+    setPressWidth,
+    toggleFlag,
+    setChecklistValue,
+    checklistRows,
+    infoBlocks,
+    isLoading,
+    isSaving,
+    error,
+    saveError,
+    save,
+}: OrderExecutionProcessControlProps) {
+    const fieldsDisabled = isLoading || isSaving || !workAreaId?.trim();
 
     return (
         <div className="flex flex-col gap-4">
+            {error ? (
+                <Informer tone="alert" variant="filled" title="Ошибка загрузки" description={error} />
+            ) : null}
+
+            {saveError ? (
+                <Informer tone="alert" variant="filled" title="Ошибка сохранения" description={saveError} />
+            ) : null}
+
             <div className="grid grid-cols-1 gap-4 md:max-w-[320px]">
                 <div>
                     <div className={comboboxFieldLabelClassName}>Элементов заменено</div>
@@ -32,6 +63,8 @@ export function OrderExecutionProcessControl() {
                         className="mt-1"
                         value={form.replacedElementsCount}
                         onChange={(event) => setReplacedElementsCount(event.target.value)}
+                        inputMode="numeric"
+                        disabled={fieldsDisabled}
                     />
                 </div>
                 <div>
@@ -40,6 +73,8 @@ export function OrderExecutionProcessControl() {
                         className="mt-1"
                         value={form.pressWidth}
                         onChange={(event) => setPressWidth(event.target.value)}
+                        inputMode="decimal"
+                        disabled={fieldsDisabled}
                     />
                 </div>
             </div>
@@ -59,22 +94,29 @@ export function OrderExecutionProcessControl() {
                             <TableRow key={row.id}>
                                 <TableCell className={dataTableBodyCellClassName}>{row.section}</TableCell>
                                 <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
-                                    <input
-                                        type="checkbox"
-                                        checked={Boolean(form.flags[row.id])}
-                                        onChange={() => toggleFlag(row.id)}
-                                        className="h-4 w-4 accent-primary"
-                                        aria-label={row.section}
-                                    />
+                                    {row.hasValue ? (
+                                        <Input
+                                            className="mx-auto h-8 max-w-[180px] text-center text-[12px]"
+                                            value={form.checklistValues[row.id] ?? ""}
+                                            onChange={(event) => setChecklistValue(row.id, event.target.value)}
+                                            disabled={fieldsDisabled}
+                                            aria-label={row.section}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(form.flags[row.id])}
+                                            onChange={() => toggleFlag(row.id)}
+                                            disabled={fieldsDisabled}
+                                            className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                                            aria-label={row.section}
+                                        />
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
-            </div>
-
-            <div className="flex justify-end">
-                <Button size="sm">Сохранить</Button>
             </div>
 
             {infoBlocks.map((block) => (
@@ -87,6 +129,20 @@ export function OrderExecutionProcessControl() {
                     description={block.description}
                 />
             ))}
+
+            <div className="flex justify-end">
+                <Button
+                    size="sm"
+                    disabled={fieldsDisabled}
+                    pending={isSaving}
+                    pendingLabel="Сохранение…"
+                    onClick={() => {
+                        void save();
+                    }}
+                >
+                    Сохранить
+                </Button>
+            </div>
         </div>
     );
 }

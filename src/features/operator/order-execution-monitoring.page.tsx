@@ -47,6 +47,7 @@ function OrderExecutionMonitoringPage() {
                     >
                         <OrderExecutionTechnologicalParamsPanel
                             machineId={machineId}
+                            workAreaId={workAreaId || undefined}
                             layout="page"
                             showTitle={false}
                         />

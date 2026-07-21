@@ -6,6 +6,7 @@ import {
     buildMockDiscardEventRollResponse,
     buildMockEventRollWriteOffResponse,
 } from "../data/order-execution-event-roll-write-off";
+import { buildMockRollWriteOffEventsSummaryResponse } from "../data/order-execution-roll-write-off-events-summary";
 
 export const orderExecutionEventRollWriteOffHandlers = [
     http.post("/v1/contexts/users.admin.models.rest/functions/eventRollWriteOff", async ({ request }) => {
@@ -59,5 +60,16 @@ export const orderExecutionEventRollWriteOffHandlers = [
                 machineEventSignalId,
             }),
         );
+    }),
+
+    http.post("/v1/contexts/users.admin.models.rest/functions/getRollEventsSummary", async ({ request }) => {
+        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
+        const workAreaId = body?.[0]?.workAreaId?.trim() ?? "";
+
+        if (!workAreaId) {
+            return HttpResponse.json({ message: "Укажите workAreaId" }, { status: 400 });
+        }
+
+        return HttpResponse.json(buildMockRollWriteOffEventsSummaryResponse(workAreaId));
     }),
 ];

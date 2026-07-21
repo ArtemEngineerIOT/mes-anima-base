@@ -55,10 +55,12 @@ import {
     type TechnologicalProcessParamRow,
     type TechnologicalSpeedRow,
 } from "../model/technological-params-mock";
+import { useLastProcessParamsSlices } from "../model/technological-params/last-process-params-slices/use-last-process-params-slices";
 import type { MachineId } from "../model/types";
 
 type OrderExecutionTechnologicalParamsPanelProps = {
     machineId: MachineId;
+    workAreaId?: string;
     layout?: "page" | "embedded";
     showTitle?: boolean;
     title?: string;
@@ -698,6 +700,7 @@ function SpeedTable({
 
 export function OrderExecutionTechnologicalParamsPanel({
     machineId,
+    workAreaId,
     layout = "page",
     showTitle = true,
     title,
@@ -710,6 +713,16 @@ export function OrderExecutionTechnologicalParamsPanel({
         () => resolveTechnologicalParamsStompSyncInformer(stompState),
         [stompState],
     );
+
+    const {
+        historyByRowId: slicesHistoryByRowId,
+        isLoading: isSlicesLoading,
+        error: slicesError,
+    } = useLastProcessParamsSlices({
+        workAreaId,
+        sections: data,
+        enabled: Boolean(workAreaId?.trim()),
+    });
 
     const [manualEntry, setManualEntry] = useState(false);
     const [draft, setDraft] = useState<TechnologicalParamsDraft>(() => buildTechnologicalParamsDraft(data));
@@ -730,6 +743,23 @@ export function OrderExecutionTechnologicalParamsPanel({
         setSavedPresser(buildSavedPresserState(data));
         setHistoryByRowId(buildInitialTechnologicalParamHistory(data));
     }, [data]);
+
+    useEffect(() => {
+        if (isSlicesLoading) {
+            return;
+        }
+
+        if (!workAreaId?.trim()) {
+            setHistoryByRowId(buildInitialTechnologicalParamHistory(data));
+            return;
+        }
+
+        const next = buildInitialTechnologicalParamHistory(data);
+        for (const [rowId, entries] of Object.entries(slicesHistoryByRowId)) {
+            next[rowId] = entries.map((entry) => ({ ...entry }));
+        }
+        setHistoryByRowId(next);
+    }, [data, isSlicesLoading, slicesHistoryByRowId, workAreaId]);
 
     const resolveCurrentValue = useCallback(
         (row: MeasurableRow) =>
@@ -844,6 +874,25 @@ export function OrderExecutionTechnologicalParamsPanel({
                 title={stompSyncInformer.title}
                 description={stompSyncInformer.description}
             />
+
+            {slicesError ? (
+                <Informer
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Срезы технологических параметров"
+                    description={slicesError}
+                />
+            ) : null}
+
+            {isSlicesLoading ? (
+                <Informer
+                    tone="system"
+                    variant="bordered"
+                    size="s"
+                    title="Загрузка срезов технологических параметров…"
+                />
+            ) : null}
 
             <Informer tone="system" variant="bordered" size="s" title="Правила заполнения" description={data.rulesText} />
 

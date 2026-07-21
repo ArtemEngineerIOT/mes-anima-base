@@ -1,10 +1,11 @@
+import { useCallback } from "react";
+
 import { useEventRegistrationContext } from "../../model/event-registration/event-registration-context";
-import { useOrderExecutionMachineStompState } from "../../model/machine-stomp/order-execution-machine-stomp-context";
-import { resolveEventRegistrationMachinePanel } from "../../model/machine-stomp/resolve-event-registration-machine-panel";
+import { useUnprocessedSignalsSummary } from "../../model/event-registration/unprocessed-signals-summary/use-unprocessed-signals-summary";
 import { Informer } from "@/shared/ui/kit/informer";
-import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { EventRegistrationSignalHeader } from "./event-registration/event-registration-signal-header";
+import { EventRegistrationSignalsSummaryPanel } from "./event-registration/event-registration-signals-summary-panel";
 import { EventRegistrationStepper } from "./event-registration/event-registration-stepper";
 import {
     EventRegistrationStep1,
@@ -14,15 +15,17 @@ import {
 import { EventRegistrationUnprocessedPanel } from "./event-registration/event-registration-unprocessed-panel";
 
 type OrderExecutionEventRegistrationSectionProps = {
+    workAreaId?: string;
+    signalsSummaryEnabled: boolean;
     onExpandedChange?: (expanded: boolean) => void;
 };
 
 export function OrderExecutionEventRegistrationSection({
+    workAreaId,
+    signalsSummaryEnabled,
     onExpandedChange,
 }: OrderExecutionEventRegistrationSectionProps) {
     const registration = useEventRegistrationContext();
-    const machineStompState = useOrderExecutionMachineStompState();
-    const machineDataPanel = resolveEventRegistrationMachinePanel(machineStompState);
     const {
         step,
         unprocessedCount,
@@ -36,26 +39,47 @@ export function OrderExecutionEventRegistrationSection({
         isWizardDisabled,
     } = registration;
 
-    const headerTone = unprocessedCount > 0 ? "warning" : undefined;
+    const {
+        snapshot: signalsSummary,
+        isLoading: isSignalsSummaryLoading,
+        error: signalsSummaryError,
+        reload: reloadSignalsSummary,
+    } = useUnprocessedSignalsSummary({
+        workAreaId,
+        enabled: signalsSummaryEnabled,
+    });
+
+    const handleExpandedChange = useCallback(
+        (expanded: boolean) => {
+            onExpandedChange?.(expanded);
+            if (expanded) {
+                void reloadSignalsSummary();
+            }
+        },
+        [onExpandedChange, reloadSignalsSummary],
+    );
+
+    const headerCount = signalsSummary.totalCount > 0 ? signalsSummary.totalCount : unprocessedCount;
+    const headerTone = headerCount > 0 ? "warning" : undefined;
 
     return (
         <OrderExecutionCollapsibleSection
             title="Регистрация события"
             defaultOpen={false}
             tone={headerTone}
-            count={unprocessedCount > 0 ? unprocessedCount : undefined}
+            count={headerCount > 0 ? headerCount : undefined}
             keepMounted
-            onExpandedChange={onExpandedChange}
+            onExpandedChange={handleExpandedChange}
         >
             <div className="grid gap-4">
                 {loadError ? (
                     <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={loadError} />
                 ) : null}
 
-                <MachineDataPanel
-                    rows={machineDataPanel.rows}
-                    updatedAt={machineDataPanel.updatedAt}
-                    tone={machineDataPanel.tone}
+                <EventRegistrationSignalsSummaryPanel
+                    snapshot={signalsSummary}
+                    isLoading={isSignalsSummaryLoading}
+                    error={signalsSummaryError}
                 />
 
                 <EventRegistrationUnprocessedPanel registration={registration} disabled={isWizardDisabled} />

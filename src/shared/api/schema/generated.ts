@@ -1622,6 +1622,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/getEventsSummary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сводка событий выпуска (SCR-06 / UC-25)
+         * @description BFF `users.admin.models.rollReleaseProductionEventQueue.getEventsSummary`. Badge в заголовке блока «Выпуск». Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Сводка событий выпуска (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionReleaseProductionEventsSummaryResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getRollEventsSummary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сводка событий списания (SCR-04 / UC-15)
+         * @description BFF `users.admin.models.rollWriteOffRawEventQueue.getEventsSummary` (REST: `getRollEventsSummary`). Badge в заголовке блока «Материалы. Списание/возврат». Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Сводка событий списания (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionRollWriteOffEventsSummaryResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getLastProcessParamsSlices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Три последних среза ТП (JB Process control)
+         * @description BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`. Колонки-справка на экране «Технологические параметры машины». Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Срезы ТП (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionLastProcessParamsSlicesResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getProcessControl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Контроль процесса (чеклист JB)
+         * @description BFF `users.admin.models.processControlJbBff.getProcessControl`. Данные формы чеклиста в `result.encoded_data` (JSON). Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Контроль процесса (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionProcessControlResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/saveProcessControl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сохранение контроля процесса (чеклист JB)
+         * @description BFF `users.admin.models.processControlJbBff.saveProcessControl`. Тело: `[{ workAreaId, payloadJson, operatorRef }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionSaveProcessControlRequest"];
+                };
+            };
+            responses: {
+                /** @description Сохранение контроля процесса (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionSaveProcessControlResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea": {
         parameters: {
             query?: never;
@@ -2105,6 +2330,96 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderExecutionMonitoringStageEventsResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getProgress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Прогресс этапа по метражу (SCR-00 / UC-25)
+         * @description BFF `users.admin.models.armExecutionStageProgress.getProgress`. План / выпуск / остаток / % — для шапки «Исполнение заказа». Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Прогресс этапа (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionStageProgressResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getUnprocessedSignalsSummary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сводка необработанных сигналов (SCR-07 / UC-25)
+         * @description BFF `users.admin.models.productionEventWizard.getUnprocessedSignalsSummary`. Плашка «Сигналы с машины» в блоке «Регистрация события». Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Сводка сигналов (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionUnprocessedSignalsSummaryResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -3422,6 +3737,85 @@ export interface components {
         OrderExecutionReleaseBatchReleasesResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionReleaseBatchReleasesResultItem"][];
         })[];
+        /** @description Элемент result getEventsSummary (SCR-06 / UC-25) */
+        OrderExecutionReleaseProductionEventsSummaryResultItem: {
+            work_area_id?: string | null;
+            total_count?: number | null;
+            last_event_at?: string | null;
+            last_event_name?: string | null;
+            last_event_description?: string | null;
+            last_event_length_m?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getEventsSummary (SCR-06 / UC-25) */
+        OrderExecutionReleaseProductionEventsSummaryResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionReleaseProductionEventsSummaryResultItem"][];
+        })[];
+        /** @description Элемент result getRollEventsSummary (SCR-04 / UC-15) */
+        OrderExecutionRollWriteOffEventsSummaryResultItem: {
+            work_area_id?: string | null;
+            total_count?: number | null;
+            last_event_at?: string | null;
+            last_event_name?: string | null;
+            last_event_description?: string | null;
+            last_event_length_m?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getRollEventsSummary (SCR-04 / UC-15) */
+        OrderExecutionRollWriteOffEventsSummaryResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionRollWriteOffEventsSummaryResultItem"][];
+        })[];
+        /** @description Строка result getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSliceRow: {
+            slice_no?: number | null;
+            external_series_key?: string | null;
+            param_code?: string | null;
+            value?: string | null;
+            material_roll_id?: string | null;
+            /** @description Время последнего изменения среза (`yyyy-MM-dd HH:mm:ss`) */
+            updated_at?: string | null;
+            captured_at?: string | null;
+            recorded_at?: string | null;
+            checked_at?: string | null;
+            origin?: string | null;
+            source?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSlicesResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionLastProcessParamsSliceRow"][];
+        })[];
+        /** @description Элемент result getProcessControl (JB Process control) */
+        OrderExecutionProcessControlResultItem: {
+            work_area_id?: string | null;
+            /** @description JSON с `tables.checklist` и `tables.numeric_values` */
+            encoded_data?: string | null;
+            updated_at?: string | null;
+            status?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getProcessControl (JB Process control) */
+        OrderExecutionProcessControlResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionProcessControlResultItem"][];
+        })[];
+        /** @description Запрос saveProcessControl (JB Process control) */
+        OrderExecutionSaveProcessControlRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description JSON-строка с `tables.checklist` и `tables.numeric_values` (`item_code`, `item_label`, `checked`, `value`, `presser_width`) */
+            payloadJson: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`, из сессии) */
+            operatorRef?: string;
+        };
+        OrderExecutionSaveProcessControlRequest: components["schemas"]["OrderExecutionSaveProcessControlRequestItem"][];
+        /** @description Ответ saveProcessControl (JB Process control) */
+        OrderExecutionSaveProcessControlResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionProcessControlResultItem"][];
+        })[];
         OrderExecutionReleaseInputRollRow: {
             barcode?: string | null;
             external_series_key?: string | null;
@@ -3644,16 +4038,24 @@ export interface components {
         OrderExecutionMonitoringStageEventsResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionMonitoringStageEventsResultItem"][];
         })[];
-        /** @description Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события */
-        OrderExecutionProductionEventWizardInitRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
-            workAreaId: string;
-            /** @description Ссылка на оператора в MES (`operator_ref`) */
-            operatorRef: string;
+        /** @description Элемент result getProgress (SCR-00 / UC-25) */
+        OrderExecutionStageProgressResultItem: {
+            work_area_id?: string | null;
+            /** @description План, м */
+            required_meterage_m?: number | null;
+            /** @description Выпуск (годный), м */
+            released_good_meterage_m?: number | null;
+            /** @description Остаток, м */
+            remaining_meterage_m?: number | null;
+            /** @description Прогресс, % */
+            progress_percent?: number | null;
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionProductionEventWizardInitRequest: components["schemas"]["OrderExecutionProductionEventWizardInitRequestItem"][];
+        /** @description Ответ getProgress (SCR-00 / UC-25) */
+        OrderExecutionStageProgressResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionStageProgressResultItem"][];
+        })[];
         /** @description Обёртка ответа RPC мастера регистрации события (initWizard и др.) */
         OrderExecutionProductionEventWizardRpcResultRow: {
             /** @description OK — успех */
@@ -3666,6 +4068,38 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Элемент summary getUnprocessedSignalsSummary (SCR-07 / UC-25) */
+        OrderExecutionUnprocessedSignalsSummaryItem: {
+            signal_name?: string | null;
+            signal_description?: string | null;
+            count?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Элемент result getUnprocessedSignalsSummary (SCR-07 / UC-25) */
+        OrderExecutionUnprocessedSignalsSummaryResultItem: {
+            work_area_id?: string | null;
+            total_count?: number | null;
+            /** @description Время последнего события (`yyyy-MM-dd HH:mm:ss` или пусто) */
+            last_event_at?: string | null;
+            summary?: components["schemas"]["OrderExecutionUnprocessedSignalsSummaryItem"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getUnprocessedSignalsSummary (SCR-07 / UC-25) */
+        OrderExecutionUnprocessedSignalsSummaryResponse: (components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"] & {
+            result?: components["schemas"]["OrderExecutionUnprocessedSignalsSummaryResultItem"][];
+        })[];
+        /** @description Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события */
+        OrderExecutionProductionEventWizardInitRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`) */
+            operatorRef: string;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionProductionEventWizardInitRequest: components["schemas"]["OrderExecutionProductionEventWizardInitRequestItem"][];
         OrderExecutionProductionEventWizardInitResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
         /** @description Запрос discardSignals (SCR-07 / UC-25) — удаление необработанных сигналов */
         OrderExecutionProductionEventWizardDiscardSignalsRequestItem: {

@@ -36,11 +36,21 @@ export function OrderExecutionOperatorPanel({
             <div className="min-h-0 flex flex-col gap-3 app-scroll overflow-auto">
                 <OrderExecutionJbSection jb={operator.jb} workAreaId={workAreaId} />
                 
-                <OrderExecutionMaterialsSection workAreaId={workAreaId} />
-                <OrderExecutionProcessControlSection />
+                <OrderExecutionMaterialsSection
+                    workAreaId={workAreaId}
+                    eventsSummaryEnabled={Boolean(workAreaId?.trim())}
+                />
+                <OrderExecutionProcessControlSection workAreaId={workAreaId} />
                 <OrderExecutionProcessJournalSection onExpandedChange={setProcessJournalExpanded} />
-                <OrderExecutionEventRegistrationSection onExpandedChange={setEventRegistrationExpanded} />
-                <OrderExecutionReleaseSection workAreaId={workAreaId} />
+                <OrderExecutionEventRegistrationSection
+                    workAreaId={workAreaId}
+                    signalsSummaryEnabled={Boolean(workAreaId?.trim())}
+                    onExpandedChange={setEventRegistrationExpanded}
+                />
+                <OrderExecutionReleaseSection
+                    workAreaId={workAreaId}
+                    eventsSummaryEnabled={Boolean(workAreaId?.trim())}
+                />
 
                 <OrderExecutionStageCompletionSection workAreaId={workAreaId} />
             </div>
