@@ -23,8 +23,13 @@ export function App() {
     const isMaterialOrderPage = location.pathname === ROUTES.OPERATOR.MATERIAL_ORDER;
     const isMaterialMovePage = location.pathname === ROUTES.OPERATOR.MATERIAL_MOVE;
     const isProductionPlanPage = location.pathname === ROUTES.OPERATOR.PRODUCTION_PLAN;
+    const isDefectWeighingPage = location.pathname === ROUTES.OPERATOR.DEFECT_WEIGHING;
     const isFullHeightPage =
-        isOrderExecutionPage || isMaterialOrderPage || isMaterialMovePage || isProductionPlanPage;
+        isOrderExecutionPage ||
+        isMaterialOrderPage ||
+        isMaterialMovePage ||
+        isProductionPlanPage ||
+        isDefectWeighingPage;
 
     const productionPlanShellClassName =
         "flex-1 min-h-0 min-w-0 overflow-hidden rounded-sm border bg-background shadow-sm";

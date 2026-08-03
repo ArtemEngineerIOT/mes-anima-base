@@ -46,6 +46,7 @@ function formatQuantity(quantity: number | undefined, unit: string | undefined):
 function mapStageRow(row: Record<string, unknown>): MaterialOrderPlanStage | null {
     const workAreaId = pickString(row, "work_area_id", "workAreaId");
     const stage = pickString(row, "etap", "stage");
+    const operationId = pickString(row, "id_operacii", "operationId") ?? "—";
     const orderId = pickString(row, "order_id", "orderId");
 
     if (!workAreaId || !stage || !orderId) {
@@ -59,6 +60,7 @@ function mapStageRow(row: Record<string, unknown>): MaterialOrderPlanStage | nul
         id: workAreaId,
         workAreaId,
         stage,
+        operationId,
         orderId,
         orderDate: formatPlanDateTime(pickString(row, "client_order_date", "clientOrderDate")),
         client: pickString(row, "client_name", "clientName") ?? "—",

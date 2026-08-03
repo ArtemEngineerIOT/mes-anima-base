@@ -5,7 +5,6 @@ import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
 import {
-    MATERIAL_ORDER_RESOURCE_CODE,
     NOMENCLATURE_KIND_OPTIONS,
 } from "./constants";
 import { buildMaterialOrderLocationRequestBody } from "./build-material-order-location-request-body";
@@ -48,6 +47,7 @@ function planMatchesSearch(row: MaterialOrderPlanStage, q: string) {
         row.stage.toLowerCase().includes(n) ||
         row.orderId.toLowerCase().includes(n) ||
         row.client.toLowerCase().includes(n) ||
+        row.operationId.toLowerCase().includes(n) ||
         row.product.toLowerCase().includes(n)
     );
 }
@@ -88,7 +88,11 @@ function byKindOrder(a: NomenclatureKindId, b: NomenclatureKindId) {
 }
 
 export function useMaterialOrderWorkspace() {
-    const planStages = useMaterialOrderPlanStages(MATERIAL_ORDER_RESOURCE_CODE);
+    const [orderMachineResourceCode, setOrderMachineResourceCode] = useState<string | null>(null);
+    const planStages = useMaterialOrderPlanStages(
+        orderMachineResourceCode ?? "",
+        Boolean(orderMachineResourceCode),
+    );
     const {
         machineOptions,
         isLoading: isMachineOptionsLoading,
@@ -208,6 +212,21 @@ export function useMaterialOrderWorkspace() {
         setLocationFilterMachines((prev) => pickDefaultMaterialOrderMachineCodes(machineOptions, prev));
     }, [machineOptions]);
 
+    useEffect(() => {
+        if (machineOptions.length === 0) {
+            return;
+        }
+
+        setOrderMachineResourceCode((prev) => {
+            if (prev && machineOptions.some((m) => m.resourceCode === prev)) {
+                return prev;
+            }
+
+            const next = pickDefaultMaterialOrderMachineCodes(machineOptions, prev ? [prev] : []);
+            return next[0] ?? null;
+        });
+    }, [machineOptions]);
+
     const planRowsFiltered = useMemo(
         () => planStages.stages.filter((row) => planMatchesSearch(row, planQuery)),
         [planQuery, planStages.stages],
@@ -315,6 +334,15 @@ export function useMaterialOrderWorkspace() {
         setComposeError(null);
         setPlanSelectedIds(new Set());
     }, []);
+
+    const setOrderMachine = useCallback(
+        (resourceCode: string) => {
+            const trimmed = resourceCode.trim();
+            setOrderMachineResourceCode(trimmed ? trimmed : null);
+            resetOrderDraft();
+        },
+        [resetOrderDraft],
+    );
 
     const togglePlanRow = useCallback((id: string) => {
         setPlanSelectedIds((prev) => {
@@ -568,10 +596,11 @@ export function useMaterialOrderWorkspace() {
     ]);
 
     return {
-        orderMachineId: planStages.resourceCode,
+        orderMachineId: orderMachineResourceCode ?? "",
         planStagesLoading: planStages.isLoading,
         planStagesError: planStages.error,
         reloadPlanStages: planStages.reload,
+        setOrderMachine,
         machineOptions,
         isMachineOptionsLoading,
         machineOptionsError,

@@ -6,10 +6,16 @@ import { Informer } from "@/shared/ui/kit/informer";
 import { Switch } from "@/shared/ui/kit/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cn } from "@/shared/lib/css";
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
+import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
+    dataTableInsetShellClassName,
     dataTableScrollViewportClassName,
     dataTableShellClassName,
+    dataTableSplitScrollBodyClassName,
     dataTableStickyHeadCellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -23,6 +29,9 @@ type MaterialOrderFormPanelProps = {
 export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProps) {
     const {
         orderMachineId,
+        machineOptions,
+        isMachineOptionsLoading,
+        setOrderMachine,
         planStagesLoading,
         planStagesError,
         reloadPlanStages,
@@ -67,11 +76,37 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
     const rollToggleDisabled = !pickToggleEnabled;
     const showRollPickBlock = pickToggleEnabled && specificRollsEnabled;
 
+    const {
+        pageItems: planPageItems,
+        pagination: planPagination,
+        pageSize: planPageSize,
+        setPageSize: setPlanPageSize,
+        setPage: setPlanPage,
+    } = useDataTablePagination(planRowsFiltered, { initialPageSize: 10 });
+
     return (
-        <div className="flex flex-col gap-4">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Вы заказываете к машине — {orderMachineId}
-            </p>
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="grid w-fit max-w-full gap-1.5">
+                <Label htmlFor="material-order-machine" className={comboboxFieldLabelClassName}>
+                    Машина
+                </Label>
+                <select
+                    id="material-order-machine"
+                    value={orderMachineId}
+                    disabled={isMachineOptionsLoading || machineOptions.length === 0 || isOrderFormVisible}
+                    onChange={(event) => setOrderMachine(event.target.value)}
+                    className="h-9 w-fit min-w-[8.5rem] max-w-full rounded-sm border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {isMachineOptionsLoading ? <option value="">Загрузка…</option> : null}
+                    {machineOptions.length === 0 ? <option value="">Нет машин</option> : null}
+                    <option value="">Не выбрано</option>
+                    {machineOptions.map((item) => (
+                        <option key={item.resourceCode} value={item.resourceCode}>
+                            {item.machine}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
             <section className="flex flex-col gap-2">
                 {planStagesError ? (
@@ -108,34 +143,87 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                         <Icon name="delete_sweep" className="text-base" />
                     </Button>
                 </div>
-                <div className={dataTableScrollViewportClassName}>
-                    <Table className={dataTableShellClassName}>
+                <DataTableViewport
+                    layout="fill"
+                    footer={
+                        <DataTablePaginationFooter
+                            totalCount={planPagination.totalCount}
+                            rangeStart={planPagination.rangeStart}
+                            rangeEnd={planPagination.rangeEnd}
+                            page={planPagination.page}
+                            totalPages={planPagination.totalPages}
+                            pageSize={planPageSize}
+                            onPageChange={setPlanPage}
+                            onPageSizeChange={setPlanPageSize}
+                        />
+                    }
+                >
+                    <Table
+                        className={cn(
+                            dataTableInsetShellClassName,
+                            "min-w-[760px] border-separate border-spacing-0 text-[12px]",
+                        )}
+                    >
                         <TableHeader className="bg-muted/40">
                             <TableRow>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-10")} />
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        "w-[40px] max-w-[40px] whitespace-nowrap",
+                                    )}
+                                />
                                 <TableHead className={dataTableStickyHeadCellClassName}>Этап</TableHead>
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        "w-[80px] max-w-[80px] whitespace-nowrap",
+                                    )}
+                                >
+                                    id этапа
+                                </TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Дата заказа</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Клиент</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[180px]")}>Продукт</TableHead>
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        "min-w-[180px] max-w-[240px] truncate",
+                                    )}
+                                >
+                                    Продукт
+                                </TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Количество</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Старт</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Завершение</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className={dataTableSplitScrollBodyClassName}>
                             {planStagesLoading ? (
                                 <TableRow>
                                     <TableCell
                                         className={cn(dataTableBodyCellClassName, "py-8 text-center text-muted-foreground")}
-                                        colSpan={8}
+                                        colSpan={9}
                                     >
                                         Загрузка этапов…
                                     </TableCell>
                                 </TableRow>
+                            ) : planRowsFiltered.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        className={cn(dataTableBodyCellClassName, "py-8 text-center text-muted-foreground")}
+                                        colSpan={9}
+                                    >
+                                        {!orderMachineId ? "Сначала выберите машину" : `Нет этапов плана для машины ${orderMachineId}`}
+                                    </TableCell>
+                                </TableRow>
                             ) : (
-                                planRowsFiltered.map((row) => (
+                                planPageItems.map((row) => (
                                     <TableRow key={row.id}>
-                                        <TableCell className={dataTableBodyCellClassName}>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "w-[40px] max-w-[40px] whitespace-nowrap",
+                                            )}
+                                        >
                                             <input
                                                 type="checkbox"
                                                 className="border-input size-4 rounded border"
@@ -146,28 +234,32 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                                             />
                                         </TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.stage}</TableCell>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "w-[80px] max-w-[80px] truncate",
+                                            )}
+                                            title={row.operationId}
+                                        >
+                                            {row.operationId}
+                                        </TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.orderDate}</TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.client}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.product}</TableCell>
+                                        <TableCell
+                                            className={cn(dataTableBodyCellClassName, "max-w-[240px] truncate")}
+                                            title={row.product}
+                                        >
+                                            {row.product}
+                                        </TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.quantity}</TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.startAt}</TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.endAt}</TableCell>
                                     </TableRow>
                                 ))
                             )}
-                            {!planStagesLoading && planRowsFiltered.length === 0 && (
-                                <TableRow>
-                                    <TableCell
-                                        className={cn(dataTableBodyCellClassName, "py-8 text-center text-muted-foreground")}
-                                        colSpan={8}
-                                    >
-                                        Нет этапов плана для машины {orderMachineId}
-                                    </TableCell>
-                                </TableRow>
-                            )}
                         </TableBody>
                     </Table>
-                </div>
+                </DataTableViewport>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                     {composeError ? (
                         <div className="mr-auto text-[12px] text-destructive">{composeError}</div>

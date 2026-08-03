@@ -11,15 +11,18 @@ import {
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
-import { JB_CYLINDER_LIST_ROW_ID, JB_INK_RECIPE_ROW_ID, JB_PRINT_PARAMS_MAP_ROW_ID, JB_SECTION_LABEL_ROW_ID, JB_STAGE_INFO_ROW_ID } from "../../model/jb/constants";
+import { JB_COLOR_CONTROL_MAP_ROW_ID, JB_CYLINDER_LIST_ROW_ID, JB_INK_RECIPE_ROW_ID, JB_PRINT_PARAMS_MAP_ROW_ID, JB_PROCESS_CONTROL_ROW_ID, JB_SECTION_LABEL_ROW_ID, JB_STAGE_INFO_ROW_ID, JB_WHOLE_DOCUMENT_ROW_ID } from "../../model/jb/constants";
 import type { JobBagDocumentGroup, JobBagDocumentRow, JobBagDocumentStatus } from "../../model/types";
 
 const JB_PRINTABLE_ROW_IDS = new Set([
     JB_CYLINDER_LIST_ROW_ID,
     JB_STAGE_INFO_ROW_ID,
     JB_PRINT_PARAMS_MAP_ROW_ID,
+    JB_COLOR_CONTROL_MAP_ROW_ID,
     JB_INK_RECIPE_ROW_ID,
     JB_SECTION_LABEL_ROW_ID,
+    JB_PROCESS_CONTROL_ROW_ID,
+    JB_WHOLE_DOCUMENT_ROW_ID,
 ]);
 
 type JbDocumentActionsProps = {

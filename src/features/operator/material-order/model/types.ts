@@ -6,6 +6,8 @@ export type MaterialOrderPlanStage = {
     id: string;
     workAreaId: string;
     stage: string;
+    /** `id_operacii` из getMaterialOrderPlanStages */
+    operationId: string;
     orderId: string;
     orderDate: string;
     client: string;

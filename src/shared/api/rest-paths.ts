@@ -43,10 +43,14 @@ export const REST_FUNCTION_PATHS = {
     getLastProcessParamsSlices: `${REST_FUNCTIONS_BASE}/getLastProcessParamsSlices`,
     getProcessControl: `${REST_FUNCTIONS_BASE}/getProcessControl`,
     saveProcessControl: `${REST_FUNCTIONS_BASE}/saveProcessControl`,
+    saveManualProcessParams: `${REST_FUNCTIONS_BASE}/saveManualProcessParams`,
     listStageInputRollsForWorkArea: `${REST_FUNCTIONS_BASE}/listStageInputRollsForWorkArea`,
-    jbGetListCylinders: `${REST_FUNCTIONS_BASE}/jbGetListCylinders`,
-    jbGetStageInfo: `${REST_FUNCTIONS_BASE}/jbGetStageInfo`,
+    jbPrintSheet2: `${REST_FUNCTIONS_BASE}/jbPrintSheet2`,
+    jbPrintSheet1: `${REST_FUNCTIONS_BASE}/jbPrintSheet1`,
     jbMapParameters: `${REST_FUNCTIONS_BASE}/jbMapParameters`,
+    jbMapPrint: `${REST_FUNCTIONS_BASE}/jbMapPrint`,
+    jbFullPrint: `${REST_FUNCTIONS_BASE}/jbFullPrint`,
+    jbProcessControl: `${REST_FUNCTIONS_BASE}/jbProcessControl`,
     jbPaintsRecipe: `${REST_FUNCTIONS_BASE}/jbPaintsRecipe`,
     jbLabelSection: `${REST_FUNCTIONS_BASE}/jbLabelSection`,
     registerRelease: `${REST_FUNCTIONS_BASE}/registerRelease`,
@@ -64,4 +68,6 @@ export const REST_FUNCTION_PATHS = {
     orderStageCompletionSubmit: `${REST_FUNCTIONS_BASE}/orderStageCompletionSubmit`,
     /** MES-профиль и роли после POST /auth (Bearer обязателен). */
     mesUserProfile: `${REST_FUNCTIONS_BASE}/mesUserProfile`,
+    /** Окружение клиента: каталог временных файлов (Bearer обязателен). */
+    clientGetEnvironment: `${REST_FUNCTIONS_BASE}/clientGetEnvironment`,
 } as const;

@@ -19,9 +19,18 @@ export { fetchClient };
 fetchClient.use({
     async onResponse({ response, request }) {
         if (response.status === 401 && !request.url.includes("/auth")) {
-            const requestToken = getRequestAuthToken(request);
+            const requestToken = getRequestAuthToken(request) ?? null;
             const currentToken = readValidStoredAuthToken();
-            if (requestToken != null && requestToken === currentToken) {
+            const sessionToken = useSession.getState().token ?? null;
+
+            const isStaleUserRequest =
+                requestToken != null && currentToken != null && requestToken !== currentToken;
+            const isExpiredSessionRequest =
+                sessionToken != null &&
+                (requestToken === sessionToken || requestToken == null) &&
+                (currentToken == null || currentToken === sessionToken);
+
+            if (!isStaleUserRequest && (requestToken === currentToken || isExpiredSessionRequest)) {
                 useSession.getState().logout();
             }
         }

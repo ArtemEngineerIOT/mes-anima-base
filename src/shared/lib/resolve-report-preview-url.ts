@@ -53,3 +53,17 @@ export function resolveReportPreviewUrl(filePath: string): string {
 
     return new URL(path, window.location.origin).href;
 }
+
+/**
+ * URL PDF в temp клиента: `/web/temp/{pathFolder}/{fileName}`.
+ * `pathFolder` — `tempFilesFolder` из clientGetEnvironment.
+ */
+export function resolveClientTempReportUrl(pathFolder: string, fileName: string): string {
+    const folder = pathFolder.trim().replace(/^\/+|\/+$/g, "");
+    const name = fileName.trim().replace(/^\/+/, "");
+    if (!folder || !name) {
+        return "";
+    }
+
+    return resolveReportPreviewUrl(`/web/temp/${folder}/${name}`);
+}

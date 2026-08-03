@@ -70,6 +70,8 @@ function OrderExecutionPage() {
                             operator={current.operator}
                             machineId={current.machineId}
                             workAreaId={current.workAreaId}
+                            workAreaStart={current.workAreaStart}
+                            order={current.order.orderId}
                             onMonitoringSummaryReload={() => {
                                 lineMetersSilentReloadRef.current?.();
                                 rollTablesSilentReloadRef.current?.();

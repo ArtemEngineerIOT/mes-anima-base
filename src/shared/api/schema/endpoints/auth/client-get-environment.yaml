@@ -1,0 +1,24 @@
+postClientGetEnvironment:
+    summary: Окружение клиента (каталог временных файлов)
+    description: >
+        RPC `clientGetEnvironment`. Возвращает `tempFilesFolder` (pathFolder для печати JB) и связанные поля.
+        Тело: `[{ operatorRef }]`. Ответ: `[{ clientLogin, tempFilesFolder, clientTimeZone }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/ClientGetEnvironmentRequest"
+    responses:
+        "200":
+            description: Окружение клиента
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/ClientGetEnvironmentResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"

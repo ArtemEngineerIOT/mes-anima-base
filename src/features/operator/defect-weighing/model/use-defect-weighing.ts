@@ -28,6 +28,7 @@ function stageMatchesSearch(row: DefectWeighingStage, q: string) {
     const normalized = normalizeSearch(q);
     return (
         row.stage.toLowerCase().includes(normalized) ||
+        row.operationId.toLowerCase().includes(normalized) ||
         row.orderId.toLowerCase().includes(normalized) ||
         row.client.toLowerCase().includes(normalized) ||
         row.product.toLowerCase().includes(normalized)

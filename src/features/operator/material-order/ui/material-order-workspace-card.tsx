@@ -14,20 +14,20 @@ export function MaterialOrderWorkspaceCard() {
         <Card className="flex min-h-0 flex-1 flex-col gap-0 py-0">
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
                 <div className="app-scroll min-h-0 flex-1 overflow-auto">
-                    <div className="grid grid-cols-1 divide-y divide-border lg:grid-cols-2 lg:divide-y-0">
-                        <div className="min-w-0">
+                    <div className="grid h-full grid-cols-1 divide-y divide-border lg:grid-cols-2 lg:divide-y-0">
+                        <div className="min-w-0 flex min-h-0 flex-col">
                             <div className="px-4 py-3">
                                 <div className={sectionBlockTitleClassName}>Формирование заказа</div>
                             </div>
-                            <div className="border-border px-4 py-3 pb-4 lg:border-r">
+                            <div className="border-border flex min-h-0 flex-1 flex-col px-4 py-3 pb-4 lg:border-r">
                                 <MaterialOrderFormPanel workspace={workspace} />
                             </div>
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex min-h-0 flex-col">
                             <div className="px-4 py-3">
                                 <div className={sectionBlockTitleClassName}>Статус заказа</div>
                             </div>
-                            <div className="px-4 py-3 pb-4">
+                            <div className="flex min-h-0 flex-1 flex-col px-4 py-3 pb-4">
                                 <MaterialOrderLocationPanel workspace={workspace} />
                             </div>
                         </div>
