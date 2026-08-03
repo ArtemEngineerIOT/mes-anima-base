@@ -6,7 +6,7 @@ function DefectWeighingPage() {
     const model = useDefectWeighing();
 
     return (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-full min-h-0 flex-col p-4">
             <DefectWeighingFilters model={model} />
             <div className="mt-3 flex min-h-0 flex-1 flex-col">
                 <DefectWeighingWorkspace model={model} />

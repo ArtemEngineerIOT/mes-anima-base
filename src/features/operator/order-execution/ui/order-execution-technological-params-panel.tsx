@@ -56,6 +56,7 @@ import {
     type TechnologicalSpeedRow,
 } from "../model/technological-params-mock";
 import { useLastProcessParamsSlices } from "../model/technological-params/last-process-params-slices/use-last-process-params-slices";
+import { useSaveManualProcessParams } from "../model/technological-params/use-save-manual-process-params";
 import type { MachineId } from "../model/types";
 
 type OrderExecutionTechnologicalParamsPanelProps = {
@@ -718,11 +719,19 @@ export function OrderExecutionTechnologicalParamsPanel({
         historyByRowId: slicesHistoryByRowId,
         isLoading: isSlicesLoading,
         error: slicesError,
+        reload: reloadSlices,
     } = useLastProcessParamsSlices({
         workAreaId,
         sections: data,
         enabled: Boolean(workAreaId?.trim()),
     });
+
+    const {
+        save: saveManualProcessParams,
+        isSaving,
+        saveError,
+        clearSaveError,
+    } = useSaveManualProcessParams({ workAreaId });
 
     const [manualEntry, setManualEntry] = useState(false);
     const [draft, setDraft] = useState<TechnologicalParamsDraft>(() => buildTechnologicalParamsDraft(data));
@@ -732,11 +741,12 @@ export function OrderExecutionTechnologicalParamsPanel({
     );
 
     const resetState = useCallback(() => {
+        clearSaveError();
         setManualEntry(false);
         setDraft(buildTechnologicalParamsDraft(data));
         setSavedPresser(buildSavedPresserState(data));
         setHistoryByRowId(buildInitialTechnologicalParamHistory(data));
-    }, [data]);
+    }, [clearSaveError, data]);
 
     useEffect(() => {
         setDraft(buildTechnologicalParamsDraft(data));
@@ -783,6 +793,7 @@ export function OrderExecutionTechnologicalParamsPanel({
     }, [stompState]);
 
     const handleManualEntryChange = (checked: boolean) => {
+        clearSaveError();
         setManualEntry(checked);
         setDraft({
             presserWidth: savedPresser.width,
@@ -822,7 +833,12 @@ export function OrderExecutionTechnologicalParamsPanel({
         }));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        const ok = await saveManualProcessParams({ sections: data, draft });
+        if (!ok) {
+            return;
+        }
+
         setSavedPresser({
             width: draft.presserWidth,
             numbers: { ...draft.presserNumbers },
@@ -855,6 +871,8 @@ export function OrderExecutionTechnologicalParamsPanel({
             manualValues: createEmptyManualDraft(rowIds),
             manualInputMeta: createDefaultManualInputMeta(currentRollNumber),
         }));
+
+        void reloadSlices();
     };
 
     const manualEntryId =
@@ -882,6 +900,16 @@ export function OrderExecutionTechnologicalParamsPanel({
                     size="s"
                     title="Срезы технологических параметров"
                     description={slicesError}
+                />
+            ) : null}
+
+            {saveError ? (
+                <Informer
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Ошибка сохранения"
+                    description={saveError}
                 />
             ) : null}
 
@@ -990,7 +1018,14 @@ export function OrderExecutionTechnologicalParamsPanel({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {manualEntry ? (
-                        <Button type="button" onClick={handleSave}>
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                void handleSave();
+                            }}
+                            pending={isSaving}
+                            pendingLabel="Сохранение…"
+                        >
                             Сохранить
                         </Button>
                     ) : null}

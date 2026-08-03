@@ -58,6 +58,7 @@ function mapStageRow(row: Record<string, unknown>): DefectWeighingStage | null {
     return {
         id: workAreaId,
         workAreaId,
+        operationId: pickString(row, "id_operacii", "operationId", "operation_number", "operationNumber") ?? "—",
         stage,
         orderId,
         orderDate: formatPlanDateTime(pickString(row, "client_order_date", "clientOrderDate")),

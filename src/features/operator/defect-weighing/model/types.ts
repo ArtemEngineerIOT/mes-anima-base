@@ -1,6 +1,8 @@
 export type DefectWeighingStage = {
     id: string;
     workAreaId: string;
+    /** `id_operacii` из getMaterialOrderPlanStages */
+    operationId: string;
     stage: string;
     orderId: string;
     orderDate: string;

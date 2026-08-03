@@ -1,5 +1,6 @@
 import { setupWorker } from "msw/browser";
 import { authHandlers } from "./handlers/auth";
+import { clientGetEnvironmentHandlers } from "./handlers/client-get-environment";
 import { mesUserProfileFunctionHandlers } from "./handlers/mes-user-profile-function";
 import { orderExecutionHandlers } from "./handlers/order-execution";
 import { orderExecutionResolveBarcodeOnStageHandlers } from "./handlers/order-execution-resolve-barcode-on-stage";
@@ -18,11 +19,15 @@ import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-mon
 import { orderExecutionStageProgressHandlers } from "./handlers/order-execution-stage-progress";
 import { orderExecutionUnprocessedSignalsSummaryHandlers } from "./handlers/order-execution-unprocessed-signals-summary";
 import { orderExecutionLastProcessParamsSlicesHandlers } from "./handlers/order-execution-last-process-params-slices";
+import { orderExecutionSaveManualProcessParamsHandlers } from "./handlers/order-execution-save-manual-process-params";
 import { orderExecutionProcessControlHandlers } from "./handlers/order-execution-process-control";
 import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
-import { orderExecutionListCylindersReportHandlers } from "./handlers/order-execution-list-cylinders-report";
-import { orderExecutionStageInfoReportHandlers } from "./handlers/order-execution-stage-info-report";
+import { orderExecutionPrintSheet2ReportHandlers } from "./handlers/order-execution-print-sheet2-report";
+import { orderExecutionPrintSheet1ReportHandlers } from "./handlers/order-execution-print-sheet1-report";
 import { orderExecutionMapParametersReportHandlers } from "./handlers/order-execution-map-parameters-report";
+import { orderExecutionMapPrintReportHandlers } from "./handlers/order-execution-map-print-report";
+import { orderExecutionFullPrintReportHandlers } from "./handlers/order-execution-full-print-report";
+import { orderExecutionProcessControlReportHandlers } from "./handlers/order-execution-process-control-report";
 import { orderExecutionPaintsRecipeReportHandlers } from "./handlers/order-execution-paints-recipe-report";
 import { orderExecutionLabelSectionReportHandlers } from "./handlers/order-execution-label-section-report";
 import { orderExecutionStageCompletionInitHandlers } from "./handlers/order-execution-stage-completion-init";
@@ -42,6 +47,7 @@ export const worker = setupWorker(
     ...summaryHandlers,
     ...authHandlers,
     ...mesUserProfileFunctionHandlers,
+    ...clientGetEnvironmentHandlers,
     ...productionPlanHandlers,
     ...materialOrderPlanStagesHandlers,
     ...materialOrderComposeHandlers,
@@ -68,11 +74,15 @@ export const worker = setupWorker(
     ...orderExecutionStageProgressHandlers,
     ...orderExecutionUnprocessedSignalsSummaryHandlers,
     ...orderExecutionLastProcessParamsSlicesHandlers,
+    ...orderExecutionSaveManualProcessParamsHandlers,
     ...orderExecutionProcessControlHandlers,
     ...orderExecutionProductionEventWizardHandlers,
-    ...orderExecutionListCylindersReportHandlers,
-    ...orderExecutionStageInfoReportHandlers,
+    ...orderExecutionPrintSheet2ReportHandlers,
+    ...orderExecutionPrintSheet1ReportHandlers,
     ...orderExecutionMapParametersReportHandlers,
+    ...orderExecutionMapPrintReportHandlers,
+    ...orderExecutionFullPrintReportHandlers,
+    ...orderExecutionProcessControlReportHandlers,
     ...orderExecutionPaintsRecipeReportHandlers,
     ...orderExecutionLabelSectionReportHandlers,
     ...orderExecutionStageCompletionInitHandlers,

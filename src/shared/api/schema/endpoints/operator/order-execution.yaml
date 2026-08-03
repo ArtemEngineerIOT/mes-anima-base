@@ -563,6 +563,32 @@ postSaveProcessControl:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
+postSaveManualProcessParams:
+    summary: Сохранение ручного среза ТП
+    description: >
+        BFF `users.admin.models.processControlJbBff.saveManualProcessParams`.
+        Экран «Технологические параметры машины» — кнопка «Сохранить» в ручном режиме.
+        Тело: `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSaveManualProcessParamsRequest"
+    responses:
+        "200":
+            description: Сохранение ручного среза (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionSaveManualProcessParamsResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
 postListStageInputRollsForWorkArea:
     summary: Входные рулоны этапа для блокировки
     description: Раскрытие блока «Выпуск» — таблица входных рулонов
@@ -586,9 +612,11 @@ postListStageInputRollsForWorkArea:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbGetListCylinders:
-    summary: Отчёт «Список цилиндров» (JB)
-    description: Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа»
+postJbPrintSheet2:
+    summary: Отчёт «Список цилиндров» / лист 2 (JB)
+    description: >
+        Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа».
+        RPC `jbPrintSheet2`. Тело: `[{ order }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -596,22 +624,24 @@ postJbGetListCylinders:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbGetListCylindersRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet2Request"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbGetListCylindersResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet2Response"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbGetStageInfo:
-    summary: Отчёт «Информация по этапу» (JB)
-    description: Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа»
+postJbPrintSheet1:
+    summary: Отчёт «Информация по этапу» / лист 1 (JB)
+    description: >
+        Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа».
+        RPC `jbPrintSheet1`. Тело: `[{ order, workAreaStart }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -619,14 +649,14 @@ postJbGetStageInfo:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbGetStageInfoRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet1Request"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbGetStageInfoResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet1Response"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
@@ -650,6 +680,75 @@ postJbMapParameters:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/JbMapParametersResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postJbMapPrint:
+    summary: Отчёт «Карта контроля цвета» (JB)
+    description: Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbMapPrintRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbMapPrintResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postJbFullPrint:
+    summary: Отчёт «Весь документ» (JB Summary)
+    description: Кнопка печати «Весь документ» / Summary в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbFullPrintRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbFullPrintResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postJbProcessControl:
+    summary: Отчёт «Process control» (JB)
+    description: Кнопка печати «Process control» в блоке JB на экране «Исполнение заказа»
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbProcessControlRequest"
+    responses:
+        "200":
+            description: Ссылка на PDF отчёта (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbProcessControlResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

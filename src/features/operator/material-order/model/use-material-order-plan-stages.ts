@@ -7,10 +7,13 @@ import { MATERIAL_ORDER_RESOURCE_CODE } from "./constants";
 import { mapMaterialOrderPlanStagesPayload } from "./map-material-order-plan-stages-payload";
 import type { MaterialOrderPlanStage } from "./types";
 
-export function useMaterialOrderPlanStages(resourceCode: string = MATERIAL_ORDER_RESOURCE_CODE) {
+export function useMaterialOrderPlanStages(
+    resourceCode: string = MATERIAL_ORDER_RESOURCE_CODE,
+    enabled: boolean = true,
+) {
     const [stages, setStages] = useState<MaterialOrderPlanStage[]>([]);
     const [resolvedResourceCode, setResolvedResourceCode] = useState(resourceCode);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(enabled);
     const [error, setError] = useState<string | null>(null);
 
     const { mutateAsync: fetchPlanStages } = rqClient.useMutation(
@@ -23,6 +26,10 @@ export function useMaterialOrderPlanStages(resourceCode: string = MATERIAL_ORDER
     fetchPlanStagesRef.current = fetchPlanStages;
 
     const load = useCallback(async () => {
+        if (!enabled) {
+            return;
+        }
+
         const trimmedResourceCode = resourceCode.trim();
         if (!trimmedResourceCode) {
             setStages([]);
@@ -47,11 +54,19 @@ export function useMaterialOrderPlanStages(resourceCode: string = MATERIAL_ORDER
         } finally {
             setIsLoading(false);
         }
-    }, [resourceCode]);
+    }, [resourceCode, enabled]);
 
     useEffect(() => {
+        if (!enabled) {
+            setStages([]);
+            setError(null);
+            setIsLoading(false);
+            setResolvedResourceCode(resourceCode);
+            return;
+        }
+
         void load();
-    }, [load]);
+    }, [enabled, load, resourceCode]);
 
     return {
         stages,

@@ -2,24 +2,30 @@ import { useJbCylinderReportPrint } from "../../model/jb/use-jb-cylinder-report-
 import type { OperatorJbPanel } from "../../model/types";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { OrderExecutionJbDocumentsTable } from "./jb-documents-table";
-import { useTestEventStompCount } from "@/shared/api/websocket/use-test-event-stomp-count";
 
 type OrderExecutionJbSectionProps = {
     jb: OperatorJbPanel;
     workAreaId?: string;
+    workAreaStart?: string;
+    order?: string;
 };
 
-export function OrderExecutionJbSection({ jb, workAreaId }: OrderExecutionJbSectionProps) {
-    const { printJbDocument, printingRowId, printError } = useJbCylinderReportPrint({ workAreaId });
-    const testEventCount = useTestEventStompCount({ enabled: import.meta.env.DEV });
-    const headerCount = import.meta.env.DEV ? testEventCount ?? jb.headerCount : jb.headerCount;
+export function OrderExecutionJbSection({
+    jb,
+    workAreaId,
+    workAreaStart,
+    order,
+}: OrderExecutionJbSectionProps) {
+    const { printJbDocument, printingRowId, printError } = useJbCylinderReportPrint({
+        workAreaId,
+        workAreaStart,
+        order,
+    });
 
     return (
         <OrderExecutionCollapsibleSection
             title="JB"
             defaultOpen={false}
-            tone="system"
-            count={headerCount}
         >
             <OrderExecutionJbDocumentsTable
                 groups={jb.groups}

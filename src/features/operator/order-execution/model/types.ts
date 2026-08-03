@@ -161,6 +161,8 @@ export type MachineData = {
     machineId: MachineId;
     /** Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
     workAreaId?: string;
+    /** Время старта рабочей области (`start_work_area` из getOrderExecution) */
+    workAreaStart?: string;
     /** Счётчик необработанных событий (`sidebar_badges.unprocessed_events_count`) */
     unprocessedEventsCount?: number;
     /** На машине есть назначенный этап / исполняется заказ — показываем мониторинг и панель оператора */

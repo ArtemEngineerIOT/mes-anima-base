@@ -59,8 +59,8 @@ const pr120JbPanel: OperatorJbPanel = {
                 {
                     id: "process-control",
                     label: "Process control",
-                    status: "preparation",
-                    statusLabel: "ПОДГОТОВКА",
+                    status: "ready_for_print",
+                    statusLabel: "ГОТОВ К ПЕЧАТИ",
                 },
                 {
                     id: "color-control-map",
@@ -77,8 +77,8 @@ const pr120JbPanel: OperatorJbPanel = {
                 {
                     id: "jb-whole",
                     label: "JB",
-                    status: "preparation",
-                    statusLabel: "ПОДГОТОВКА",
+                    status: "ready_for_print",
+                    statusLabel: "ГОТОВ К ПЕЧАТИ",
                 },
             ],
         },
@@ -522,6 +522,8 @@ export const ORDER_EXECUTION_MOCK: MachineData[] = [
     {
         machineId: "PR120",
         hasAssignedStage: true,
+        workAreaId: "191",
+        workAreaStart: "22.07.2026 14:43:15",
         order: {
             orderId: "123345",
             product: "4045725 MMS Plain Black Currant 45g RU-BY FSI",

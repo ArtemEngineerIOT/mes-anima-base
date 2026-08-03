@@ -93,6 +93,7 @@ export function mergeOrderExecutionMachineData(
         ...mockFallback,
         machineId: apiData.machineId,
         workAreaId: apiData.workAreaId,
+        workAreaStart: apiData.workAreaStart,
         unprocessedEventsCount: apiData.unprocessedEventsCount,
         hasAssignedStage: apiData.hasAssignedStage,
         order: apiData.order,
@@ -125,6 +126,7 @@ export function mapOrderExecutionPayload(
 
     const record = resultItem as Record<string, unknown>;
     const workAreaId = readWorkAreaId(record.work_area_id);
+    const workAreaStart = pickString(record, "start_work_area", "startWorkArea", "work_area_start", "workAreaStart");
     const hasAssignedStage = workAreaId !== null;
 
     const headerRow = Array.isArray(record.header)
@@ -143,6 +145,7 @@ export function mapOrderExecutionPayload(
     return {
         ...base,
         workAreaId: workAreaId ?? undefined,
+        workAreaStart,
         unprocessedEventsCount,
         hasAssignedStage,
         order,

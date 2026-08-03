@@ -767,6 +767,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/clientGetEnvironment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Окружение клиента (каталог временных файлов)
+         * @description RPC `clientGetEnvironment`. Возвращает `tempFilesFolder` (pathFolder для печати JB) и связанные поля. Тело: `[{ operatorRef }]`. Ответ: `[{ clientLogin, tempFilesFolder, clientTimeZone }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ClientGetEnvironmentRequest"];
+                };
+            };
+            responses: {
+                /** @description Окружение клиента */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ClientGetEnvironmentResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/contexts/users.admin.models.rest/functions/getOrderExecution": {
         parameters: {
             query?: never;
@@ -1847,6 +1892,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/saveManualProcessParams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сохранение ручного среза ТП
+         * @description BFF `users.admin.models.processControlJbBff.saveManualProcessParams`. Экран «Технологические параметры машины» — кнопка «Сохранить» в ручном режиме. Тело: `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionSaveManualProcessParamsRequest"];
+                };
+            };
+            responses: {
+                /** @description Сохранение ручного среза (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionSaveManualProcessParamsResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea": {
         parameters: {
             query?: never;
@@ -1892,7 +1982,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbGetListCylinders": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet2": {
         parameters: {
             query?: never;
             header?: never;
@@ -1902,8 +1992,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отчёт «Список цилиндров» (JB)
-         * @description Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа»
+         * Отчёт «Список цилиндров» / лист 2 (JB)
+         * @description Кнопка печати «Список цилиндров» в блоке JB на экране «Исполнение заказа». RPC `jbPrintSheet2`. Тело: `[{ order }]`.
          */
         post: {
             parameters: {
@@ -1914,17 +2004,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbGetListCylindersRequest"];
+                    "application/json": components["schemas"]["JbPrintSheet2Request"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbGetListCylindersResponse"];
+                        "application/json": components["schemas"]["JbPrintSheet2Response"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -1937,7 +2027,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbGetStageInfo": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet1": {
         parameters: {
             query?: never;
             header?: never;
@@ -1947,8 +2037,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отчёт «Информация по этапу» (JB)
-         * @description Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа»
+         * Отчёт «Информация по этапу» / лист 1 (JB)
+         * @description Кнопка печати «Информация по этапу» в блоке JB на экране «Исполнение заказа». RPC `jbPrintSheet1`. Тело: `[{ order, workAreaStart }]`.
          */
         post: {
             parameters: {
@@ -1959,17 +2049,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbGetStageInfoRequest"];
+                    "application/json": components["schemas"]["JbPrintSheet1Request"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbGetStageInfoResponse"];
+                        "application/json": components["schemas"]["JbPrintSheet1Response"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2015,6 +2105,141 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["JbMapParametersResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/jbMapPrint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отчёт «Карта контроля цвета» (JB)
+         * @description Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JbMapPrintRequest"];
+                };
+            };
+            responses: {
+                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JbMapPrintResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/jbFullPrint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отчёт «Весь документ» (JB Summary)
+         * @description Кнопка печати «Весь документ» / Summary в блоке JB на экране «Исполнение заказа»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JbFullPrintRequest"];
+                };
+            };
+            responses: {
+                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JbFullPrintResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/jbProcessControl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отчёт «Process control» (JB)
+         * @description Кнопка печати «Process control» в блоке JB на экране «Исполнение заказа»
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JbProcessControlRequest"];
+                };
+            };
+            responses: {
+                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JbProcessControlResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2810,6 +3035,8 @@ export interface components {
         /** @description Строка этапа APS в `result` ответа getMaterialOrderPlanStages */
         MaterialOrderPlanStageResultItem: {
             work_area_id?: string | null;
+            /** @description Идентификатор операции этапа (`id_operacii`) */
+            id_operacii?: string | null;
             etap?: string | null;
             order_id?: string | null;
             client_name?: string | null;
@@ -3153,6 +3380,27 @@ export interface components {
             [key: string]: unknown;
         };
         MesUserProfileResponse: components["schemas"]["MesUserProfileRow"][];
+        ClientGetEnvironmentRequestItem: {
+            /** @description Ссылка на оператора в MES (`operator_ref`, из mesUserProfile) */
+            operatorRef: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ operatorRef }]` для clientGetEnvironment */
+        ClientGetEnvironmentRequest: components["schemas"]["ClientGetEnvironmentRequestItem"][];
+        /** @description Элемент ответа clientGetEnvironment */
+        ClientGetEnvironmentResultItem: {
+            /** @description Логин клиента */
+            clientLogin?: string | null;
+            /** @description UUID каталога временных файлов (`pathFolder` для печати JB) */
+            tempFilesFolder?: string | null;
+            /** @description Часовой пояс клиента */
+            clientTimeZone?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ clientGetEnvironment — `[{ clientLogin, tempFilesFolder, clientTimeZone }]` */
+        ClientGetEnvironmentResponse: components["schemas"]["ClientGetEnvironmentResultItem"][];
         OrderExecutionRequestItem: {
             /** @description Код ресурса (машины) из getProductionPlanMachines */
             resourceCode: string;
@@ -3177,6 +3425,8 @@ export interface components {
         OrderExecutionResultItem: {
             /** @description Пусто/null — на машине нет назначенного этапа */
             work_area_id?: string | null;
+            /** @description Время старта рабочей области этапа (`start_work_area` → `workAreaStart` для jbPrintSheet1) */
+            start_work_area?: string | null;
             resource_id?: string | null;
             sidebar_badges?: components["schemas"]["OrderExecutionSidebarBadge"][];
             header?: components["schemas"]["OrderExecutionHeaderRow"][];
@@ -3816,6 +4066,27 @@ export interface components {
         OrderExecutionSaveProcessControlResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionProcessControlResultItem"][];
         })[];
+        /** @description Запрос saveManualProcessParams (ручной срез ТП) */
+        OrderExecutionSaveManualProcessParamsRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id`) */
+            workAreaId: string;
+            /** @description Идентификатор рулона (`material_roll_id`) */
+            materialRollId: string;
+            /** @description Внешний ключ серии / номер рулона (`external_series_key`) */
+            externalSeriesKey: string;
+            /** @description JSON-строка: `tables.parameters[]` (`param_code`, `value`, `origin`: `OPERATOR`) и `fields` (`work_area_id`, `material_roll_id`, `external_series_key`) */
+            payloadJson: string;
+            /** @description Ссылка на оператора в MES (`operator_ref`, из сессии) */
+            operatorRef?: string;
+        };
+        /** @description Тело `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]` */
+        OrderExecutionSaveManualProcessParamsRequest: components["schemas"]["OrderExecutionSaveManualProcessParamsRequestItem"][];
+        /** @description Ответ saveManualProcessParams (JB Process control) */
+        OrderExecutionSaveManualProcessParamsResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
+            result?: {
+                [key: string]: unknown;
+            }[];
+        })[];
         OrderExecutionReleaseInputRollRow: {
             barcode?: string | null;
             external_series_key?: string | null;
@@ -3850,26 +4121,48 @@ export interface components {
         } & {
             [key: string]: unknown;
         })[];
-        /** @description Запрос jbGetListCylinders — печать «Список цилиндров» (JB) */
-        JbGetListCylindersRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Запрос jbPrintSheet2 — печать «Список цилиндров» / лист 2 (JB) */
+        JbPrintSheet2RequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbGetListCylinders */
-        JbGetListCylindersRequest: components["schemas"]["JbGetListCylindersRequestItem"][];
-        JbGetListCylindersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Запрос jbGetStageInfo — печать «Информация по этапу» (JB) */
-        JbGetStageInfoRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Тело `[{ order }]` для jbPrintSheet2 */
+        JbPrintSheet2Request: components["schemas"]["JbPrintSheet2RequestItem"][];
+        /** @description Элемент ответа jbPrintSheet2 */
+        JbPrintSheet2ResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbGetStageInfo */
-        JbGetStageInfoRequest: components["schemas"]["JbGetStageInfoRequestItem"][];
-        JbGetStageInfoResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Ответ jbPrintSheet2 — `[{ fileName, succeeded }]` */
+        JbPrintSheet2Response: components["schemas"]["JbPrintSheet2ResponseItem"][];
+        /** @description Запрос jbPrintSheet1 — печать «Информация по этапу» / лист 1 (JB) */
+        JbPrintSheet1RequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
+            /** @description Время старта рабочей области (`start_work_area` из getOrderExecution) */
+            workAreaStart: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ order, workAreaStart }]` для jbPrintSheet1 */
+        JbPrintSheet1Request: components["schemas"]["JbPrintSheet1RequestItem"][];
+        /** @description Элемент ответа jbPrintSheet1 */
+        JbPrintSheet1ResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ jbPrintSheet1 — `[{ fileName, succeeded }]` */
+        JbPrintSheet1Response: components["schemas"]["JbPrintSheet1ResponseItem"][];
         /** @description Запрос jbMapParameters — печать «Карта технологических параметров печати» (JB) */
         JbMapParametersRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
@@ -3880,6 +4173,36 @@ export interface components {
         /** @description Тело `[{ workAreaId }]` для jbMapParameters */
         JbMapParametersRequest: components["schemas"]["JbMapParametersRequestItem"][];
         JbMapParametersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbMapPrint — печать «Карта контроля цвета» (JB) */
+        JbMapPrintRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ workAreaId }]` для jbMapPrint */
+        JbMapPrintRequest: components["schemas"]["JbMapPrintRequestItem"][];
+        JbMapPrintResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbFullPrint — печать «Весь документ» / Summary (JB) */
+        JbFullPrintRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ workAreaId }]` для jbFullPrint */
+        JbFullPrintRequest: components["schemas"]["JbFullPrintRequestItem"][];
+        JbFullPrintResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Запрос jbProcessControl — печать «Process control» (JB) */
+        JbProcessControlRequestItem: {
+            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
+            workAreaId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ workAreaId }]` для jbProcessControl */
+        JbProcessControlRequest: components["schemas"]["JbProcessControlRequestItem"][];
+        JbProcessControlResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
         /** @description Запрос jbPaintsRecipe — печать «Рецептура красок» (JB) */
         JbPaintsRecipeRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */

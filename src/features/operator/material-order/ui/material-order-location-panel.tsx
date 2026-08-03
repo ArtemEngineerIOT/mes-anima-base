@@ -9,12 +9,16 @@ import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import { MultiSelectCombobox } from "@/shared/ui/kit/multi-select-combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cn } from "@/shared/lib/css";
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
-    dataTableStickyHeadCellClassName,
+    dataTableInsetShellClassName,
     dataTableShellClassName,
+    dataTableSplitScrollBodyClassName,
+    dataTableStickyHeadCellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 
@@ -84,9 +88,16 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
     }, [locationRowsFiltered, locationSelectedIds]);
 
     const canSubmitBlock = selectedBlockSeriesRefs.length > 0 && Boolean(selectedBlockReasonCode);
+    const {
+        pageItems: locationPageItems,
+        pagination: locationPagination,
+        pageSize: locationPageSize,
+        setPageSize: setLocationPageSize,
+        setPage: setLocationPage,
+    } = useDataTablePagination(locationRowsFiltered, { initialPageSize: 5 });
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
             {submitStatus?.visible ? (
                 <>
                     <Informer
@@ -97,7 +108,7 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                         description={submitStatus.detail || undefined}
                     />
                     {submitStatus.orderResults.length > 0 ? (
-                        <div className={dataTableScrollViewportClassName}>
+                        <div className="data-table-scroll-viewport app-scroll min-w-0 max-w-full overflow-auto">
                             <Table className={cn(dataTableShellClassName, "text-[12px]")}>
                                 <TableHeader className="bg-muted/40">
                                     <TableRow>
@@ -206,70 +217,114 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                         aria-label="Поиск в локации у машины"
                     />
                 </div>
-                <div className={dataTableScrollViewportClassName}>
-                    <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+                <DataTableViewport
+                    layout="fill"
+                    footer={
+                        <DataTablePaginationFooter
+                            totalCount={locationPagination.totalCount}
+                            rangeStart={locationPagination.rangeStart}
+                            rangeEnd={locationPagination.rangeEnd}
+                            page={locationPagination.page}
+                            totalPages={locationPagination.totalPages}
+                            pageSize={locationPageSize}
+                            onPageChange={setLocationPage}
+                            onPageSizeChange={setLocationPageSize}
+                        />
+                    }
+                >
+                    <Table
+                        className={cn(
+                            dataTableInsetShellClassName,
+                            "min-w-[760px] border-separate border-spacing-0 text-[12px]",
+                        )}
+                    >
                         <TableHeader className="bg-muted/40">
                             <TableRow>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-10")} />
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        "w-[40px] max-w-[40px] whitespace-nowrap",
+                                    )}
+                                />
                                 <TableHead className={dataTableStickyHeadCellClassName}>Машина</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Номенклатура</TableHead>
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        "min-w-[200px] max-w-[260px] truncate",
+                                    )}
+                                >
+                                    Номенклатура
+                                </TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Вид номенклатуры</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Серия</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Количество</TableHead>
                                 <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм.</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-12")} aria-label="Действия" />
+                                <TableHead
+                                    className={cn(dataTableStickyHeadCellClassName, "w-[48px] max-w-[48px]")}
+                                    aria-label="Действия"
+                                />
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
-                            {locationRowsFiltered.map((row) => {
+                        <TableBody className={dataTableSplitScrollBodyClassName}>
+                            {locationPageItems.map((row) => {
                                 const isRowSelectable = row.rowSelectable === true;
                                 const canPrintLabel = isRowSelectable && row.series.length > 0;
 
                                 return (
-                                <TableRow
-                                    key={row.id}
-                                    className={
-                                        !isRowSelectable
-                                            ? "!bg-destructive/15 hover:!bg-destructive/25 dark:!bg-destructive/20"
-                                            : undefined
-                                    }
-                                >
-                                    <TableCell className={dataTableBodyCellClassName}>
-                                        <input
-                                            type="checkbox"
-                                            className="border-input size-4 rounded border disabled:cursor-not-allowed disabled:opacity-50"
-                                            checked={locationSelectedIds.has(row.id)}
-                                            disabled={!isRowSelectable}
-                                            onChange={() => toggleLocationRow(row.id)}
-                                            aria-label={`Выбрать позицию ${row.series || row.nomenclature}`}
-                                        />
-                                    </TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.machineId}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.nomenclature}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.kindLabel}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.series}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.quantity}</TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>{row.unit}</TableCell>
-                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon-sm"
-                                            className="size-7 shrink-0"
-                                            disabled={!canPrintLabel || printingLocationSeriesRef === row.series}
-                                            aria-label={
-                                                canPrintLabel
-                                                    ? `Печать этикетки: ${row.series}`
-                                                    : "Печать этикетки недоступна"
-                                            }
-                                            onClick={() => {
-                                                void printLocationRollLabel(row.series);
-                                            }}
+                                    <TableRow
+                                        key={row.id}
+                                        className={
+                                            !isRowSelectable
+                                                ? "!bg-destructive/15 hover:!bg-destructive/25 dark:!bg-destructive/20"
+                                                : undefined
+                                        }
+                                    >
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "w-[40px] max-w-[40px] whitespace-nowrap",
+                                            )}
                                         >
-                                            <Icon name="print" size="sm" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
+                                            <input
+                                                type="checkbox"
+                                                className="border-input size-4 rounded border disabled:cursor-not-allowed disabled:opacity-50"
+                                                checked={locationSelectedIds.has(row.id)}
+                                                disabled={!isRowSelectable}
+                                                onChange={() => toggleLocationRow(row.id)}
+                                                aria-label={`Выбрать позицию ${row.series || row.nomenclature}`}
+                                            />
+                                        </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.machineId}</TableCell>
+                                        <TableCell
+                                            className={cn(dataTableBodyCellClassName, "max-w-[260px] truncate")}
+                                            title={row.nomenclature}
+                                        >
+                                            {row.nomenclature}
+                                        </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.kindLabel}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.series}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.quantity}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.unit}</TableCell>
+                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon-sm"
+                                                className="size-7 shrink-0"
+                                                disabled={!canPrintLabel || printingLocationSeriesRef === row.series}
+                                                aria-label={
+                                                    canPrintLabel
+                                                        ? `Печать этикетки: ${row.series}`
+                                                        : "Печать этикетки недоступна"
+                                                }
+                                                onClick={() => {
+                                                    void printLocationRollLabel(row.series);
+                                                }}
+                                            >
+                                                <Icon name="print" size="sm" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
                                 );
                             })}
                             {locationRowsFiltered.length === 0 && (
@@ -286,7 +341,7 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                             )}
                         </TableBody>
                     </Table>
-                </div>
+                </DataTableViewport>
             </section>
 
             <section className="border-border flex flex-col gap-3 border-t pt-2">

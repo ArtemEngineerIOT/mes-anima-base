@@ -124,6 +124,10 @@ export function OrderExecutionCollapsibleSection({
                                 </span>
                             ) : null}
                         </div>
+                    ) : typeof count === "number" && count > 0 ? (
+                        <span className="shrink-0 text-[12px] font-semibold tabular-nums leading-none text-muted-foreground">
+                            {count}
+                        </span>
                     ) : updatedAt?.trim() ? (
                         <span className="shrink-0 text-[12px] leading-none text-muted-foreground">
                             {updatedAtLabel}: {updatedAt.trim()}

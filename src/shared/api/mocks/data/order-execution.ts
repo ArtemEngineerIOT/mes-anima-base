@@ -1,6 +1,7 @@
 /** Элемент `result` в ответе `getOrderExecution`. */
 export type MockOrderExecutionResultItem = {
     work_area_id: string | null;
+    start_work_area: string | null;
     resource_id: string;
     sidebar_badges: { unprocessed_events_count: number }[];
     header: {
@@ -14,6 +15,7 @@ export type MockOrderExecutionResultItem = {
 const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem> = {
     PR120: {
         work_area_id: "191",
+        start_work_area: "22.07.2026 14:43:15",
         resource_id: "PR120",
         sidebar_badges: [{ unprocessed_events_count: 2 }],
         header: [
@@ -27,6 +29,7 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
     },
     PR110: {
         work_area_id: "195",
+        start_work_area: "22.07.2026 09:15:00",
         resource_id: "PR110",
         sidebar_badges: [{ unprocessed_events_count: 0 }],
         header: [
@@ -40,6 +43,7 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
     },
     LM230: {
         work_area_id: "193",
+        start_work_area: "22.07.2026 10:30:00",
         resource_id: "LM230",
         sidebar_badges: [{ unprocessed_events_count: 0 }],
         header: [
@@ -66,6 +70,7 @@ export function buildMockOrderExecutionResponse(resourceCode: string) {
             result: [
                 resultItem ?? {
                     work_area_id: null,
+                    start_work_area: null,
                     resource_id: resourceCode,
                     sidebar_badges: [{ unprocessed_events_count: 0 }],
                     header: [],
