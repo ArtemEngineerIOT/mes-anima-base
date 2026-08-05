@@ -2117,7 +2117,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbPaintsRecipe": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet4": {
         parameters: {
             query?: never;
             header?: never;
@@ -2127,8 +2127,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отчёт «Рецептура красок» (JB)
-         * @description Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа»
+         * Отчёт «Рецептура красок» / лист 4 (JB)
+         * @description Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа». RPC `jbPrintSheet4`. Тело: `[{ order }]`.
          */
         post: {
             parameters: {
@@ -2139,17 +2139,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbPaintsRecipeRequest"];
+                    "application/json": components["schemas"]["JbPrintSheet4Request"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description PDF во временном каталоге клиента (`fileName` + `succeeded`) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbPaintsRecipeResponse"];
+                        "application/json": components["schemas"]["JbPrintSheet4Response"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -3286,6 +3286,16 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Элемент `release_block` в ответе getOrderExecution (стартовая сводка блока «Выпуск») */
+        OrderExecutionReleaseBlockItem: {
+            work_area_id?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
+            total_count?: number | null;
+            changed_at?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
         /** @description Элемент `result` в ответе getOrderExecution */
         OrderExecutionResultItem: {
             /** @description Пусто/null — на машине нет назначенного этапа */
@@ -3295,6 +3305,8 @@ export interface components {
             resource_id?: string | null;
             sidebar_badges?: components["schemas"]["OrderExecutionSidebarBadge"][];
             header?: components["schemas"]["OrderExecutionHeaderRow"][];
+            /** @description Стартовая сводка блока «Выпуск» (badge + плашка до STOMP/getEventsSummary) */
+            release_block?: components["schemas"]["OrderExecutionReleaseBlockItem"][];
         } & {
             [key: string]: unknown;
         };
@@ -4021,16 +4033,25 @@ export interface components {
         /** @description Тело `[{ workAreaId }]` для jbProcessControl */
         JbProcessControlRequest: components["schemas"]["JbProcessControlRequestItem"][];
         JbProcessControlResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Запрос jbPaintsRecipe — печать «Рецептура красок» (JB) */
-        JbPaintsRecipeRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Запрос jbPrintSheet4 — печать «Рецептура красок» / лист 4 (JB) */
+        JbPrintSheet4RequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbPaintsRecipe */
-        JbPaintsRecipeRequest: components["schemas"]["JbPaintsRecipeRequestItem"][];
-        JbPaintsRecipeResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Тело `[{ order }]` для jbPrintSheet4 */
+        JbPrintSheet4Request: components["schemas"]["JbPrintSheet4RequestItem"][];
+        /** @description Элемент ответа jbPrintSheet4 */
+        JbPrintSheet4ResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        JbPrintSheet4Response: components["schemas"]["JbPrintSheet4ResponseItem"][];
         /** @description Запрос jbPrintSheet6 — печать «Этикетка на секцию» (JB) */
         JbPrintSheet6RequestItem: {
             /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
@@ -4067,6 +4088,8 @@ export interface components {
             lastRoll?: boolean;
             /** @description Код склада назначения из формы (`destination_warehouse_code` на BFF) */
             warehouseCode: string;
+            /** @description Id сигнала из таблицы «Сигналы машины (выпуск)» (`signal_id`); пустая строка при ручной регистрации без сигнала */
+            idEvent?: string;
         } & {
             [key: string]: unknown;
         };

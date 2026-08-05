@@ -8,6 +8,8 @@ export function buildReleaseRegisterBody(params: {
     rewind: boolean;
     lastRoll: boolean;
     warehouseCode: string;
+    /** Id выбранного сигнала; пустая строка — регистрация без сигнала */
+    idEvent?: string;
 }): ApiSchemas["OrderExecutionRegisterReleaseRequest"] {
     return [
         {
@@ -18,6 +20,7 @@ export function buildReleaseRegisterBody(params: {
             rewind: params.rewind,
             lastRoll: params.lastRoll,
             warehouseCode: params.warehouseCode,
+            idEvent: params.idEvent?.trim() ?? "",
         },
     ];
 }

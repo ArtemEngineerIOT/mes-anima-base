@@ -12,8 +12,8 @@ type UseMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscriptionOptio
 
 /**
  * STOMP подписка на `rollReleaseProductionEventsSummaryChanged`.
- * Payload содержит только `changed_at` — при событии перезагружаем summary выпуска
- * и связанные данные мониторинга / прогресса (SCR-06).
+ * Обновляет сводку блока «Выпуск» (старт — из getOrderExecution.release_block).
+ * Таблица сигналов обновляется отдельно (silent-reload через onSummaryChanged).
  */
 export function useMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscription({
     enabled,

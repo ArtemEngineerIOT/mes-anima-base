@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { MachineData, MachineId } from "../model/types";
+import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
 import { EventRegistrationProvider } from "../model/event-registration/event-registration-context";
 import {
     OrderExecutionEventRegistrationSection,
@@ -18,8 +19,10 @@ type OrderExecutionOperatorPanelProps = {
     workAreaId?: string;
     workAreaStart?: string;
     order?: string;
+    releaseBlockSummary?: ReleaseProductionEventsSummarySnapshot | null;
     onMonitoringSummaryReload?: () => void;
-    onReleaseProductionEventsSummaryChanged?: () => void;
+    /** После успешного registerRelease — silent-reload мониторинга / прогресса */
+    onReleaseRegistered?: () => void;
 };
 
 export function OrderExecutionOperatorPanel({
@@ -28,8 +31,9 @@ export function OrderExecutionOperatorPanel({
     workAreaId,
     workAreaStart,
     order,
+    releaseBlockSummary,
     onMonitoringSummaryReload,
-    onReleaseProductionEventsSummaryChanged,
+    onReleaseRegistered,
 }: OrderExecutionOperatorPanelProps) {
     const [eventRegistrationExpanded, setEventRegistrationExpanded] = useState(false);
     const [processJournalExpanded, setProcessJournalExpanded] = useState(false);
@@ -63,8 +67,9 @@ export function OrderExecutionOperatorPanel({
                 />
                 <OrderExecutionReleaseSection
                     workAreaId={workAreaId}
+                    initialReleaseSummary={releaseBlockSummary}
                     eventsSummaryEnabled={Boolean(workAreaId?.trim())}
-                    onRelatedDataReload={onReleaseProductionEventsSummaryChanged}
+                    onReleaseRegistered={onReleaseRegistered}
                 />
 
                 <OrderExecutionStageCompletionSection workAreaId={workAreaId} />

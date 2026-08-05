@@ -1,3 +1,5 @@
+import type { ReleaseProductionEventsSummarySnapshot } from "./release/production-events-summary/types";
+
 export type MachineId = string;
 
 export type OrderInfo = {
@@ -165,6 +167,8 @@ export type MachineData = {
     workAreaStart?: string;
     /** Счётчик необработанных событий (`sidebar_badges.unprocessed_events_count`) */
     unprocessedEventsCount?: number;
+    /** Стартовая сводка блока «Выпуск» (`release_block` из getOrderExecution) */
+    releaseBlockSummary?: ReleaseProductionEventsSummarySnapshot | null;
     /** На машине есть назначенный этап / исполняется заказ — показываем мониторинг и панель оператора */
     hasAssignedStage: boolean;
     order: OrderInfo;

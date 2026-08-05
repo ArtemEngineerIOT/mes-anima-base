@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState, type MutableRefObject } from "react";
 
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import {
@@ -6,6 +6,10 @@ import {
     getReleaseProductionEventCellValue,
 } from "../model/release/map-event-release-production-payload";
 import { RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS } from "../model/release/production-event-types";
+import {
+    sortReleaseProductionEventListByRegisteredAt,
+    type ReleaseProductionEventTimeSortDirection,
+} from "../model/release/sort-release-production-events-by-registered-at";
 import { useOrderExecutionMachineStompState } from "../model/machine-stomp/order-execution-machine-stomp-context";
 import { resolveMachineStompPanelTone } from "../model/machine-stomp/resolve-machine-stomp-panel-tone";
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
@@ -36,8 +40,9 @@ type OrderExecutionReleaseProps = {
     workAreaId?: string;
     enabled: boolean;
     eventsSummary?: ReleaseProductionEventsSummarySnapshot;
-    eventsSummaryLoading?: boolean;
-    eventsSummaryError?: string | null;
+    onReleaseRegistered?: () => void;
+    /** Регистрирует silent-reload таблицы «Сигналы машины (выпуск)» */
+    productionEventsSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 const productionEventSelectionColumnClassName = "w-10";
@@ -47,8 +52,8 @@ export function OrderExecutionRelease({
     workAreaId,
     enabled,
     eventsSummary,
-    eventsSummaryLoading = false,
-    eventsSummaryError = null,
+    onReleaseRegistered,
+    productionEventsSilentReloadRef,
 }: OrderExecutionReleaseProps) {
     const {
         form,
@@ -88,9 +93,35 @@ export function OrderExecutionRelease({
         productionEventError,
         selectedProductionEventId,
         toggleProductionEventSignal,
-    } = useRelease({ workAreaId, enabled });
+        reloadProductionEventsSilent,
+    } = useRelease({ workAreaId, enabled, onReleaseRegistered });
+
+    useEffect(() => {
+        if (!productionEventsSilentReloadRef) {
+            return;
+        }
+
+        productionEventsSilentReloadRef.current = () => {
+            reloadProductionEventsSilent();
+        };
+
+        return () => {
+            productionEventsSilentReloadRef.current = null;
+        };
+    }, [productionEventsSilentReloadRef, reloadProductionEventsSilent]);
 
     const machineStompState = useOrderExecutionMachineStompState();
+    const [registeredAtSortDirection, setRegisteredAtSortDirection] =
+        useState<ReleaseProductionEventTimeSortDirection>("desc");
+
+    const sortedProductionEventList = useMemo(
+        () =>
+            sortReleaseProductionEventListByRegisteredAt(
+                productionEvent.eventList,
+                registeredAtSortDirection,
+            ),
+        [productionEvent.eventList, registeredAtSortDirection],
+    );
 
     const eventsSummaryRows = useMemo(
         () =>
@@ -103,6 +134,19 @@ export function OrderExecutionRelease({
     );
 
     const eventsSummaryTone = resolveMachineStompPanelTone(machineStompState);
+
+    const hasEventsSummaryData = useMemo(() => {
+        if (!eventsSummary) {
+            return false;
+        }
+
+        return (
+            eventsSummary.totalCount > 0 ||
+            eventsSummary.unprocessedCount > 0 ||
+            eventsSummary.processedCount > 0 ||
+            Boolean(eventsSummary.changedAt)
+        );
+    }, [eventsSummary]);
 
     const {
         pageItems: batchPageItems,
@@ -118,7 +162,7 @@ export function OrderExecutionRelease({
         pageSize: productionEventPageSize,
         setPageSize: setProductionEventPageSize,
         setPage: setProductionEventPage,
-    } = useDataTablePagination(productionEvent.eventList, { initialPageSize: 5 });
+    } = useDataTablePagination(sortedProductionEventList, { initialPageSize: 5 });
 
     if (!enabled) {
         return null;
@@ -126,27 +170,13 @@ export function OrderExecutionRelease({
 
     return (
         <div className="flex flex-col gap-4">
-            {eventsSummaryError ? (
-                <Informer
-                    tone="alert"
-                    variant="bordered"
-                    size="s"
-                    title="Сводка сигналов выпуска"
-                    description={eventsSummaryError}
-                />
-            ) : null}
-
-            {eventsSummaryLoading ? (
-                <Informer tone="system" variant="bordered" size="s" title="Загрузка сводки сигналов…" />
-            ) : null}
-
-            {!eventsSummaryLoading && !eventsSummaryError && eventsSummary ? (
+            {hasEventsSummaryData ? (
                 <MachineDataPanel
                     title="Сводка сигналов выпуска"
                     rows={eventsSummaryRows}
                     tone={eventsSummaryTone}
                     emptyText="Нет данных сводки"
-                    updatedAt={eventsSummary.changedAt || null}
+                    updatedAt={eventsSummary?.changedAt}
                     updatedAtLabel="Обновлено"
                     showUnitColumn={false}
                 />
@@ -183,20 +213,67 @@ export function OrderExecutionRelease({
                                             )}
                                             aria-label="Выбор сигнала"
                                         />
-                                        {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => (
-                                            <TableHead
-                                                key={column.key}
-                                                className={cn(
-                                                    dataTableHeadCellClassName,
-                                                    "bg-muted/40",
-                                                    column.key === "length_m" && "text-right",
-                                                )}
-                                            >
-                                                {column.label}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
+                                        {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => {
+                                            if (column.key === "registered_at") {
+                                                const sortLabel =
+                                                    registeredAtSortDirection === "asc"
+                                                        ? "по возрастанию"
+                                                        : "по убыванию";
+
+                                                return (
+                                                    <TableHead
+                                                        key={column.key}
+                                                        className={cn(
+                                                            dataTableHeadCellClassName,
+                                                            "bg-muted/40",
+                                                        )}
+                                                        aria-sort={
+                                                            registeredAtSortDirection === "asc"
+                                                                ? "ascending"
+                                                                : "descending"
+                                                        }
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex items-center gap-1 text-left hover:text-foreground"
+                                                            onClick={() => {
+                                                                setRegisteredAtSortDirection((prev) =>
+                                                                    prev === "asc" ? "desc" : "asc",
+                                                                );
+                                                                setProductionEventPage(1);
+                                                            }}
+                                                            aria-label={`Сортировать по времени: ${sortLabel}`}
+                                                        >
+                                                            <span>{column.label}</span>
+                                                            <Icon
+                                                                name={
+                                                                    registeredAtSortDirection === "asc"
+                                                                        ? "arrow_upward"
+                                                                        : "arrow_downward"
+                                                                }
+                                                                size="sm"
+                                                                className="text-[14px] text-muted-foreground"
+                                                            />
+                                                        </button>
+                                                    </TableHead>
+                                                );
+                                            }
+
+                                            return (
+                                                <TableHead
+                                                    key={column.key}
+                                                    className={cn(
+                                                        dataTableHeadCellClassName,
+                                                        "bg-muted/40",
+                                                        column.key === "length_m" && "text-right",
+                                                    )}
+                                                >
+                                                    {column.label}
+                                                </TableHead>
+                                            );
+                                        })}
+                        </TableRow>
+                    </TableHeader>
                                 <TableBody>
                                     {productionEventPageItems.length > 0 ? (
                                         productionEventPageItems.map((row) => {
@@ -254,11 +331,11 @@ export function OrderExecutionRelease({
                                                             </TableCell>
                                                         );
                                                     })}
-                                                </TableRow>
+                        </TableRow>
                                             );
                                         })
                                     ) : (
-                                        <TableRow>
+                        <TableRow>
                                             <TableCell
                                                 colSpan={RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.length + 1}
                                                 className={cn(
@@ -268,10 +345,10 @@ export function OrderExecutionRelease({
                                             >
                                                 {productionEvent.emptyStateMessage || "Нет событий с машины"}
                                             </TableCell>
-                                        </TableRow>
+                        </TableRow>
                                     )}
-                                </TableBody>
-                            </Table>
+                    </TableBody>
+                </Table>
                         </div>
                         <div className={dataTableViewportFooterClassName}>
                             <DataTablePaginationFooter
@@ -313,9 +390,9 @@ export function OrderExecutionRelease({
                             <TableRow>
                                 <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
                                     Серия
-                                </TableCell>
+                                    </TableCell>
                                 <TableCell className={dataTableBodyCellClassName}>{series || "—"}</TableCell>
-                            </TableRow>
+                                </TableRow>
                         </TableBody>
                     </Table>
                 </div>

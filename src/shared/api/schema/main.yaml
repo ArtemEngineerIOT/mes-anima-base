@@ -198,9 +198,9 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postJbProcessControl"
 
-    /v1/contexts/users.admin.models.rest/functions/jbPaintsRecipe:
+    /v1/contexts/users.admin.models.rest/functions/jbPrintSheet4:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postJbPaintsRecipe"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbPrintSheet4"
 
     /v1/contexts/users.admin.models.rest/functions/jbPrintSheet6:
         post:

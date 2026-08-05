@@ -257,6 +257,27 @@ components:
                     nullable: true
             additionalProperties: true
 
+        OrderExecutionReleaseBlockItem:
+            type: object
+            description: Элемент `release_block` в ответе getOrderExecution (стартовая сводка блока «Выпуск»)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                unprocessed_count:
+                    type: integer
+                    nullable: true
+                processed_count:
+                    type: integer
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                changed_at:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
         OrderExecutionResultItem:
             type: object
             description: Элемент `result` в ответе getOrderExecution
@@ -280,6 +301,11 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/OrderExecutionHeaderRow"
+                release_block:
+                    type: array
+                    description: Стартовая сводка блока «Выпуск» (badge + плашка до STOMP/getEventsSummary)
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionReleaseBlockItem"
             additionalProperties: true
 
         OrderExecutionResultRow:
@@ -1029,29 +1055,43 @@ components:
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        JbPaintsRecipeRequestItem:
+        JbPrintSheet4RequestItem:
             type: object
-            description: Запрос jbPaintsRecipe — печать «Рецептура красок» (JB)
+            description: Запрос jbPrintSheet4 — печать «Рецептура красок» / лист 4 (JB)
             properties:
-                workAreaId:
+                order:
                     type: string
-                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                    description: Номер заказа (`order` / `header.order` из getOrderExecution)
             required:
-                - workAreaId
+                - order
             additionalProperties: true
 
-        JbPaintsRecipeRequest:
+        JbPrintSheet4Request:
             type: array
             minItems: 1
-            description: Тело `[{ workAreaId }]` для jbPaintsRecipe
+            description: Тело `[{ order }]` для jbPrintSheet4
             items:
-                $ref: "#/components/schemas/JbPaintsRecipeRequestItem"
+                $ref: "#/components/schemas/JbPrintSheet4RequestItem"
 
-        JbPaintsRecipeResponse:
+        JbPrintSheet4ResponseItem:
+            type: object
+            description: Элемент ответа jbPrintSheet4
+            properties:
+                fileName:
+                    type: string
+                    nullable: true
+                    description: Имя PDF в каталоге temp клиента
+                succeeded:
+                    type: boolean
+                    nullable: true
+                    description: Успешность генерации отчёта
+            additionalProperties: true
+
+        JbPrintSheet4Response:
             type: array
             minItems: 1
             items:
-                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+                $ref: "#/components/schemas/JbPrintSheet4ResponseItem"
 
         JbPrintSheet6RequestItem:
             type: object
@@ -2067,6 +2107,9 @@ components:
                 warehouseCode:
                     type: string
                     description: Код склада назначения из формы (`destination_warehouse_code` на BFF)
+                idEvent:
+                    type: string
+                    description: Id сигнала из таблицы «Сигналы машины (выпуск)» (`signal_id`); пустая строка при ручной регистрации без сигнала
             required:
                 - workAreaId
                 - seriesKey

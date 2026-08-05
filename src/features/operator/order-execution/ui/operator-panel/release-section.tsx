@@ -1,25 +1,51 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import type { ReleaseProductionEventsSummarySnapshot } from "../../model/release/production-events-summary/types";
 import { useProductionEventsSummary } from "../../model/release/production-events-summary/use-production-events-summary";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { OrderExecutionRelease } from "../order-execution-release";
 
+const PRODUCTION_EVENTS_SILENT_RELOAD_DEBOUNCE_MS = 300;
+
 type OrderExecutionReleaseSectionProps = {
     workAreaId?: string;
+    initialReleaseSummary?: ReleaseProductionEventsSummarySnapshot | null;
     eventsSummaryEnabled: boolean;
-    onRelatedDataReload?: () => void;
+    /** После успешного registerRelease — silent-reload мониторинга / прогресса */
+    onReleaseRegistered?: () => void;
 };
 
 export function OrderExecutionReleaseSection({
     workAreaId,
+    initialReleaseSummary = null,
     eventsSummaryEnabled,
-    onRelatedDataReload,
+    onReleaseRegistered,
 }: OrderExecutionReleaseSectionProps) {
     const [expanded, setExpanded] = useState(false);
-    const { snapshot, unprocessedCount, totalCount, isLoading, error } = useProductionEventsSummary({
+    const productionEventsSilentReloadRef = useRef<(() => void) | null>(null);
+    const silentReloadDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+        };
+    }, []);
+
+    const { snapshot, unprocessedCount } = useProductionEventsSummary({
         workAreaId,
-        enabled: expanded && eventsSummaryEnabled,
-        onRelatedDataReload,
+        initialSnapshot: initialReleaseSummary,
+        enabled: eventsSummaryEnabled,
+        onSummaryChanged: () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+
+            silentReloadDebounceTimerRef.current = setTimeout(() => {
+                productionEventsSilentReloadRef.current?.();
+            }, PRODUCTION_EVENTS_SILENT_RELOAD_DEBOUNCE_MS);
+        },
     });
 
     const headerTone = unprocessedCount > 0 ? "warning" : "success";
@@ -29,7 +55,7 @@ export function OrderExecutionReleaseSection({
             title="Выпуск"
             defaultOpen={false}
             tone={headerTone}
-            count={totalCount > 0 ? totalCount : undefined}
+            count={unprocessedCount > 0 ? unprocessedCount : undefined}
             keepMounted
             onExpandedChange={setExpanded}
         >
@@ -37,8 +63,8 @@ export function OrderExecutionReleaseSection({
                 workAreaId={workAreaId}
                 enabled={expanded}
                 eventsSummary={snapshot}
-                eventsSummaryLoading={isLoading}
-                eventsSummaryError={error}
+                onReleaseRegistered={onReleaseRegistered}
+                productionEventsSilentReloadRef={productionEventsSilentReloadRef}
             />
         </OrderExecutionCollapsibleSection>
     );

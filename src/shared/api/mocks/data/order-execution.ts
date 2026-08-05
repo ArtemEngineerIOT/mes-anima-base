@@ -1,9 +1,18 @@
 /** Элемент `result` в ответе `getOrderExecution`. */
+export type MockOrderExecutionReleaseBlockItem = {
+    work_area_id: string;
+    unprocessed_count: number;
+    processed_count: number;
+    total_count: number;
+    changed_at: string;
+};
+
 export type MockOrderExecutionResultItem = {
     work_area_id: string | null;
     start_work_area: string | null;
     resource_id: string;
     sidebar_badges: { unprocessed_events_count: number }[];
+    release_block?: MockOrderExecutionReleaseBlockItem[];
     header: {
         product: string;
         project: string;
@@ -18,6 +27,15 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
         start_work_area: "22.07.2026 14:43:15",
         resource_id: "PR120",
         sidebar_badges: [{ unprocessed_events_count: 2 }],
+        release_block: [
+            {
+                work_area_id: "191",
+                unprocessed_count: 303,
+                processed_count: 45,
+                total_count: 348,
+                changed_at: "05.08.2026 12:46:53",
+            },
+        ],
         header: [
             {
                 project: "111780",

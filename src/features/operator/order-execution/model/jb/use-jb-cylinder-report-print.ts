@@ -16,11 +16,11 @@ import {
 } from "./constants";
 import { mapJbFullPrintPayload } from "./map-jb-full-print-payload";
 import { mapJbMapColorControlPayload } from "./map-jb-map-color-control-payload";
-import { mapJbPaintsRecipePayload } from "./map-jb-paints-recipe-payload";
 import { mapJbProcessControlPayload } from "./map-jb-process-control-payload";
 import { mapJbPrintSheet1Payload } from "./map-jb-print-sheet1-payload";
 import { mapJbPrintSheet2Payload } from "./map-jb-print-sheet2-payload";
 import { mapJbPrintSheet3Payload } from "./map-jb-print-sheet3-payload";
+import { mapJbPrintSheet4Payload } from "./map-jb-print-sheet4-payload";
 import { mapJbPrintSheet6Payload } from "./map-jb-print-sheet6-payload";
 
 type UseJbCylinderReportPrintOptions = {
@@ -87,9 +87,9 @@ export function useJbCylinderReportPrint({
         REST_FUNCTION_PATHS.jbProcessControl,
         {},
     );
-    const { mutateAsync: fetchPaintsRecipeReport } = rqClient.useMutation(
+    const { mutateAsync: fetchPrintSheet4Report } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.jbPaintsRecipe,
+        REST_FUNCTION_PATHS.jbPrintSheet4,
         {},
     );
     const { mutateAsync: fetchPrintSheet6Report } = rqClient.useMutation(
@@ -110,8 +110,8 @@ export function useJbCylinderReportPrint({
     fetchFullPrintReportRef.current = fetchFullPrintReport;
     const fetchProcessControlReportRef = useRef(fetchProcessControlReport);
     fetchProcessControlReportRef.current = fetchProcessControlReport;
-    const fetchPaintsRecipeReportRef = useRef(fetchPaintsRecipeReport);
-    fetchPaintsRecipeReportRef.current = fetchPaintsRecipeReport;
+    const fetchPrintSheet4ReportRef = useRef(fetchPrintSheet4Report);
+    fetchPrintSheet4ReportRef.current = fetchPrintSheet4Report;
     const fetchPrintSheet6ReportRef = useRef(fetchPrintSheet6Report);
     fetchPrintSheet6ReportRef.current = fetchPrintSheet6Report;
 
@@ -231,15 +231,24 @@ export function useJbCylinderReportPrint({
                 }
 
                 if (rowId === JB_INK_RECIPE_ROW_ID) {
-                    if (!trimmedWorkAreaId) {
-                        throw new Error("Не удалось определить workAreaId этапа");
+                    if (!trimmedOrder || trimmedOrder === "—") {
+                        throw new Error("Не удалось определить номер заказа");
+                    }
+                    if (!pathFolder) {
+                        throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchPaintsRecipeReportRef.current({
-                        body: [{ workAreaId: trimmedWorkAreaId }],
-                    });
-                    const previewFilePath = mapJbPaintsRecipePayload(payload);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchPrintSheet4ReportRef.current({
+                            body: [{ order: trimmedOrder }],
+                        });
+                        const previewFilePath = mapJbPrintSheet4Payload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 

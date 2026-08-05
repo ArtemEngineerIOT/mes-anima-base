@@ -28,7 +28,7 @@ import { orderExecutionPrintSheet3ReportHandlers } from "./handlers/order-execut
 import { orderExecutionMapColorControlReportHandlers } from "./handlers/order-execution-map-color-control-report";
 import { orderExecutionFullPrintReportHandlers } from "./handlers/order-execution-full-print-report";
 import { orderExecutionProcessControlReportHandlers } from "./handlers/order-execution-process-control-report";
-import { orderExecutionPaintsRecipeReportHandlers } from "./handlers/order-execution-paints-recipe-report";
+import { orderExecutionPrintSheet4ReportHandlers } from "./handlers/order-execution-print-sheet4-report";
 import { orderExecutionPrintSheet6ReportHandlers } from "./handlers/order-execution-print-sheet6-report";
 import { orderExecutionStageCompletionInitHandlers } from "./handlers/order-execution-stage-completion-init";
 import { orderExecutionStageCompletionSubmitHandlers } from "./handlers/order-execution-stage-completion-submit";
@@ -83,7 +83,7 @@ export const worker = setupWorker(
     ...orderExecutionMapColorControlReportHandlers,
     ...orderExecutionFullPrintReportHandlers,
     ...orderExecutionProcessControlReportHandlers,
-    ...orderExecutionPaintsRecipeReportHandlers,
+    ...orderExecutionPrintSheet4ReportHandlers,
     ...orderExecutionPrintSheet6ReportHandlers,
     ...orderExecutionStageCompletionInitHandlers,
     ...orderExecutionStageCompletionSubmitHandlers,

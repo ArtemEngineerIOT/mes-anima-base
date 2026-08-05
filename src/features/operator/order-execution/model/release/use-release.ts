@@ -28,9 +28,16 @@ import { useReleaseBlockReasons } from "./use-release-block-reasons";
 type UseReleaseOptions = {
     workAreaId?: string;
     enabled: boolean;
+    /** После успешного registerRelease — silent-reload мониторинга / прогресса */
+    onReleaseRegistered?: () => void;
 };
 
-export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
+type LoadProductionEventOptions = {
+    /** Обновить таблицу сигналов без сброса формы и без индикатора загрузки */
+    silent?: boolean;
+};
+
+export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseReleaseOptions) {
     const [form, setForm] = useState<ReleaseFormState>(RELEASE_INITIAL_FORM);
     const [initSnapshot, setInitSnapshot] = useState<ReleaseInitSnapshot>(RELEASE_EMPTY_INIT);
     const [batchSnapshot, setBatchSnapshot] = useState<ReleaseBatchSnapshot>(RELEASE_EMPTY_BATCH_SNAPSHOT);
@@ -100,6 +107,8 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
     prepareReleaseLabelRequestRef.current = prepareReleaseLabelRequest;
     const submitBlockRequestRef = useRef(submitBlockRequest);
     submitBlockRequestRef.current = submitBlockRequest;
+    const onReleaseRegisteredRef = useRef(onReleaseRegistered);
+    onReleaseRegisteredRef.current = onReleaseRegistered;
 
     const resetFormState = useCallback(() => {
         setInitSnapshot(RELEASE_EMPTY_INIT);
@@ -120,27 +129,80 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         setBlockSubmitMessage(null);
     }, [resetFormState]);
 
-    const loadProductionEvent = useCallback(async (trimmedWorkAreaId: string) => {
-        setIsProductionEventLoading(true);
-        setProductionEventError(null);
+    const selectedProductionEventIdRef = useRef(selectedProductionEventId);
+    selectedProductionEventIdRef.current = selectedProductionEventId;
+
+    const clearSignalPrefillFields = useCallback(() => {
+        setForm((prev) => ({
+            ...prev,
+            lengthM: "",
+            netWeightKg: "",
+            grossWeightKg: "",
+            requiresRewind: false,
+            isLastRoll: false,
+        }));
+        setRegisterSubmitError(null);
+        setRegisterSubmitMessage(null);
+    }, []);
+
+    const loadProductionEvent = useCallback(async (
+        trimmedWorkAreaId: string,
+        options?: LoadProductionEventOptions,
+    ) => {
+        const silent = options?.silent ?? false;
+
+        if (!silent) {
+            setIsProductionEventLoading(true);
+            setProductionEventError(null);
+        }
 
         try {
             const productionEventPayload = await fetchReleaseProductionEventRef.current({
                 body: [{ workAreaId: trimmedWorkAreaId }],
             });
-            setProductionEvent(mapEventReleaseProductionPayload(productionEventPayload));
-            setSelectedProductionEventId(null);
+            const mapped = mapEventReleaseProductionPayload(productionEventPayload);
+            setProductionEvent(mapped);
+
+            if (silent) {
+                const previousSelectedId = selectedProductionEventIdRef.current;
+                const nextSelectedId =
+                    previousSelectedId && mapped.eventList.some((row) => row.id === previousSelectedId)
+                        ? previousSelectedId
+                        : null;
+
+                setSelectedProductionEventId(nextSelectedId);
+                if (previousSelectedId && !nextSelectedId) {
+                    clearSignalPrefillFields();
+                }
+                setProductionEventError(null);
+            } else {
+                setSelectedProductionEventId(null);
+            }
         } catch (loadError) {
-            setProductionEvent(RELEASE_EMPTY_PRODUCTION_EVENT);
-            setProductionEventError(
-                loadError instanceof Error
-                    ? loadError.message
-                    : "Не удалось загрузить событие выпуска с машины",
-            );
+            if (!silent) {
+                setProductionEvent(RELEASE_EMPTY_PRODUCTION_EVENT);
+                setSelectedProductionEventId(null);
+                setProductionEventError(
+                    loadError instanceof Error
+                        ? loadError.message
+                        : "Не удалось загрузить событие выпуска с машины",
+                );
+            }
         } finally {
-            setIsProductionEventLoading(false);
+            if (!silent) {
+                setIsProductionEventLoading(false);
+            }
         }
-    }, []);
+    }, [clearSignalPrefillFields]);
+
+    const reloadProductionEventsSilent = useCallback(() => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            return;
+        }
+
+        void loadProductionEvent(trimmedWorkAreaId, { silent: true });
+    }, [loadProductionEvent, workAreaId]);
 
     const loadReleaseFormData = useCallback(async (trimmedWorkAreaId: string) => {
         const requestBody = [{ workAreaId: trimmedWorkAreaId }] as const;
@@ -233,12 +295,16 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
 
                 if (lengthM !== null && lengthM !== undefined && lengthM !== "") {
                     patchForm({ lengthM: String(lengthM) });
+                } else {
+                    patchForm({ lengthM: "" });
                 }
+            } else {
+                clearSignalPrefillFields();
             }
 
             setSelectedProductionEventId(nextSelectedId);
         },
-        [patchForm, productionEvent.eventList, selectedProductionEventId],
+        [clearSignalPrefillFields, patchForm, productionEvent.eventList, selectedProductionEventId],
     );
 
     const toggleBatchRollSelection = useCallback((rowId: string) => {
@@ -368,6 +434,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
             rewind: form.requiresRewind,
             lastRoll: form.isLastRoll,
             warehouseCode,
+            idEvent: selectedProductionEventId ?? "",
         });
 
         setIsRegisteringRelease(true);
@@ -386,7 +453,9 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
                 requiresRewind: false,
                 isLastRoll: false,
             }));
+            setSelectedProductionEventId(null);
             await load();
+            onReleaseRegisteredRef.current?.();
         } catch (registerError) {
             setRegisterSubmitError(
                 registerError instanceof Error ? registerError.message : "Не удалось зарегистрировать выпуск",
@@ -402,6 +471,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         load,
         parsedLength,
         parsedWeight,
+        selectedProductionEventId,
         workAreaId,
     ]);
 
@@ -471,6 +541,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         productionEventError,
         selectedProductionEventId,
         toggleProductionEventSignal,
+        reloadProductionEventsSilent,
         isLoading,
         error,
         reload: load,
