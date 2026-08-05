@@ -1,10 +1,10 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
-import { assertReleaseRpcOk, pickNullableNumber, pickNumber, pickString } from "../map-release-rpc-utils";
+import { assertReleaseRpcOk, pickString } from "../map-release-rpc-utils";
+import { buildReleaseProductionEventsSummarySnapshot } from "./build-release-production-events-summary-snapshot";
 import {
     RELEASE_PRODUCTION_EVENTS_SUMMARY_DEFAULT_FIELDS,
     RELEASE_PRODUCTION_EVENTS_SUMMARY_EMPTY,
-    type ReleaseProductionEventsSummaryField,
     type ReleaseProductionEventsSummarySnapshot,
 } from "./types";
 
@@ -33,26 +33,6 @@ function mapFieldLabels(raw: unknown): Array<{ key: string; label: string }> {
     return fields.length > 0 ? fields : [...RELEASE_PRODUCTION_EVENTS_SUMMARY_DEFAULT_FIELDS];
 }
 
-function readFieldValue(resultItem: Record<string, unknown>, key: string): number {
-    if (key in resultItem) {
-        return pickNumber(resultItem[key]);
-    }
-
-    const camelKey = key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
-    return pickNumber(resultItem[camelKey]);
-}
-
-function mapSummaryFields(
-    resultItem: Record<string, unknown>,
-    fieldLabels: Array<{ key: string; label: string }>,
-): ReleaseProductionEventsSummaryField[] {
-    return fieldLabels.map((field) => ({
-        key: field.key,
-        label: field.label,
-        value: readFieldValue(resultItem, field.key),
-    }));
-}
-
 export function mapProductionEventsSummaryPayload(
     payload: ApiSchemas["OrderExecutionReleaseProductionEventsSummaryResponse"] | undefined,
 ): ReleaseProductionEventsSummarySnapshot {
@@ -75,15 +55,5 @@ export function mapProductionEventsSummaryPayload(
         (wrapper as Record<string, unknown>).result_field_labels ??
             (wrapper as Record<string, unknown>).resultFieldLabels,
     );
-    const fields = mapSummaryFields(record, fieldLabels);
-
-    return {
-        unprocessedCount: readFieldValue(record, "unprocessed_count"),
-        processedCount: readFieldValue(record, "processed_count"),
-        totalCount:
-            pickNullableNumber(record.total_count ?? record.totalCount) ??
-            readFieldValue(record, "unprocessed_count"),
-        changedAt: pickString(record.changed_at ?? record.changedAt) ?? null,
-        fields,
-    };
+    return buildReleaseProductionEventsSummarySnapshot(record, fieldLabels);
 }

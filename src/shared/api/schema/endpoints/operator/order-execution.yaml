@@ -689,9 +689,11 @@ postJbProcessControl:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbPaintsRecipe:
-    summary: Отчёт «Рецептура красок» (JB)
-    description: Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа»
+postJbPrintSheet4:
+    summary: Отчёт «Рецептура красок» / лист 4 (JB)
+    description: >
+        Кнопка печати «Рецептура красок» в блоке JB на экране «Исполнение заказа».
+        RPC `jbPrintSheet4`. Тело: `[{ order }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -699,14 +701,14 @@ postJbPaintsRecipe:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPaintsRecipeRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet4Request"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: PDF во временном каталоге клиента (`fileName` + `succeeded`)
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPaintsRecipeResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet4Response"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

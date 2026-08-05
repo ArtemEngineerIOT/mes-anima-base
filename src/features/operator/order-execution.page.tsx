@@ -72,11 +72,12 @@ function OrderExecutionPage() {
                             workAreaId={current.workAreaId}
                             workAreaStart={current.workAreaStart}
                             order={current.order.orderId}
+                            releaseBlockSummary={current.releaseBlockSummary}
                             onMonitoringSummaryReload={() => {
                                 lineMetersSilentReloadRef.current?.();
                                 rollTablesSilentReloadRef.current?.();
                             }}
-                            onReleaseProductionEventsSummaryChanged={() => {
+                            onReleaseRegistered={() => {
                                 lineMetersSilentReloadRef.current?.();
                                 rollTablesSilentReloadRef.current?.();
                                 void reloadProgressRef.current({ silent: true });

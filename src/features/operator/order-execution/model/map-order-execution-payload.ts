@@ -1,6 +1,7 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
 import { buildOrderExecutionEmptyMachine } from "./mock-order-execution";
+import { mapOrderExecutionReleaseBlockSummary } from "./map-order-execution-release-block-summary";
 import type { MachineData, OrderInfo } from "./types";
 
 const OK_ERROR_CODE = "OK";
@@ -95,6 +96,7 @@ export function mergeOrderExecutionMachineData(
         workAreaId: apiData.workAreaId,
         workAreaStart: apiData.workAreaStart,
         unprocessedEventsCount: apiData.unprocessedEventsCount,
+        releaseBlockSummary: apiData.releaseBlockSummary,
         hasAssignedStage: apiData.hasAssignedStage,
         order: apiData.order,
         operator: {
@@ -141,12 +143,14 @@ export function mapOrderExecutionPayload(
     };
 
     const unprocessedEventsCount = readUnprocessedEventsCount(record);
+    const releaseBlockSummary = mapOrderExecutionReleaseBlockSummary(record, workAreaId);
 
     return {
         ...base,
         workAreaId: workAreaId ?? undefined,
         workAreaStart,
         unprocessedEventsCount,
+        releaseBlockSummary,
         hasAssignedStage,
         order,
         operator: {
