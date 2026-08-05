@@ -39,12 +39,13 @@ function hasText(value: string): boolean {
     return value.trim().length > 0;
 }
 
-/** Поля метража на шаге 2 обязательны, если не включён «Весь этап» (immediate). */
+/** Поля метража на шаге 2 обязательны, если не включён «Весь этап» (только deferred). */
 export function areStep2MeterFieldsRequired(
     draft: EventRegistrationDraft,
     mode: ScrapRemovalMode,
 ): boolean {
-    return !draft.wholeStage || mode === "deferred";
+    if (mode === "deferred" && draft.wholeStage) return false;
+    return true;
 }
 
 export function areStep2TimeFieldsRequired(
@@ -126,7 +127,8 @@ export function canProceedEventRegistrationStep2(
     const mode = getScrapRemovalMode(draft);
     if (!code || mode == null) return false;
 
-    if (!hasText(draft.roll)) return false;
+    // При «Удалять брак сразу» рулон не участвует в сценарии
+    if (mode === "deferred" && !hasText(draft.roll)) return false;
     if (!hasText(draft.comment)) return false;
 
     const metersRequired = areStep2MeterFieldsRequired(draft, mode);
@@ -180,7 +182,9 @@ export function draftToJournalDetailRows(
 ): ProcessJournalDetailRow[] {
     const rows: ProcessJournalDetailRow[] = [];
 
-    rows.push({ parameter: "Рулон", value: draft.roll || "—" });
+    if (mode === "deferred") {
+        rows.push({ parameter: "Рулон", value: draft.roll || "—" });
+    }
 
     if (!draft.wholeStage) {
         if (draft.meterFrom) {

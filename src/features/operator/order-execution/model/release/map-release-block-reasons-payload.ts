@@ -1,16 +1,27 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
-import { assertReleaseRpcOk, pickString } from "./map-release-rpc-utils";
 import type { ReleaseBlockReason } from "./types";
 
+const OK_ERROR_CODE = "OK";
+
+function pickString(row: Record<string, unknown>, ...keys: string[]): string | undefined {
+    for (const key of keys) {
+        const value = row[key];
+        if (typeof value === "string" && value.trim()) {
+            return value.trim();
+        }
+    }
+    return undefined;
+}
+
 function mapBlockReasonRow(row: Record<string, unknown>): ReleaseBlockReason | null {
-    const reasonCode = pickString(row.reason_code ?? row.reasonCode);
-    const reasonLabel = pickString(row.reason_label ?? row.reasonLabel);
-    if (!reasonCode || !reasonLabel) {
+    const code = pickString(row, "reason_code", "reasonCode");
+    const title = pickString(row, "reason_label", "reasonLabel");
+    if (!code || !title) {
         return null;
     }
 
-    return { reasonCode, reasonLabel };
+    return { reasonCode: code, reasonLabel: title };
 }
 
 export function mapReleaseBlockReasonsPayload(
@@ -18,9 +29,16 @@ export function mapReleaseBlockReasonsPayload(
 ): ReleaseBlockReason[] {
     const fallbackMessage = "Не удалось загрузить причины блокировки";
     const wrapper = payload?.[0];
-    assertReleaseRpcOk(wrapper, fallbackMessage);
+    if (!wrapper) {
+        throw new Error(fallbackMessage);
+    }
 
-    return (wrapper?.result ?? [])
+    const errorCode = (wrapper.error_code ?? "").trim().toUpperCase();
+    if (errorCode !== OK_ERROR_CODE) {
+        throw new Error(wrapper.error_message?.trim() || fallbackMessage);
+    }
+
+    return (wrapper.result ?? [])
         .map((row) => mapBlockReasonRow(row as Record<string, unknown>))
         .filter((row): row is ReleaseBlockReason => row !== null);
 }

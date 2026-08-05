@@ -79,10 +79,19 @@ function extractDatePart(value: string | undefined): string | null {
     const trimmed = value?.trim();
     if (!trimmed) return null;
 
-    const match = trimmed.match(/(\d{2})-(\d{2})-(\d{4})/);
-    if (!match) return null;
+    // `2026-07-22 …`
+    const iso = trimmed.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+        return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    }
 
-    return `${match[3]}-${match[2]}-${match[1]}`;
+    // `23.07.2026 …` / `23-07-2026 …` / `23/07/2026 …`
+    const dmy = trimmed.match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
+    if (dmy) {
+        return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+    }
+
+    return null;
 }
 
 function normalizeTimePart(value: string): string {
@@ -166,7 +175,8 @@ export function buildEventRegistrationRegisterEventBody(
         eventCode === String(SETUP_RUN_EVENT_CODE)
             ? draft.setupRuns.map((tag) => tag.trim()).filter(Boolean).join(",")
             : "";
-    const wholeStage = removeImmediately ? draft.wholeStage : false;
+    // «Весь этап» участвует только при отложенном удалении брака
+    const wholeStage = removeImmediately ? false : draft.wholeStage;
     const spliceReasonCode = "";
 
     const item: Record<string, unknown> = {
@@ -178,8 +188,11 @@ export function buildEventRegistrationRegisterEventBody(
         setupRunTags,
         wholeStage,
         spliceReasonCode,
-        materialRollRef: resolveMaterialRollRef(draft.roll, snapshot.rollCatalog),
     };
+
+    if (!removeImmediately) {
+        item.materialRollRef = resolveMaterialRollRef(draft.roll, snapshot.rollCatalog);
+    }
 
     const operatorRef = params.operatorRef?.trim();
     if (operatorRef) {
@@ -191,11 +204,10 @@ export function buildEventRegistrationRegisterEventBody(
         item.comment = comment;
     }
 
-    if (removeImmediately) {
-        appendMeterAndTimeFields(item, draft, signalDateSource, false);
-    } else {
-        appendMeterAndTimeFields(item, draft, signalDateSource, true);
+    // При wholeStage метраж/время не отправляем
+    appendMeterAndTimeFields(item, draft, signalDateSource, false);
 
+    if (!removeImmediately) {
         const side = mapSideWire(draft.side);
         if (side) {
             item.side = side;

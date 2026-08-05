@@ -41,6 +41,8 @@ export type MachineDataPanelProps = {
     showToneBar?: boolean;
     /** Футер под таблицей (кнопки действий и т. п.) */
     footer?: ReactNode;
+    /** Показывать колонку «Ед. изм.». По умолчанию `true`. */
+    showUnitColumn?: boolean;
 };
 
 const DEFAULT_TITLE = "Данные с машины";
@@ -61,6 +63,7 @@ export function MachineDataPanel({
     className,
     showToneBar = true,
     footer,
+    showUnitColumn = true,
 }: MachineDataPanelProps) {
     const panelTone = resolvePanelTone(rows, tone);
     const panelIconName = iconName ?? (panelTone === "success" ? "settings" : undefined);
@@ -92,16 +95,18 @@ export function MachineDataPanel({
                                 Характеристика
                             </TableHead>
                             <TableHead className={dataTableStickyHeadCellOnBackgroundClassName}>Значение</TableHead>
-                            <TableHead className={cn(dataTableStickyHeadCellOnBackgroundClassName, "text-right")}>
-                                Ед. изм.
-                            </TableHead>
+                            {showUnitColumn ? (
+                                <TableHead className={cn(dataTableStickyHeadCellOnBackgroundClassName, "text-right")}>
+                                    Ед. изм.
+                                </TableHead>
+                            ) : null}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {rows.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={3}
+                                    colSpan={showUnitColumn ? 3 : 2}
                                     className={cn(
                                         dataTableBodyCellClassName,
                                         "py-6 text-center text-muted-foreground",
@@ -128,9 +133,11 @@ export function MachineDataPanel({
                                             row.value
                                         )}
                                     </TableCell>
-                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                        {row.unit}
-                                    </TableCell>
+                                    {showUnitColumn ? (
+                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                            {row.unit}
+                                        </TableCell>
+                                    ) : null}
                                 </TableRow>
                             ))
                         )}

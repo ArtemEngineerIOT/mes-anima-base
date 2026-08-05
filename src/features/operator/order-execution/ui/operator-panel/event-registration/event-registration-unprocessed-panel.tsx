@@ -104,8 +104,12 @@ export function EventRegistrationUnprocessedPanel({
                                             />
                                         </TableCell>
                                         <TableCell className={dataTableBodyCellClassName}>{row.description}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.detectedAt}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.endedAt}</TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>
+                                            {row.detectedAt || "—"}
+                                        </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>
+                                            {row.endedAt || "—"}
+                                        </TableCell>
                                     </TableRow>
                                 );
                             })

@@ -1,7 +1,13 @@
-const MOCK_TOTAL_COUNT_BY_WORK_AREA: Record<string, number> = {
-    "207": 2,
-    "504": 1,
+const MOCK_SUMMARY_BY_WORK_AREA: Record<string, { unprocessed_count: number; processed_count: number }> = {
+    "207": { unprocessed_count: 2, processed_count: 15 },
+    "504": { unprocessed_count: 1, processed_count: 8 },
+    "11": { unprocessed_count: 301, processed_count: 45 },
 };
+
+const MOCK_RESULT_FIELD_LABELS = [
+    { name: "unprocessed_count", label: "Сигналов необработано" },
+    { name: "processed_count", label: "Сигналов обработано" },
+] as const;
 
 function buildErrorResponse(message: string) {
     return [{ error_code: "INVALID_INPUT", error_message: message, result: [] }];
@@ -13,7 +19,7 @@ export function buildMockReleaseProductionEventsSummaryResponse(workAreaId: stri
         return buildErrorResponse("Укажите workAreaId");
     }
 
-    const totalCount = MOCK_TOTAL_COUNT_BY_WORK_AREA[normalized] ?? 0;
+    const summary = MOCK_SUMMARY_BY_WORK_AREA[normalized] ?? { unprocessed_count: 0, processed_count: 0 };
 
     return [
         {
@@ -22,13 +28,11 @@ export function buildMockReleaseProductionEventsSummaryResponse(workAreaId: stri
             result: [
                 {
                     work_area_id: normalized,
-                    total_count: totalCount,
-                    last_event_at: totalCount > 0 ? "2026-07-16 22:11:35" : "",
-                    last_event_name: totalCount > 0 ? "defectRelease" : "",
-                    last_event_description: totalCount > 0 ? "Выпуск брака" : "",
-                    last_event_length_m: totalCount > 0 ? "120.5" : "",
+                    unprocessed_count: summary.unprocessed_count,
+                    processed_count: summary.processed_count,
                 },
             ],
+            result_field_labels: [...MOCK_RESULT_FIELD_LABELS],
         },
     ];
 }

@@ -1,5 +1,6 @@
 type MockStageProgress = {
-    required_meterage_m: number;
+    plan_min_m: number;
+    plan_max_m: number;
     released_good_meterage_m: number;
     remaining_meterage_m: number;
     progress_percent: number;
@@ -7,13 +8,15 @@ type MockStageProgress = {
 
 const MOCK_PROGRESS_BY_WORK_AREA: Record<string, MockStageProgress> = {
     "207": {
-        required_meterage_m: 1250,
+        plan_min_m: 1200,
+        plan_max_m: 1300,
         released_good_meterage_m: 349,
         remaining_meterage_m: 901,
         progress_percent: 27.9,
     },
     "504": {
-        required_meterage_m: 2000,
+        plan_min_m: 1900,
+        plan_max_m: 2100,
         released_good_meterage_m: 540,
         remaining_meterage_m: 1460,
         progress_percent: 27,
@@ -21,7 +24,8 @@ const MOCK_PROGRESS_BY_WORK_AREA: Record<string, MockStageProgress> = {
 };
 
 const DEFAULT_PROGRESS: MockStageProgress = {
-    required_meterage_m: 1000,
+    plan_min_m: 950,
+    plan_max_m: 1050,
     released_good_meterage_m: 250,
     remaining_meterage_m: 750,
     progress_percent: 25,

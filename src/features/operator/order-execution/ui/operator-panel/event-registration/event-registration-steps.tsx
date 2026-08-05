@@ -9,6 +9,7 @@ import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-fie
 import { cn } from "@/shared/lib/css";
 
 import type { useEventRegistration } from "../../../model/event-registration/use-event-registration";
+import { normalizeTimeInputValue } from "../../../model/event-registration/prefill-event-registration-draft";
 import {
     areStep2MeterFieldsRequired,
     areStep2TimeFieldsRequired,
@@ -129,7 +130,7 @@ export function EventRegistrationStep1({
                         onChange={(e) => onRemoveScrapChange(e.target.checked)}
                         className="size-4 rounded border-input"
                     />
-                    Удалять брак сразу?
+                    Удалять брак сразу
                 </label>
             </div>
 
@@ -151,18 +152,12 @@ export function EventRegistrationStep2({
     onNext: () => void;
     disabled?: boolean;
 }) {
-    const {
-        snapshot,
-        draft,
-        scrapMode,
-        patchDraft,
-        onWholeStageChange,
-        canProceedStep2,
-    } = registration;
+    const { snapshot, draft, scrapMode, patchDraft, onWholeStageChange, canProceedStep2 } =
+        registration;
     const immediate = scrapMode === "immediate";
     const lineOptions = buildLineNumberOptions(snapshot);
     const fieldsDisabled = Boolean(disabled);
-    const meterFieldsDisabled = fieldsDisabled || (immediate && draft.wholeStage);
+    const meterFieldsDisabled = fieldsDisabled || (!immediate && draft.wholeStage);
     const timeFieldsDisabled = meterFieldsDisabled;
     const metersRequired = scrapMode ? areStep2MeterFieldsRequired(draft, scrapMode) : false;
     const timesRequired = scrapMode ? areStep2TimeFieldsRequired(draft, scrapMode) : false;
@@ -175,24 +170,6 @@ export function EventRegistrationStep2({
         <div className="grid gap-4">
             {immediate ? (
                 <>
-                    <EventRegistrationRollField
-                        snapshot={snapshot}
-                        value={draft.roll}
-                        disabled={fieldsDisabled}
-                        onChange={(roll) => patchDraft({ roll })}
-                    />
-
-                    <label className="flex items-center gap-2 text-[12px] text-foreground">
-                        <input
-                            type="checkbox"
-                            checked={draft.wholeStage}
-                            disabled={fieldsDisabled}
-                            onChange={(e) => onWholeStageChange(e.target.checked)}
-                            className="size-4 rounded border-input"
-                        />
-                        Весь этап
-                    </label>
-
                     <EventRegistrationMeterRow
                         draft={draft}
                         disabled={meterFieldsDisabled}
@@ -209,6 +186,17 @@ export function EventRegistrationStep2({
                 </>
             ) : (
                 <>
+                    <label className="flex items-center gap-2 text-[12px] text-foreground">
+                        <input
+                            type="checkbox"
+                            checked={draft.wholeStage}
+                            disabled={fieldsDisabled}
+                            onChange={(e) => onWholeStageChange(e.target.checked)}
+                            className="size-4 rounded border-input"
+                        />
+                        Весь этап
+                    </label>
+
                     <div className="grid gap-3 sm:grid-cols-4">
                         <div className="sm:col-span-2">
                             <EventRegistrationRollField
@@ -258,14 +246,14 @@ export function EventRegistrationStep2({
 
                     <EventRegistrationMeterRow
                         draft={draft}
-                        disabled={fieldsDisabled}
+                        disabled={meterFieldsDisabled}
                         required={metersRequired}
                         onPatch={patchDraft}
                     />
 
                     <EventRegistrationTimeRow
                         draft={draft}
-                        disabled={fieldsDisabled}
+                        disabled={timeFieldsDisabled}
                         required={timesRequired}
                         onPatch={patchDraft}
                     />
@@ -434,8 +422,7 @@ function EventRegistrationTimeRow({
                 <input
                     id="time-from"
                     type="time"
-                    step={1}
-                    value={draft.timeFrom}
+                    value={normalizeTimeInputValue(draft.timeFrom)}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeFrom: e.target.value })}
                     className={inputClass}
@@ -448,8 +435,7 @@ function EventRegistrationTimeRow({
                 <input
                     id="time-to"
                     type="time"
-                    step={1}
-                    value={draft.timeTo}
+                    value={normalizeTimeInputValue(draft.timeTo)}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeTo: e.target.value })}
                     className={inputClass}
@@ -509,14 +495,16 @@ export function EventRegistrationStep3({
         { label: "Код события", value: `${selectedCode.code} — ${selectedCode.label}` },
         ...(setupRunsSummary ? [{ label: "Заезды на настройку", value: setupRunsSummary }] : []),
         { label: "Удалять брак сразу", value: scrapMode === "immediate" ? "Да" : "Нет" },
-        ...(draft.wholeStage ? [{ label: "Весь этап", value: "Да" }] : []),
+        ...(scrapMode === "deferred" && draft.wholeStage
+            ? [{ label: "Весь этап", value: "Да" }]
+            : []),
         ...(!draft.wholeStage && (draft.meterFrom || draft.meterTo)
             ? [{ label: "Метраж", value: `${draft.meterFrom || "—"} — ${draft.meterTo || "—"}` }]
             : []),
         ...(!draft.wholeStage && (draft.timeFrom || draft.timeTo)
             ? [{ label: "Время", value: `${draft.timeFrom || "—"} — ${draft.timeTo || "—"}` }]
             : []),
-        { label: "Рулон", value: draft.roll || "—" },
+        ...(scrapMode === "deferred" ? [{ label: "Рулон", value: draft.roll || "—" }] : []),
         ...(draft.side ? [{ label: "Сторона", value: draft.side }] : []),
         ...(draft.selectedLines.length > 0
             ? [{ label: "Ряд", value: formatSelectedLinesSummary(draft.selectedLines) }]

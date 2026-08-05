@@ -142,14 +142,6 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postAcceptRawFromEvent"
 
-    /v1/contexts/users.admin.models.rest/functions/discardEvent:
-        post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postDiscardEvent"
-
-    /v1/contexts/users.admin.models.rest/functions/acceptProdFromEvent:
-        post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postAcceptProdFromEvent"
-
     /v1/contexts/users.admin.models.rest/functions/getReleaseFormInit:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetReleaseFormInit"
@@ -182,10 +174,6 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postSaveManualProcessParams"
 
-    /v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea:
-        post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postListStageInputRollsForWorkArea"
-
     /v1/contexts/users.admin.models.rest/functions/jbPrintSheet2:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postJbPrintSheet2"
@@ -194,13 +182,13 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postJbPrintSheet1"
 
-    /v1/contexts/users.admin.models.rest/functions/jbMapParameters:
+    /v1/contexts/users.admin.models.rest/functions/jbPrintSheet3:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postJbMapParameters"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbPrintSheet3"
 
-    /v1/contexts/users.admin.models.rest/functions/jbMapPrint:
+    /v1/contexts/users.admin.models.rest/functions/jbMapColorControl:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postJbMapPrint"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbMapColorControl"
 
     /v1/contexts/users.admin.models.rest/functions/jbFullPrint:
         post:
@@ -214,9 +202,9 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postJbPaintsRecipe"
 
-    /v1/contexts/users.admin.models.rest/functions/jbLabelSection:
+    /v1/contexts/users.admin.models.rest/functions/jbPrintSheet6:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postJbLabelSection"
+            $ref: "./endpoints/operator/order-execution.yaml#/postJbPrintSheet6"
 
     /v1/contexts/users.admin.models.rest/functions/registerRelease:
         post:

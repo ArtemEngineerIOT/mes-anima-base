@@ -14,6 +14,16 @@ export type ReleaseProductionCurrentEvent = {
     displayRows: ReleaseProductionEventDisplayRow[];
 };
 
+export type ReleaseProductionEventColumn = {
+    key: string;
+    label: string;
+};
+
+export type ReleaseProductionEventListRow = {
+    id: string;
+    values: Record<string, string | number | null>;
+};
+
 export type ReleaseProductionEventSnapshot = {
     workAreaId: string;
     plateTitle: string;
@@ -21,7 +31,24 @@ export type ReleaseProductionEventSnapshot = {
     manualReleaseBlocked: boolean;
     emptyStateMessage: string;
     currentEvent: ReleaseProductionCurrentEvent | null;
+    eventList: ReleaseProductionEventListRow[];
+    eventColumns: ReleaseProductionEventColumn[];
 };
+
+export const RELEASE_PRODUCTION_EVENT_DEFAULT_COLUMNS: ReleaseProductionEventColumn[] = [
+    { key: "signal_id", label: "ID" },
+    { key: "event_description", label: "Имя" },
+    { key: "registered_at", label: "Время" },
+    { key: "length_m", label: "Длина, м" },
+    { key: "event_name", label: "Код события" },
+];
+
+/** Колонки таблицы «Сигналы машины (выпуск)» на UI. */
+export const RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS: ReleaseProductionEventColumn[] = [
+    { key: "event_description", label: "Наименование" },
+    { key: "registered_at", label: "Время" },
+    { key: "length_m", label: "Длина" },
+];
 
 export const RELEASE_EMPTY_PRODUCTION_EVENT: ReleaseProductionEventSnapshot = {
     workAreaId: "",
@@ -30,4 +57,6 @@ export const RELEASE_EMPTY_PRODUCTION_EVENT: ReleaseProductionEventSnapshot = {
     manualReleaseBlocked: false,
     emptyStateMessage: "",
     currentEvent: null,
+    eventList: [],
+    eventColumns: RELEASE_PRODUCTION_EVENT_DEFAULT_COLUMNS,
 };

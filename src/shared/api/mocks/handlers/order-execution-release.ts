@@ -6,14 +6,9 @@ import {
     buildMockPrepareReleaseLabelResponse,
     buildMockRegisterReleaseResponse,
     buildMockReleaseFormInitResponse,
-    buildMockStageInputRollsResponse,
 } from "../data/order-execution-release";
 import { buildMockReleaseProductionEventsSummaryResponse } from "../data/order-execution-release-production-events-summary";
-import {
-    buildMockEventReleaseProductionResponse,
-    buildMockDiscardEventResponse,
-    buildMockAcceptProdFromEventResponse,
-} from "../data/order-execution-release-production-event";
+import { buildMockEventReleaseProductionResponse } from "../data/order-execution-release-production-event";
 
 function readWorkAreaId(body: { workAreaId?: string }[] | undefined): string {
     return body?.[0]?.workAreaId?.trim() ?? "";
@@ -29,48 +24,6 @@ export const orderExecutionReleaseHandlers = [
         }
 
         return HttpResponse.json(buildMockEventReleaseProductionResponse(workAreaId, true));
-    }),
-
-    http.post("/v1/contexts/users.admin.models.rest/functions/discardEvent", async ({ request }) => {
-        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionDiscardProductionEventRequest"];
-        const item = body[0];
-        const workAreaId = item?.workAreaId?.trim() ?? "";
-        const machineEventSignalId = item?.machineEventSignalId?.trim() ?? "";
-
-        if (!workAreaId || !machineEventSignalId) {
-            return HttpResponse.json(
-                { message: "Укажите workAreaId и machineEventSignalId" },
-                { status: 400 },
-            );
-        }
-
-        return HttpResponse.json(
-            buildMockDiscardEventResponse({
-                workAreaId,
-                machineEventSignalId,
-            }),
-        );
-    }),
-
-    http.post("/v1/contexts/users.admin.models.rest/functions/acceptProdFromEvent", async ({ request }) => {
-        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionAcceptProdFromEventRequest"];
-        const item = body[0];
-        const workAreaId = item?.workAreaId?.trim() ?? "";
-        const machineEventSignalId = item?.machineEventSignalId?.trim() ?? "";
-
-        if (!workAreaId || !machineEventSignalId) {
-            return HttpResponse.json(
-                { message: "Укажите workAreaId и machineEventSignalId" },
-                { status: 400 },
-            );
-        }
-
-        return HttpResponse.json(
-            buildMockAcceptProdFromEventResponse({
-                workAreaId,
-                machineEventSignalId,
-            }),
-        );
     }),
 
     http.post("/v1/contexts/users.admin.models.rest/functions/getReleaseFormInit", async ({ request }) => {
@@ -93,17 +46,6 @@ export const orderExecutionReleaseHandlers = [
         }
 
         return HttpResponse.json(buildMockBatchReleasesResponse(workAreaId));
-    }),
-
-    http.post("/v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea", async ({ request }) => {
-        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
-        const workAreaId = readWorkAreaId(body);
-
-        if (!workAreaId) {
-            return HttpResponse.json({ message: "Укажите workAreaId" }, { status: 400 });
-        }
-
-        return HttpResponse.json(buildMockStageInputRollsResponse(workAreaId));
     }),
 
     http.post("/v1/contexts/users.admin.models.rest/functions/registerRelease", async ({ request }) => {

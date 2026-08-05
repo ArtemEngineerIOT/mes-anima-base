@@ -15,19 +15,38 @@ import {
     JB_WHOLE_DOCUMENT_ROW_ID,
 } from "./constants";
 import { mapJbFullPrintPayload } from "./map-jb-full-print-payload";
-import { mapJbLabelSectionPayload } from "./map-jb-label-section-payload";
-import { mapJbMapParametersPayload } from "./map-jb-map-parameters-payload";
-import { mapJbMapPrintPayload } from "./map-jb-map-print-payload";
+import { mapJbMapColorControlPayload } from "./map-jb-map-color-control-payload";
 import { mapJbPaintsRecipePayload } from "./map-jb-paints-recipe-payload";
 import { mapJbProcessControlPayload } from "./map-jb-process-control-payload";
-import { mapJbPrintSheet2Payload } from "./map-jb-print-sheet2-payload";
 import { mapJbPrintSheet1Payload } from "./map-jb-print-sheet1-payload";
+import { mapJbPrintSheet2Payload } from "./map-jb-print-sheet2-payload";
+import { mapJbPrintSheet3Payload } from "./map-jb-print-sheet3-payload";
+import { mapJbPrintSheet6Payload } from "./map-jb-print-sheet6-payload";
 
 type UseJbCylinderReportPrintOptions = {
     workAreaId?: string;
     workAreaStart?: string;
     order?: string;
 };
+
+/** Открывает вкладку синхронно (до await), чтобы браузер не блокировал popup. */
+function openPreviewTab(): Window | null {
+    return window.open("about:blank", "_blank");
+}
+
+function navigatePreviewTab(tab: Window | null, url: string) {
+    if (tab && !tab.closed) {
+        tab.location.href = url;
+        return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function closePreviewTab(tab: Window | null) {
+    if (tab && !tab.closed) {
+        tab.close();
+    }
+}
 
 export function useJbCylinderReportPrint({
     workAreaId,
@@ -48,14 +67,14 @@ export function useJbCylinderReportPrint({
         REST_FUNCTION_PATHS.jbPrintSheet1,
         {},
     );
-    const { mutateAsync: fetchMapParametersReport } = rqClient.useMutation(
+    const { mutateAsync: fetchPrintSheet3Report } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.jbMapParameters,
+        REST_FUNCTION_PATHS.jbPrintSheet3,
         {},
     );
-    const { mutateAsync: fetchMapPrintReport } = rqClient.useMutation(
+    const { mutateAsync: fetchMapColorControlReport } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.jbMapPrint,
+        REST_FUNCTION_PATHS.jbMapColorControl,
         {},
     );
     const { mutateAsync: fetchFullPrintReport } = rqClient.useMutation(
@@ -73,9 +92,9 @@ export function useJbCylinderReportPrint({
         REST_FUNCTION_PATHS.jbPaintsRecipe,
         {},
     );
-    const { mutateAsync: fetchLabelSectionReport } = rqClient.useMutation(
+    const { mutateAsync: fetchPrintSheet6Report } = rqClient.useMutation(
         "post",
-        REST_FUNCTION_PATHS.jbLabelSection,
+        REST_FUNCTION_PATHS.jbPrintSheet6,
         {},
     );
 
@@ -83,18 +102,18 @@ export function useJbCylinderReportPrint({
     fetchPrintSheet2ReportRef.current = fetchPrintSheet2Report;
     const fetchPrintSheet1ReportRef = useRef(fetchPrintSheet1Report);
     fetchPrintSheet1ReportRef.current = fetchPrintSheet1Report;
-    const fetchMapParametersReportRef = useRef(fetchMapParametersReport);
-    fetchMapParametersReportRef.current = fetchMapParametersReport;
-    const fetchMapPrintReportRef = useRef(fetchMapPrintReport);
-    fetchMapPrintReportRef.current = fetchMapPrintReport;
+    const fetchPrintSheet3ReportRef = useRef(fetchPrintSheet3Report);
+    fetchPrintSheet3ReportRef.current = fetchPrintSheet3Report;
+    const fetchMapColorControlReportRef = useRef(fetchMapColorControlReport);
+    fetchMapColorControlReportRef.current = fetchMapColorControlReport;
     const fetchFullPrintReportRef = useRef(fetchFullPrintReport);
     fetchFullPrintReportRef.current = fetchFullPrintReport;
     const fetchProcessControlReportRef = useRef(fetchProcessControlReport);
     fetchProcessControlReportRef.current = fetchProcessControlReport;
     const fetchPaintsRecipeReportRef = useRef(fetchPaintsRecipeReport);
     fetchPaintsRecipeReportRef.current = fetchPaintsRecipeReport;
-    const fetchLabelSectionReportRef = useRef(fetchLabelSectionReport);
-    fetchLabelSectionReportRef.current = fetchLabelSectionReport;
+    const fetchPrintSheet6ReportRef = useRef(fetchPrintSheet6Report);
+    fetchPrintSheet6ReportRef.current = fetchPrintSheet6Report;
 
     const printJbDocument = useCallback(
         async (rowId: string) => {
@@ -115,11 +134,17 @@ export function useJbCylinderReportPrint({
                         throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchPrintSheet2ReportRef.current({
-                        body: [{ order: trimmedOrder }],
-                    });
-                    const previewFilePath = mapJbPrintSheet2Payload(payload, pathFolder);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchPrintSheet2ReportRef.current({
+                            body: [{ order: trimmedOrder }],
+                        });
+                        const previewFilePath = mapJbPrintSheet2Payload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 
@@ -134,42 +159,74 @@ export function useJbCylinderReportPrint({
                         throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchPrintSheet1ReportRef.current({
-                        body: [
-                            {
-                                order: trimmedOrder,
-                                workAreaStart: trimmedWorkAreaStart,
-                            },
-                        ],
-                    });
-                    const previewFilePath = mapJbPrintSheet1Payload(payload, pathFolder);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchPrintSheet1ReportRef.current({
+                            body: [
+                                {
+                                    order: trimmedOrder,
+                                    workAreaStart: trimmedWorkAreaStart,
+                                },
+                            ],
+                        });
+                        const previewFilePath = mapJbPrintSheet1Payload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 
                 if (rowId === JB_PRINT_PARAMS_MAP_ROW_ID) {
-                    if (!trimmedWorkAreaId) {
-                        throw new Error("Не удалось определить workAreaId этапа");
+                    if (!trimmedOrder || trimmedOrder === "—") {
+                        throw new Error("Не удалось определить номер заказа");
+                    }
+                    if (!trimmedWorkAreaStart) {
+                        throw new Error("Не удалось определить workAreaStart этапа");
+                    }
+                    if (!pathFolder) {
+                        throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchMapParametersReportRef.current({
-                        body: [{ workAreaId: trimmedWorkAreaId }],
-                    });
-                    const previewFilePath = mapJbMapParametersPayload(payload);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchPrintSheet3ReportRef.current({
+                            body: [
+                                {
+                                    order: trimmedOrder,
+                                    workAreaStart: trimmedWorkAreaStart,
+                                },
+                            ],
+                        });
+                        const previewFilePath = mapJbPrintSheet3Payload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 
                 if (rowId === JB_COLOR_CONTROL_MAP_ROW_ID) {
-                    if (!trimmedWorkAreaId) {
-                        throw new Error("Не удалось определить workAreaId этапа");
+                    if (!trimmedOrder || trimmedOrder === "—") {
+                        throw new Error("Не удалось определить номер заказа");
+                    }
+                    if (!pathFolder) {
+                        throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchMapPrintReportRef.current({
-                        body: [{ workAreaId: trimmedWorkAreaId }],
-                    });
-                    const previewFilePath = mapJbMapPrintPayload(payload);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchMapColorControlReportRef.current({
+                            body: [{ order: trimmedOrder }],
+                        });
+                        const previewFilePath = mapJbMapColorControlPayload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 
@@ -187,15 +244,24 @@ export function useJbCylinderReportPrint({
                 }
 
                 if (rowId === JB_SECTION_LABEL_ROW_ID) {
-                    if (!trimmedWorkAreaId) {
-                        throw new Error("Не удалось определить workAreaId этапа");
+                    if (!trimmedOrder || trimmedOrder === "—") {
+                        throw new Error("Не удалось определить номер заказа");
+                    }
+                    if (!pathFolder) {
+                        throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
-                    const payload = await fetchLabelSectionReportRef.current({
-                        body: [{ workAreaId: trimmedWorkAreaId }],
-                    });
-                    const previewFilePath = mapJbLabelSectionPayload(payload);
-                    window.open(previewFilePath, "_blank", "noopener,noreferrer");
+                    const previewTab = openPreviewTab();
+                    try {
+                        const payload = await fetchPrintSheet6ReportRef.current({
+                            body: [{ order: trimmedOrder }],
+                        });
+                        const previewFilePath = mapJbPrintSheet6Payload(payload, pathFolder);
+                        navigatePreviewTab(previewTab, previewFilePath);
+                    } catch (error) {
+                        closePreviewTab(previewTab);
+                        throw error;
+                    }
                     return;
                 }
 

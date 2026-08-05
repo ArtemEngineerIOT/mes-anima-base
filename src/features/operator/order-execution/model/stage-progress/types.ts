@@ -1,5 +1,6 @@
 export type StageProgress = {
-    requiredMeterageM: number | null;
+    planMinM: number | null;
+    planMaxM: number | null;
     releasedGoodMeterageM: number | null;
     remainingMeterageM: number | null;
     progressPercent: number | null;
@@ -11,7 +12,8 @@ export type StageProgressInfoItem = {
 };
 
 export const STAGE_PROGRESS_EMPTY: StageProgress = {
-    requiredMeterageM: null,
+    planMinM: null,
+    planMaxM: null,
     releasedGoodMeterageM: null,
     remainingMeterageM: null,
     progressPercent: null,

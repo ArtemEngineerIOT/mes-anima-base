@@ -1,163 +1,118 @@
-type MockProductionEvent = {
-    machine_event_signal_id: string;
-    register_action: string;
-    event_code_label: string;
-    event_code: string;
-    event_display_rows: Array<{
-        value_text: string;
-        characteristic_label: string;
-        unit_label: string;
-    }>;
-    informer_detail: string;
-    event_at: string;
-};
+const MOCK_RELEASE_EVENT_FIELD_LABELS = [
+    { name: "signal_id", label: "ID" },
+    { name: "event_description", label: "Имя" },
+    { name: "registered_at", label: "Время" },
+    { name: "length_m", label: "Длина, м" },
+    { name: "event_name", label: "Код события" },
+] as const;
 
-const PENDING_EVENTS_BY_WORK_AREA = new Map<string, MockProductionEvent[]>();
-
-function cloneDefaultPendingEvents(): MockProductionEvent[] {
-    return [
-        {
-            machine_event_signal_id: "783",
-            register_action: "PREFILL_PROD",
-            event_code_label: "Выпуск продукции",
-            event_code: "prodRelease",
-            event_display_rows: [
-                {
-                    value_text: "1200",
-                    characteristic_label: "Длина выпуска",
-                    unit_label: "м",
-                },
-                {
-                    value_text: "480",
-                    characteristic_label: "Вес нетто",
-                    unit_label: "кг",
-                },
-            ],
-            informer_detail: "Заполнить выпуск по сигналу машины",
-            event_at: "2028-07-14 10:00:00",
-        },
-    ];
-}
-
-function getPendingEvents(workAreaId: string, withPendingEvent: boolean): MockProductionEvent[] {
-    if (!withPendingEvent) {
-        return [];
-    }
-
-    const existing = PENDING_EVENTS_BY_WORK_AREA.get(workAreaId);
-    if (existing) {
-        return existing;
-    }
-
-    const seed = cloneDefaultPendingEvents();
-    PENDING_EVENTS_BY_WORK_AREA.set(workAreaId, seed);
-    return seed;
-}
+const MOCK_RELEASE_EVENTS = [
+    {
+        registered_at: "24.07.2026 08:32:48",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "232",
+        length_m: 7926.0,
+    },
+    {
+        registered_at: "24.07.2026 10:02:15",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "237",
+        length_m: 17993.0,
+    },
+    {
+        registered_at: "24.07.2026 10:52:41",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "241",
+        length_m: 17538.0,
+    },
+    {
+        registered_at: "24.07.2026 13:57:02",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "246",
+        length_m: 17700.0,
+    },
+    {
+        registered_at: "24.07.2026 14:34:04",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "248",
+        length_m: 12829.0,
+    },
+    {
+        registered_at: "24.07.2026 14:56:45",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "253",
+        length_m: 3008.0,
+    },
+    {
+        registered_at: "24.07.2026 17:13:32",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "260",
+        length_m: 13044.0,
+    },
+    {
+        registered_at: "24.07.2026 17:50:58",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "262",
+        length_m: 13150.0,
+    },
+    {
+        registered_at: "24.07.2026 18:41:05",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "264",
+        length_m: 17529.0,
+    },
+    {
+        registered_at: "24.07.2026 19:32:54",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "268",
+        length_m: 18023.0,
+    },
+    {
+        registered_at: "24.07.2026 20:29:17",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "273",
+        length_m: 13015.0,
+    },
+    {
+        registered_at: "24.07.2026 21:04:22",
+        event_description: "Выпуск продукта",
+        event_name: "prodRelease",
+        signal_id: "277",
+        length_m: 12279.0,
+    },
+] as const;
 
 export function buildMockEventReleaseProductionResponse(workAreaId: string, withPendingEvent = false) {
-    const pendingEvents = getPendingEvents(workAreaId, withPendingEvent);
-    const pendingCount = pendingEvents.length;
-    const currentEvent = pendingEvents[0] ? [pendingEvents[0]] : [];
+    void workAreaId;
 
-    return [
-        {
-            error_message: "",
-            error_code: "OK",
-            result: [
-                {
-                    pending_count: pendingCount,
-                    empty_state_message: pendingCount === 0 ? "Событий с машины нет" : "",
-                    work_area_id: workAreaId,
-                    plate_title: "Событие с машины",
-                    current_event: currentEvent,
-                    manual_release_blocked: pendingCount > 0,
-                },
-            ],
-        },
-    ];
-}
-
-export function buildMockDiscardEventResponse(params: {
-    workAreaId: string;
-    machineEventSignalId: string;
-}) {
-    const queue = PENDING_EVENTS_BY_WORK_AREA.get(params.workAreaId) ?? cloneDefaultPendingEvents();
-    const nextQueue = queue.filter((event) => event.machine_event_signal_id !== params.machineEventSignalId);
-    PENDING_EVENTS_BY_WORK_AREA.set(params.workAreaId, nextQueue);
-
-    const pendingCount = nextQueue.length;
-
-    return [
-        {
-            error_message: "",
-            error_code: "OK",
-            result: [
-                {
-                    machine_event_signal_id: params.machineEventSignalId,
-                    processing_status: "DISCARDED",
-                    pending_count: pendingCount,
-                    manual_release_blocked: pendingCount > 0,
-                },
-            ],
-        },
-    ];
-}
-
-function readPrefillFromEvent(event: MockProductionEvent | undefined): {
-    prefill_output_length_m: number | null;
-    prefill_output_weight_kg: number | null;
-} {
-    if (!event) {
-        return { prefill_output_length_m: null, prefill_output_weight_kg: null };
+    if (!withPendingEvent) {
+        return [
+            {
+                error_message: "",
+                error_code: "OK",
+                result: [],
+                result_field_labels: [...MOCK_RELEASE_EVENT_FIELD_LABELS],
+            },
+        ];
     }
 
-    const lengthRow = event.event_display_rows.find((row) =>
-        row.characteristic_label.toLowerCase().includes("длин"),
-    );
-    const weightRow = event.event_display_rows.find((row) =>
-        row.characteristic_label.toLowerCase().includes("вес"),
-    );
-
-    const parseValue = (value: string | undefined): number | null => {
-        if (!value?.trim()) {
-            return null;
-        }
-        const parsed = Number(value.replace(",", "."));
-        return Number.isFinite(parsed) ? parsed : null;
-    };
-
-    return {
-        prefill_output_length_m: parseValue(lengthRow?.value_text),
-        prefill_output_weight_kg: parseValue(weightRow?.value_text),
-    };
-}
-
-export function buildMockAcceptProdFromEventResponse(params: {
-    workAreaId: string;
-    machineEventSignalId: string;
-}) {
-    const queue = PENDING_EVENTS_BY_WORK_AREA.get(params.workAreaId) ?? cloneDefaultPendingEvents();
-    const acceptedEvent = queue.find((event) => event.machine_event_signal_id === params.machineEventSignalId);
-    const nextQueue = queue.filter((event) => event.machine_event_signal_id !== params.machineEventSignalId);
-    PENDING_EVENTS_BY_WORK_AREA.set(params.workAreaId, nextQueue);
-
-    const pendingCount = nextQueue.length;
-    const prefill = readPrefillFromEvent(acceptedEvent);
-
     return [
         {
             error_message: "",
             error_code: "OK",
-            result: [
-                {
-                    machine_event_signal_id: params.machineEventSignalId,
-                    processing_status: "OPERATOR_ACCEPTED",
-                    prefill_output_length_m: prefill.prefill_output_length_m,
-                    prefill_output_weight_kg: prefill.prefill_output_weight_kg,
-                    pending_count: pendingCount,
-                    manual_release_blocked: pendingCount > 0,
-                },
-            ],
+            result: [...MOCK_RELEASE_EVENTS],
+            result_field_labels: [...MOCK_RELEASE_EVENT_FIELD_LABELS],
         },
     ];
 }
