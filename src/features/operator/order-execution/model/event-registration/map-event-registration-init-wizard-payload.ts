@@ -86,8 +86,8 @@ function mapUnprocessedSignalRow(row: Record<string, unknown>): UnprocessedMachi
 
     const description =
         pickString(row.description ?? row.signal_description ?? row.signalDescription) ?? "—";
-    const detectedAt = pickString(row.time_start ?? row.timeStart ?? row.detected_at ?? row.detectedAt) ?? "—";
-    const endedAt = pickString(row.time_end ?? row.timeEnd ?? row.ended_at ?? row.endedAt) ?? "—";
+    const detectedAt = pickString(row.time_start ?? row.timeStart ?? row.detected_at ?? row.detectedAt) ?? "";
+    const endedAt = pickString(row.time_end ?? row.timeEnd ?? row.ended_at ?? row.endedAt) ?? "";
 
     return {
         id,

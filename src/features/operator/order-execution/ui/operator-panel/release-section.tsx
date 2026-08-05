@@ -16,13 +16,13 @@ export function OrderExecutionReleaseSection({
     onRelatedDataReload,
 }: OrderExecutionReleaseSectionProps) {
     const [expanded, setExpanded] = useState(false);
-    const { totalCount } = useProductionEventsSummary({
+    const { snapshot, unprocessedCount, totalCount, isLoading, error } = useProductionEventsSummary({
         workAreaId,
-        enabled: eventsSummaryEnabled,
+        enabled: expanded && eventsSummaryEnabled,
         onRelatedDataReload,
     });
 
-    const headerTone = totalCount > 0 ? "warning" : "success";
+    const headerTone = unprocessedCount > 0 ? "warning" : "success";
 
     return (
         <OrderExecutionCollapsibleSection
@@ -33,7 +33,13 @@ export function OrderExecutionReleaseSection({
             keepMounted
             onExpandedChange={setExpanded}
         >
-            <OrderExecutionRelease workAreaId={workAreaId} enabled={expanded} />
+            <OrderExecutionRelease
+                workAreaId={workAreaId}
+                enabled={expanded}
+                eventsSummary={snapshot}
+                eventsSummaryLoading={isLoading}
+                eventsSummaryError={error}
+            />
         </OrderExecutionCollapsibleSection>
     );
 }

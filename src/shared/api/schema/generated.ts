@@ -1317,8 +1317,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Очередь событий выпуска с машины (UI-61)
-         * @description Первый запрос при раскрытии блока «Выпуск» — плашка «Событие с машины»
+         * Список событий выпуска с машины (UI-61)
+         * @description Первый запрос при раскрытии блока «Выпуск» — плашка и таблица событий
          */
         post: {
             parameters: {
@@ -1487,96 +1487,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/discardEvent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Отклонить событие выпуска с машины (UI-61)
-         * @description Кнопка «Отклонить» на плашке «Событие с машины» — discardEvent
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["OrderExecutionDiscardProductionEventRequest"];
-                };
-            };
-            responses: {
-                /** @description Событие отклонено (error_code OK — успех) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OrderExecutionDiscardProductionEventResponse"];
-                    };
-                };
-                400: components["responses"]["Error"];
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/contexts/users.admin.models.rest/functions/acceptProdFromEvent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Принять событие выпуска продукции с машины (UI-61)
-         * @description Кнопка «Зарегистрировать» при register_action PREFILL_PROD — acceptProdFromEvent
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["OrderExecutionAcceptProdFromEventRequest"];
-                };
-            };
-            responses: {
-                /** @description Событие принято, prefill для формы (error_code OK — успех) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OrderExecutionAcceptProdFromEventResponse"];
-                    };
-                };
-                400: components["responses"]["Error"];
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/contexts/users.admin.models.rest/functions/getReleaseFormInit": {
         parameters: {
             query?: never;
@@ -1678,7 +1588,7 @@ export interface paths {
         put?: never;
         /**
          * Сводка событий выпуска (SCR-06 / UC-25)
-         * @description BFF `users.admin.models.rollReleaseProductionEventQueue.getEventsSummary`. Badge в заголовке блока «Выпуск». Тело: `[{ workAreaId }]`.
+         * @description BFF `users.admin.models.rollReleaseProductionEventQueue.getEventsSummary`. Badge в заголовке блока «Выпуск»; вызывается при раскрытии секции. Тело: `[{ workAreaId }]`.
          */
         post: {
             parameters: {
@@ -1937,51 +1847,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/listStageInputRollsForWorkArea": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Входные рулоны этапа для блокировки
-         * @description Раскрытие блока «Выпуск» — таблица входных рулонов
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
-                };
-            };
-            responses: {
-                /** @description Входные рулоны этапа (error_code OK — успех) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OrderExecutionReleaseInputRollsResponse"];
-                    };
-                };
-                400: components["responses"]["Error"];
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet2": {
         parameters: {
             query?: never;
@@ -2072,7 +1937,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbMapParameters": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet3": {
         parameters: {
             query?: never;
             header?: never;
@@ -2082,8 +1947,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Отчёт «Карта технологических параметров печати» (JB)
-         * @description Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа»
+         * Отчёт «Карта технологических параметров печати» / лист 3 (JB)
+         * @description Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа». RPC `jbPrintSheet3`. Тело: `[{ order, workAreaStart }]`.
          */
         post: {
             parameters: {
@@ -2094,17 +1959,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbMapParametersRequest"];
+                    "application/json": components["schemas"]["JbPrintSheet3Request"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbMapParametersResponse"];
+                        "application/json": components["schemas"]["JbPrintSheet3Response"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2117,7 +1982,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbMapPrint": {
+    "/v1/contexts/users.admin.models.rest/functions/jbMapColorControl": {
         parameters: {
             query?: never;
             header?: never;
@@ -2128,7 +1993,7 @@ export interface paths {
         put?: never;
         /**
          * Отчёт «Карта контроля цвета» (JB)
-         * @description Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа»
+         * @description Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа». RPC `jbMapColorControl`. Тело: `[{ order }]`.
          */
         post: {
             parameters: {
@@ -2139,17 +2004,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbMapPrintRequest"];
+                    "application/json": components["schemas"]["JbMapColorControlRequest"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbMapPrintResponse"];
+                        "application/json": components["schemas"]["JbMapColorControlResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2297,7 +2162,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/jbLabelSection": {
+    "/v1/contexts/users.admin.models.rest/functions/jbPrintSheet6": {
         parameters: {
             query?: never;
             header?: never;
@@ -2308,7 +2173,7 @@ export interface paths {
         put?: never;
         /**
          * Отчёт «Этикетка на секцию» (JB)
-         * @description Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа»
+         * @description Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа». RPC `jbPrintSheet6`. Тело: `[{ order }]`.
          */
         post: {
             parameters: {
@@ -2319,17 +2184,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["JbLabelSectionRequest"];
+                    "application/json": components["schemas"]["JbPrintSheet6Request"];
                 };
             };
             responses: {
-                /** @description Ссылка на PDF отчёта (error_code OK — успех) */
+                /** @description Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["JbLabelSectionResponse"];
+                        "application/json": components["schemas"]["JbPrintSheet6Response"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -3832,41 +3697,22 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        OrderExecutionReleaseProductionEventDisplayRow: {
-            characteristic_label?: string | null;
-            value_text?: string | null;
-            unit_label?: string | null;
-        } & {
-            [key: string]: unknown;
-        };
-        OrderExecutionReleaseProductionCurrentEvent: {
-            machine_event_signal_id?: string | null;
-            event_code?: string | null;
-            event_code_label?: string | null;
-            event_at?: string | null;
-            informer_detail?: string | null;
-            /** @description PREFILL_PROD | REGISTER_DEFECT */
-            register_action?: string | null;
-            event_display_rows?: components["schemas"]["OrderExecutionReleaseProductionEventDisplayRow"][];
-        } & {
-            [key: string]: unknown;
-        };
-        /** @description Элемент `result` в ответе eventReleaseProduction (listPending) */
-        OrderExecutionReleaseProductionEventResultItem: {
-            work_area_id?: string | null;
-            plate_title?: string | null;
-            pending_count?: number | null;
-            manual_release_blocked?: boolean | null;
-            empty_state_message?: string | null;
-            /** @description Текущее событие (обычно 0 или 1 элемент); берём первый */
-            current_event?: components["schemas"]["OrderExecutionReleaseProductionCurrentEvent"][];
+        /** @description Подпись колонки таблицы событий (`result_field_labels`) */
+        OrderExecutionReleaseProductionEventFieldLabel: {
+            name?: string;
+            label?: string;
         } & {
             [key: string]: unknown;
         };
         OrderExecutionReleaseProductionEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
-            result?: components["schemas"]["OrderExecutionReleaseProductionEventResultItem"][];
+            /** @description Список событий выпуска или устаревшая обёртка очереди (eventRollWriteOff) */
+            result?: {
+                [key: string]: unknown;
+            }[];
+            /** @description Заголовки колонок таблицы событий выпуска */
+            result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
-        /** @description Запрос discardEvent (UI-61 SCR-06) */
+        /** @description Запрос discardEventRoll (UI-61a) */
         OrderExecutionDiscardProductionEventRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */
             workAreaId: string;
@@ -3878,7 +3724,7 @@ export interface components {
             [key: string]: unknown;
         };
         OrderExecutionDiscardProductionEventRequest: components["schemas"]["OrderExecutionDiscardProductionEventRequestItem"][];
-        /** @description Элемент `result` в ответе discardEvent */
+        /** @description Элемент `result` в ответе discardEventRoll */
         OrderExecutionDiscardProductionEventResultItem: {
             machine_event_signal_id?: string | null;
             /** @description DISCARDED */
@@ -3891,7 +3737,7 @@ export interface components {
         OrderExecutionDiscardProductionEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionDiscardProductionEventResultItem"][];
         })[];
-        /** @description Запрос acceptProdFromEvent (UI-61 SCR-06) */
+        /** @description Запрос acceptRawFromEvent (UI-61a) — общее тело accept*FromEvent */
         OrderExecutionAcceptProdFromEventRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */
             workAreaId: string;
@@ -3919,21 +3765,6 @@ export interface components {
         };
         OrderExecutionAcceptRawFromEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionAcceptRawFromEventResultItem"][];
-        })[];
-        /** @description Элемент `result` в ответе acceptProdFromEvent */
-        OrderExecutionAcceptProdFromEventResultItem: {
-            machine_event_signal_id?: string | null;
-            /** @description OPERATOR_ACCEPTED */
-            processing_status?: string | null;
-            prefill_output_length_m?: number | null;
-            prefill_output_weight_kg?: number | null;
-            pending_count?: number | null;
-            manual_release_blocked?: boolean | null;
-        } & {
-            [key: string]: unknown;
-        };
-        OrderExecutionAcceptProdFromEventResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
-            result?: components["schemas"]["OrderExecutionAcceptProdFromEventResultItem"][];
         })[];
         /** @description Элемент `result` в ответе getReleaseFormInit */
         OrderExecutionReleaseFormInitResultItem: {
@@ -3990,17 +3821,16 @@ export interface components {
         /** @description Элемент result getEventsSummary (SCR-06 / UC-25) */
         OrderExecutionReleaseProductionEventsSummaryResultItem: {
             work_area_id?: string | null;
-            total_count?: number | null;
-            last_event_at?: string | null;
-            last_event_name?: string | null;
-            last_event_description?: string | null;
-            last_event_length_m?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
         } & {
             [key: string]: unknown;
         };
         /** @description Ответ getEventsSummary (SCR-06 / UC-25) */
         OrderExecutionReleaseProductionEventsSummaryResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionReleaseProductionEventsSummaryResultItem"][];
+            /** @description Подписи полей для плашки сводки */
+            result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
         /** @description Элемент result getRollEventsSummary (SCR-04 / UC-15) */
         OrderExecutionRollWriteOffEventsSummaryResultItem: {
@@ -4087,40 +3917,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
         })[];
-        OrderExecutionReleaseInputRollRow: {
-            barcode?: string | null;
-            external_series_key?: string | null;
-            material_roll_id?: string | null;
-            roll_trace_context_id?: string | null;
-            meter_card_id?: string | null;
-            nomenclature_name?: string | null;
-            nomenclature_code?: string | null;
-            quantity_primary?: number | null;
-            uom_primary?: string | null;
-            quantity_secondary?: number | null;
-            uom_secondary?: string | null;
-            stage_input_card_status?: string | null;
-            roll_status?: string | null;
-            roll_status_label?: string | null;
-        } & {
-            [key: string]: unknown;
-        };
-        /** @description Устаревший вложенный `result`; предпочтительно `input_rolls` на корне обёртки */
-        OrderExecutionReleaseInputRollsResultItem: {
-            input_rolls?: components["schemas"]["OrderExecutionReleaseInputRollRow"][];
-        } & {
-            [key: string]: unknown;
-        };
-        OrderExecutionReleaseInputRollsResponse: ({
-            /** @description Пустая строка или `OK` — успех */
-            error_code?: string;
-            error_message?: string | null;
-            work_area_id?: string | null;
-            input_rolls?: components["schemas"]["OrderExecutionReleaseInputRollRow"][];
-            result?: components["schemas"]["OrderExecutionReleaseInputRollsResultItem"][];
-        } & {
-            [key: string]: unknown;
-        })[];
         /** @description Запрос jbPrintSheet2 — печать «Список цилиндров» / лист 2 (JB) */
         JbPrintSheet2RequestItem: {
             /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
@@ -4163,26 +3959,48 @@ export interface components {
         };
         /** @description Ответ jbPrintSheet1 — `[{ fileName, succeeded }]` */
         JbPrintSheet1Response: components["schemas"]["JbPrintSheet1ResponseItem"][];
-        /** @description Запрос jbMapParameters — печать «Карта технологических параметров печати» (JB) */
-        JbMapParametersRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Запрос jbPrintSheet3 — печать «Карта технологических параметров печати» / лист 3 (JB) */
+        JbPrintSheet3RequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
+            /** @description Время старта рабочей области (`start_work_area` из getOrderExecution) */
+            workAreaStart: string;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbMapParameters */
-        JbMapParametersRequest: components["schemas"]["JbMapParametersRequestItem"][];
-        JbMapParametersResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Запрос jbMapPrint — печать «Карта контроля цвета» (JB) */
-        JbMapPrintRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Тело `[{ order, workAreaStart }]` для jbPrintSheet3 */
+        JbPrintSheet3Request: components["schemas"]["JbPrintSheet3RequestItem"][];
+        /** @description Элемент ответа jbPrintSheet3 */
+        JbPrintSheet3ResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbMapPrint */
-        JbMapPrintRequest: components["schemas"]["JbMapPrintRequestItem"][];
-        JbMapPrintResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Ответ jbPrintSheet3 — `[{ fileName, succeeded }]` */
+        JbPrintSheet3Response: components["schemas"]["JbPrintSheet3ResponseItem"][];
+        /** @description Запрос jbMapColorControl — печать «Карта контроля цвета» (JB) */
+        JbMapColorControlRequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ order }]` для jbMapColorControl */
+        JbMapColorControlRequest: components["schemas"]["JbMapColorControlRequestItem"][];
+        /** @description Элемент ответа jbMapColorControl */
+        JbMapColorControlResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ jbMapColorControl — `[{ fileName, succeeded }]` */
+        JbMapColorControlResponse: components["schemas"]["JbMapColorControlResponseItem"][];
         /** @description Запрос jbFullPrint — печать «Весь документ» / Summary (JB) */
         JbFullPrintRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
@@ -4213,16 +4031,26 @@ export interface components {
         /** @description Тело `[{ workAreaId }]` для jbPaintsRecipe */
         JbPaintsRecipeRequest: components["schemas"]["JbPaintsRecipeRequestItem"][];
         JbPaintsRecipeResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
-        /** @description Запрос jbLabelSection — печать «Этикетка на секцию» (JB) */
-        JbLabelSectionRequestItem: {
-            /** @description Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution) */
-            workAreaId: string;
+        /** @description Запрос jbPrintSheet6 — печать «Этикетка на секцию» (JB) */
+        JbPrintSheet6RequestItem: {
+            /** @description Номер заказа (`order` / `header.order` из getOrderExecution) */
+            order: string;
         } & {
             [key: string]: unknown;
         };
-        /** @description Тело `[{ workAreaId }]` для jbLabelSection */
-        JbLabelSectionRequest: components["schemas"]["JbLabelSectionRequestItem"][];
-        JbLabelSectionResponse: components["schemas"]["OrderExecutionMaterialReturnLabelResultRow"][];
+        /** @description Тело `[{ order }]` для jbPrintSheet6 */
+        JbPrintSheet6Request: components["schemas"]["JbPrintSheet6RequestItem"][];
+        /** @description Элемент ответа jbPrintSheet6 */
+        JbPrintSheet6ResponseItem: {
+            /** @description Имя PDF в каталоге temp клиента */
+            fileName?: string | null;
+            /** @description Успешность генерации отчёта */
+            succeeded?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ jbPrintSheet6 — `[{ fileName, succeeded }]` */
+        JbPrintSheet6Response: components["schemas"]["JbPrintSheet6ResponseItem"][];
         /** @description Запрос registerRelease (UI-60 SCR-06) */
         OrderExecutionRegisterReleaseRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */
@@ -4235,6 +4063,8 @@ export interface components {
             weight: number;
             /** @description Требуется перемотка (`requires_rewind` на BFF) */
             rewind: boolean;
+            /** @description Последний рулон (`last_roll` на BFF) */
+            lastRoll?: boolean;
             /** @description Код склада назначения из формы (`destination_warehouse_code` на BFF) */
             warehouseCode: string;
         } & {
@@ -4364,7 +4194,11 @@ export interface components {
         /** @description Элемент result getProgress (SCR-00 / UC-25) */
         OrderExecutionStageProgressResultItem: {
             work_area_id?: string | null;
-            /** @description План, м */
+            /** @description План MIN, м (`plan_min_m`) */
+            plan_min_m?: number | null;
+            /** @description План MAX, м (`plan_max_m`) */
+            plan_max_m?: number | null;
+            /** @description Требуемый метраж, м (legacy) */
             required_meterage_m?: number | null;
             /** @description Выпуск (годный), м */
             released_good_meterage_m?: number | null;
@@ -4562,6 +4396,47 @@ export interface components {
         } & {
             [key: string]: unknown;
         })[];
+        OrderExecutionReleaseProductionEventDisplayRow: {
+            characteristic_label?: string | null;
+            value_text?: string | null;
+            unit_label?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        OrderExecutionReleaseProductionCurrentEvent: {
+            machine_event_signal_id?: string | null;
+            event_code?: string | null;
+            event_code_label?: string | null;
+            event_at?: string | null;
+            informer_detail?: string | null;
+            /** @description PREFILL_PROD | REGISTER_DEFECT */
+            register_action?: string | null;
+            event_display_rows?: components["schemas"]["OrderExecutionReleaseProductionEventDisplayRow"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Устаревший элемент `result` для eventRollWriteOff (плашка current_event) */
+        OrderExecutionReleaseProductionEventResultItem: {
+            work_area_id?: string | null;
+            plate_title?: string | null;
+            pending_count?: number | null;
+            manual_release_blocked?: boolean | null;
+            empty_state_message?: string | null;
+            /** @description Текущее событие (обычно 0 или 1 элемент); берём первый */
+            current_event?: components["schemas"]["OrderExecutionReleaseProductionCurrentEvent"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Строка списка событий выпуска в ответе eventReleaseProduction */
+        OrderExecutionReleaseProductionEventListRow: {
+            signal_id?: string | null;
+            event_description?: string | null;
+            event_name?: string | null;
+            registered_at?: string | null;
+            length_m?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
         MaterialOrderSubmitLineItem: components["schemas"]["MaterialOrderComposeLineResultItem"];
     };
     responses: {

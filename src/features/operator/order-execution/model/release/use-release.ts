@@ -1,36 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
-import { useSession } from "@/shared/model/session";
 
-import { mapReleaseBlockReasonsPayload } from "./map-release-block-reasons-payload";
-import { mapEventReleaseProductionPayload } from "./map-event-release-production-payload";
-import { buildDiscardProductionEventBody } from "./build-discard-production-event-body";
-import { mapDiscardProductionEventPayload } from "./map-discard-production-event-payload";
-import { buildAcceptProdFromEventBody } from "./build-accept-prod-from-event-body";
-import { mapAcceptProdFromEventPayload } from "./map-accept-prod-from-event-payload";
-import { buildReleaseSubmitBlockBody } from "./build-release-submit-block-body";
+import { buildReleaseSubmitBlockBody, collectReleaseBlockSeriesRefs } from "./build-release-submit-block-body";
+import { mapEventReleaseProductionPayload, getReleaseProductionEventCellValue } from "./map-event-release-production-payload";
 import { buildReleaseRegisterBody } from "./build-release-register-body";
 import { buildReleasePrintLabelBody } from "./build-release-print-label-body";
-import { mapReleaseSubmitBlockPayload } from "./map-release-submit-block-payload";
 import { mapReleaseRegisterPayload } from "./map-release-register-payload";
 import { mapPrepareReleaseLabelPayload } from "./map-prepare-release-label-payload";
+import { mapReleaseSubmitBlockPayload } from "./map-release-submit-block-payload";
 import {
     mapReleaseBatchReleasesPayload,
     RELEASE_EMPTY_BATCH_SNAPSHOT,
     type ReleaseBatchSnapshot,
 } from "./map-release-batch-releases-payload";
 import { mapReleaseFormInitPayload } from "./map-release-form-init-payload";
-import { mapReleaseInputRollsPayload } from "./map-release-input-rolls-payload";
-import type { ReleaseBlockReason, ReleaseFormState, ReleaseInitSnapshot, ReleaseInputRollRow } from "./types";
+import type { ReleaseFormState, ReleaseInitSnapshot } from "./types";
 import { RELEASE_EMPTY_INIT, RELEASE_INITIAL_FORM } from "./types";
 import {
     RELEASE_EMPTY_PRODUCTION_EVENT,
     type ReleaseProductionEventSnapshot,
 } from "./production-event-types";
-import { resolveReleaseOperatorRef } from "./resolve-release-operator-ref";
 import { sanitizeReleaseNumericInput } from "./sanitize-release-numeric-input";
+import { useReleaseBlockReasons } from "./use-release-block-reasons";
 
 type UseReleaseOptions = {
     workAreaId?: string;
@@ -38,17 +31,11 @@ type UseReleaseOptions = {
 };
 
 export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
-    const { session } = useSession();
     const [form, setForm] = useState<ReleaseFormState>(RELEASE_INITIAL_FORM);
     const [initSnapshot, setInitSnapshot] = useState<ReleaseInitSnapshot>(RELEASE_EMPTY_INIT);
     const [batchSnapshot, setBatchSnapshot] = useState<ReleaseBatchSnapshot>(RELEASE_EMPTY_BATCH_SNAPSHOT);
-    const [inputRolls, setInputRolls] = useState<ReleaseInputRollRow[]>([]);
-    const [blockReasons, setBlockReasons] = useState<ReleaseBlockReason[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
-    const [blockSubmitError, setBlockSubmitError] = useState<string | null>(null);
-    const [blockSubmitMessage, setBlockSubmitMessage] = useState<string | null>(null);
     const [isRegisteringRelease, setIsRegisteringRelease] = useState(false);
     const [registerSubmitError, setRegisterSubmitError] = useState<string | null>(null);
     const [registerSubmitMessage, setRegisterSubmitMessage] = useState<string | null>(null);
@@ -59,25 +46,24 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
     );
     const [isProductionEventLoading, setIsProductionEventLoading] = useState(false);
     const [productionEventError, setProductionEventError] = useState<string | null>(null);
-    const [isDiscardingProductionEvent, setIsDiscardingProductionEvent] = useState(false);
-    const [discardProductionEventError, setDiscardProductionEventError] = useState<string | null>(null);
-    const [isAcceptingProdFromEvent, setIsAcceptingProdFromEvent] = useState(false);
-    const [acceptProdFromEventError, setAcceptProdFromEventError] = useState<string | null>(null);
-    const pendingPrefillRef = useRef<{ lengthM: string; netWeightKg: string } | null>(null);
+    const [selectedProductionEventId, setSelectedProductionEventId] = useState<string | null>(null);
+    const [selectedBatchRollIds, setSelectedBatchRollIds] = useState<Set<string>>(() => new Set());
+    const [selectedBlockReasonCode, setSelectedBlockReasonCode] = useState<string | null>(null);
+    const [blockComment, setBlockComment] = useState("");
+    const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
+    const [blockSubmitError, setBlockSubmitError] = useState<string | null>(null);
+    const [blockSubmitMessage, setBlockSubmitMessage] = useState<string | null>(null);
+
+    const {
+        blockReasons,
+        isLoading: isBlockReasonsLoading,
+        error: blockReasonsError,
+        reload: reloadBlockReasons,
+    } = useReleaseBlockReasons({ enabled });
 
     const { mutateAsync: fetchReleaseProductionEvent } = rqClient.useMutation(
         "post",
         REST_FUNCTION_PATHS.eventReleaseProduction,
-        {},
-    );
-    const { mutateAsync: discardProductionEventRequest } = rqClient.useMutation(
-        "post",
-        REST_FUNCTION_PATHS.discardEvent,
-        {},
-    );
-    const { mutateAsync: acceptProdFromEventRequest } = rqClient.useMutation(
-        "post",
-        REST_FUNCTION_PATHS.acceptProdFromEvent,
         {},
     );
     const { mutateAsync: fetchReleaseFormInit } = rqClient.useMutation(
@@ -86,17 +72,6 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         {},
     );
     const { mutateAsync: fetchBatchReleases } = rqClient.useMutation("post", REST_FUNCTION_PATHS.getBatchReleases, {});
-    const { mutateAsync: fetchInputRolls } = rqClient.useMutation(
-        "post",
-        REST_FUNCTION_PATHS.listStageInputRollsForWorkArea,
-        {},
-    );
-    const { mutateAsync: listBlockReasons } = rqClient.useMutation("post", REST_FUNCTION_PATHS.listBlockReasons, {});
-    const { mutateAsync: submitBlockRequest } = rqClient.useMutation(
-        "post",
-        REST_FUNCTION_PATHS.submitBlockRequest,
-        {},
-    );
     const { mutateAsync: registerReleaseRequest } = rqClient.useMutation(
         "post",
         REST_FUNCTION_PATHS.registerRelease,
@@ -107,33 +82,28 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         REST_FUNCTION_PATHS.prepareReleaseLabel,
         {},
     );
+    const { mutateAsync: submitBlockRequest } = rqClient.useMutation(
+        "post",
+        REST_FUNCTION_PATHS.submitBlockRequest,
+        {},
+    );
 
     const fetchReleaseProductionEventRef = useRef(fetchReleaseProductionEvent);
     fetchReleaseProductionEventRef.current = fetchReleaseProductionEvent;
-    const discardProductionEventRequestRef = useRef(discardProductionEventRequest);
-    discardProductionEventRequestRef.current = discardProductionEventRequest;
-    const acceptProdFromEventRequestRef = useRef(acceptProdFromEventRequest);
-    acceptProdFromEventRequestRef.current = acceptProdFromEventRequest;
     const fetchReleaseFormInitRef = useRef(fetchReleaseFormInit);
     fetchReleaseFormInitRef.current = fetchReleaseFormInit;
     const fetchBatchReleasesRef = useRef(fetchBatchReleases);
     fetchBatchReleasesRef.current = fetchBatchReleases;
-    const fetchInputRollsRef = useRef(fetchInputRolls);
-    fetchInputRollsRef.current = fetchInputRolls;
-    const listBlockReasonsRef = useRef(listBlockReasons);
-    listBlockReasonsRef.current = listBlockReasons;
-    const submitBlockRequestRef = useRef(submitBlockRequest);
-    submitBlockRequestRef.current = submitBlockRequest;
     const registerReleaseRequestRef = useRef(registerReleaseRequest);
     registerReleaseRequestRef.current = registerReleaseRequest;
     const prepareReleaseLabelRequestRef = useRef(prepareReleaseLabelRequest);
     prepareReleaseLabelRequestRef.current = prepareReleaseLabelRequest;
+    const submitBlockRequestRef = useRef(submitBlockRequest);
+    submitBlockRequestRef.current = submitBlockRequest;
 
     const resetFormState = useCallback(() => {
         setInitSnapshot(RELEASE_EMPTY_INIT);
         setBatchSnapshot(RELEASE_EMPTY_BATCH_SNAPSHOT);
-        setInputRolls([]);
-        setBlockReasons([]);
         setForm(RELEASE_INITIAL_FORM);
         setError(null);
     }, []);
@@ -142,25 +112,13 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         resetFormState();
         setProductionEvent(RELEASE_EMPTY_PRODUCTION_EVENT);
         setProductionEventError(null);
-        setDiscardProductionEventError(null);
-        setAcceptProdFromEventError(null);
-        pendingPrefillRef.current = null;
+        setSelectedProductionEventId(null);
+        setSelectedBatchRollIds(new Set());
+        setSelectedBlockReasonCode(null);
+        setBlockComment("");
+        setBlockSubmitError(null);
+        setBlockSubmitMessage(null);
     }, [resetFormState]);
-
-    const applyPendingPrefill = useCallback(() => {
-        const pendingPrefill = pendingPrefillRef.current;
-        if (!pendingPrefill) {
-            return;
-        }
-
-        pendingPrefillRef.current = null;
-        setForm((prev) => ({
-            ...prev,
-            lengthM: sanitizeReleaseNumericInput(pendingPrefill.lengthM),
-            netWeightKg: sanitizeReleaseNumericInput(pendingPrefill.netWeightKg),
-            grossWeightKg: sanitizeReleaseNumericInput(pendingPrefill.netWeightKg),
-        }));
-    }, []);
 
     const loadProductionEvent = useCallback(async (trimmedWorkAreaId: string) => {
         setIsProductionEventLoading(true);
@@ -170,11 +128,8 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
             const productionEventPayload = await fetchReleaseProductionEventRef.current({
                 body: [{ workAreaId: trimmedWorkAreaId }],
             });
-            const mapped = mapEventReleaseProductionPayload(productionEventPayload);
-            setProductionEvent(mapped);
-            if (!mapped.manualReleaseBlocked) {
-                applyPendingPrefill();
-            }
+            setProductionEvent(mapEventReleaseProductionPayload(productionEventPayload));
+            setSelectedProductionEventId(null);
         } catch (loadError) {
             setProductionEvent(RELEASE_EMPTY_PRODUCTION_EVENT);
             setProductionEventError(
@@ -185,31 +140,25 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         } finally {
             setIsProductionEventLoading(false);
         }
-    }, [applyPendingPrefill]);
+    }, []);
 
     const loadReleaseFormData = useCallback(async (trimmedWorkAreaId: string) => {
         const requestBody = [{ workAreaId: trimmedWorkAreaId }] as const;
 
-        const [initPayload, batchPayload, inputRollsPayload, blockReasonsPayload] = await Promise.all([
+        const [initPayload, batchPayload] = await Promise.all([
             fetchReleaseFormInitRef.current({ body: [...requestBody] }),
             fetchBatchReleasesRef.current({ body: [...requestBody] }),
-            fetchInputRollsRef.current({ body: [...requestBody] }),
-            listBlockReasonsRef.current({ body: [] }),
         ]);
 
         const mappedInit = mapReleaseFormInitPayload(initPayload);
         const mappedBatch = mapReleaseBatchReleasesPayload(batchPayload);
-        const mappedInputRolls = mapReleaseInputRollsPayload(inputRollsPayload);
-        const mappedBlockReasons = mapReleaseBlockReasonsPayload(blockReasonsPayload);
 
         setInitSnapshot(mappedInit);
         setBatchSnapshot(mappedBatch);
-        setInputRolls(mappedInputRolls.rows);
-        setBlockReasons(mappedBlockReasons);
+        setSelectedBatchRollIds(new Set());
         setForm({
             ...RELEASE_INITIAL_FORM,
             warehouse: mappedInit.defaultWarehouseCode,
-            blockReason: mappedBlockReasons[0]?.reasonCode ?? "",
         });
     }, []);
 
@@ -274,51 +223,60 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         setRegisterSubmitMessage(null);
     }, []);
 
-    const toggleInputRoll = useCallback((rollId: string) => {
-        setForm((prev) => {
-            const exists = prev.selectedInputRollIds.includes(rollId);
-            return {
-                ...prev,
-                selectedInputRollIds: exists
-                    ? prev.selectedInputRollIds.filter((id) => id !== rollId)
-                    : [...prev.selectedInputRollIds, rollId],
-            };
-        });
-    }, []);
+    const toggleProductionEventSignal = useCallback(
+        (rowId: string) => {
+            const nextSelectedId = selectedProductionEventId === rowId ? null : rowId;
 
-    const setBlockReason = useCallback((reasonCode: string) => {
-        setForm((prev) => ({
-            ...prev,
-            blockReason: reasonCode,
-        }));
+            if (nextSelectedId) {
+                const row = productionEvent.eventList.find((item) => item.id === nextSelectedId);
+                const lengthM = row ? getReleaseProductionEventCellValue(row, "length_m") : null;
+
+                if (lengthM !== null && lengthM !== undefined && lengthM !== "") {
+                    patchForm({ lengthM: String(lengthM) });
+                }
+            }
+
+            setSelectedProductionEventId(nextSelectedId);
+        },
+        [patchForm, productionEvent.eventList, selectedProductionEventId],
+    );
+
+    const toggleBatchRollSelection = useCallback((rowId: string) => {
+        setSelectedBatchRollIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(rowId)) {
+                next.delete(rowId);
+            } else {
+                next.add(rowId);
+            }
+            return next;
+        });
         setBlockSubmitError(null);
         setBlockSubmitMessage(null);
     }, []);
 
-    const canSubmitBlock =
-        form.selectedInputRollIds.length > 0 && Boolean(form.blockReason.trim());
+    const selectBlockReason = useCallback((code: string | null) => {
+        setSelectedBlockReasonCode(code);
+        setBlockSubmitError(null);
+        setBlockSubmitMessage(null);
+    }, []);
 
-    const submitBlock = useCallback(async () => {
-        const reasonCode = form.blockReason.trim();
+    const selectedBlockSeriesRefs = useMemo(
+        () => collectReleaseBlockSeriesRefs(batchSnapshot.rows, selectedBatchRollIds),
+        [batchSnapshot.rows, selectedBatchRollIds],
+    );
+
+    const canSubmitBlock = selectedBlockSeriesRefs.length > 0 && Boolean(selectedBlockReasonCode?.trim());
+
+    const submitBatchBlock = useCallback(async () => {
+        const reasonCode = selectedBlockReasonCode?.trim();
         if (!reasonCode) {
             setBlockSubmitError("Выберите причину блокировки");
             return;
         }
 
-        if (form.selectedInputRollIds.length === 0) {
-            setBlockSubmitError("Выберите хотя бы один входной рулон");
-            return;
-        }
-
-        const body = buildReleaseSubmitBlockBody({
-            inputRolls,
-            selectedInputRollIds: form.selectedInputRollIds,
-            reasonCode,
-            comment: form.warehouseComment,
-        });
-
-        if (!body[0]?.seriesRefs) {
-            setBlockSubmitError("У выбранных рулонов нет серии для блокировки");
+        if (selectedBlockSeriesRefs.length === 0) {
+            setBlockSubmitError("Выберите выпуски партии с непустой серией");
             return;
         }
 
@@ -327,30 +285,43 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         setBlockSubmitMessage(null);
 
         try {
+            const body = buildReleaseSubmitBlockBody({
+                batchRolls: batchSnapshot.rows,
+                selectedBatchRollIds,
+                reasonCode,
+                comment: blockComment,
+            });
             const payload = await submitBlockRequestRef.current({ body });
             const result = mapReleaseSubmitBlockPayload(payload);
             setBlockSubmitMessage(result.message);
-            setForm((prev) => ({
-                ...prev,
-                selectedInputRollIds: [],
-                warehouseComment: "",
-            }));
-            await load();
-        } catch (submitBlockError) {
+            setSelectedBatchRollIds(new Set());
+            setBlockComment("");
+            setSelectedBlockReasonCode(null);
+
+            const trimmedWorkAreaId = workAreaId?.trim();
+            if (trimmedWorkAreaId) {
+                await loadReleaseFormData(trimmedWorkAreaId);
+            }
+        } catch (submitError) {
             setBlockSubmitError(
-                submitBlockError instanceof Error
-                    ? submitBlockError.message
-                    : "Не удалось передать блокировку",
+                submitError instanceof Error ? submitError.message : "Не удалось передать блокировку",
             );
         } finally {
             setIsSubmittingBlock(false);
         }
-    }, [form.blockReason, form.selectedInputRollIds, form.warehouseComment, inputRolls, load]);
+    }, [
+        batchSnapshot.rows,
+        blockComment,
+        loadReleaseFormData,
+        selectedBatchRollIds,
+        selectedBlockReasonCode,
+        selectedBlockSeriesRefs.length,
+        workAreaId,
+    ]);
 
     const parsedLength = Number(form.lengthM.trim().replace(",", "."));
     const parsedWeight = Number(form.netWeightKg.trim().replace(",", "."));
     const canRegisterRelease =
-        !productionEvent.manualReleaseBlocked &&
         Boolean(workAreaId?.trim()) &&
         Boolean(initSnapshot.predictedExternalSeriesKey.trim()) &&
         Boolean(form.warehouse.trim()) &&
@@ -358,96 +329,6 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         parsedLength > 0 &&
         Number.isFinite(parsedWeight) &&
         parsedWeight > 0;
-
-    const discardProductionEvent = useCallback(async () => {
-        const trimmedWorkAreaId = workAreaId?.trim();
-        const machineEventSignalId = productionEvent.currentEvent?.machineEventSignalId.trim() ?? "";
-
-        if (!trimmedWorkAreaId) {
-            setDiscardProductionEventError("Не удалось определить workAreaId этапа");
-            return;
-        }
-
-        if (!machineEventSignalId) {
-            setDiscardProductionEventError("Не удалось определить идентификатор события");
-            return;
-        }
-
-        const operatorRef = resolveReleaseOperatorRef(session);
-
-        setIsDiscardingProductionEvent(true);
-        setDiscardProductionEventError(null);
-        setAcceptProdFromEventError(null);
-
-        try {
-            const payload = await discardProductionEventRequestRef.current({
-                body: buildDiscardProductionEventBody({
-                    workAreaId: trimmedWorkAreaId,
-                    machineEventSignalId,
-                    operatorRef: operatorRef || undefined,
-                }),
-            });
-            mapDiscardProductionEventPayload(payload);
-            await loadProductionEvent(trimmedWorkAreaId);
-        } catch (discardError) {
-            setDiscardProductionEventError(
-                discardError instanceof Error ? discardError.message : "Не удалось отклонить событие с машины",
-            );
-        } finally {
-            setIsDiscardingProductionEvent(false);
-        }
-    }, [loadProductionEvent, productionEvent.currentEvent?.machineEventSignalId, session, workAreaId]);
-
-    const acceptProdFromEvent = useCallback(async () => {
-        const trimmedWorkAreaId = workAreaId?.trim();
-        const machineEventSignalId = productionEvent.currentEvent?.machineEventSignalId.trim() ?? "";
-
-        if (!trimmedWorkAreaId) {
-            setAcceptProdFromEventError("Не удалось определить workAreaId этапа");
-            return;
-        }
-
-        if (!machineEventSignalId) {
-            setAcceptProdFromEventError("Не удалось определить идентификатор события");
-            return;
-        }
-
-        const operatorRef = resolveReleaseOperatorRef(session);
-
-        setIsAcceptingProdFromEvent(true);
-        setAcceptProdFromEventError(null);
-        setDiscardProductionEventError(null);
-
-        try {
-            const payload = await acceptProdFromEventRequestRef.current({
-                body: buildAcceptProdFromEventBody({
-                    workAreaId: trimmedWorkAreaId,
-                    machineEventSignalId,
-                    operatorRef: operatorRef || undefined,
-                }),
-            });
-            const result = mapAcceptProdFromEventPayload(payload);
-
-            if (result.prefillOutputLengthM != null || result.prefillOutputWeightKg != null) {
-                pendingPrefillRef.current = {
-                    lengthM:
-                        result.prefillOutputLengthM != null ? String(result.prefillOutputLengthM) : "",
-                    netWeightKg:
-                        result.prefillOutputWeightKg != null ? String(result.prefillOutputWeightKg) : "",
-                };
-            }
-
-            await loadProductionEvent(trimmedWorkAreaId);
-        } catch (acceptError) {
-            setAcceptProdFromEventError(
-                acceptError instanceof Error
-                    ? acceptError.message
-                    : "Не удалось зарегистрировать событие выпуска с машины",
-            );
-        } finally {
-            setIsAcceptingProdFromEvent(false);
-        }
-    }, [loadProductionEvent, productionEvent.currentEvent?.machineEventSignalId, session, workAreaId]);
 
     const registerRelease = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -485,6 +366,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
             length: parsedLength,
             weight: parsedWeight,
             rewind: form.requiresRewind,
+            lastRoll: form.isLastRoll,
             warehouseCode,
         });
 
@@ -502,6 +384,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
                 netWeightKg: "",
                 grossWeightKg: "",
                 requiresRewind: false,
+                isLastRoll: false,
             }));
             await load();
         } catch (registerError) {
@@ -512,6 +395,7 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
             setIsRegisteringRelease(false);
         }
     }, [
+        form.isLastRoll,
         form.requiresRewind,
         form.warehouse,
         initSnapshot.predictedExternalSeriesKey,
@@ -563,32 +447,33 @@ export function useRelease({ workAreaId, enabled }: UseReleaseOptions) {
         form,
         patchForm,
         setNetWeight,
-        toggleInputRoll,
-        setBlockReason,
         series: initSnapshot.predictedExternalSeriesKey,
         warehouseOptions: initSnapshot.warehouseOptions,
         batchRolls: batchSnapshot.rows,
         batchAsOf: batchSnapshot.asOf,
-        inputRolls,
+        selectedBatchRollIds,
+        toggleBatchRollSelection,
         blockReasons,
-        productionEvent,
-        isProductionEventLoading,
-        productionEventError,
-        discardProductionEvent,
-        isDiscardingProductionEvent,
-        discardProductionEventError,
-        acceptProdFromEvent,
-        isAcceptingProdFromEvent,
-        acceptProdFromEventError,
-        manualReleaseBlocked: productionEvent.manualReleaseBlocked,
-        isLoading,
-        error,
-        reload: load,
+        isBlockReasonsLoading,
+        blockReasonsError,
+        reloadBlockReasons,
+        selectedBlockReasonCode,
+        selectBlockReason,
+        blockComment,
+        setBlockComment,
         canSubmitBlock,
         isSubmittingBlock,
         blockSubmitError,
         blockSubmitMessage,
-        submitBlock,
+        submitBatchBlock,
+        productionEvent,
+        isProductionEventLoading,
+        productionEventError,
+        selectedProductionEventId,
+        toggleProductionEventSignal,
+        isLoading,
+        error,
+        reload: load,
         canRegisterRelease,
         isRegisteringRelease,
         registerSubmitError,

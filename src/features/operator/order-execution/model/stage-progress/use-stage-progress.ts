@@ -83,7 +83,8 @@ export function useStageProgress({ workAreaId, enabled = true }: UseStageProgres
         }
         const isInitialLoading =
             isLoading &&
-            progress.requiredMeterageM == null &&
+            progress.planMinM == null &&
+            progress.planMaxM == null &&
             progress.releasedGoodMeterageM == null &&
             progress.remainingMeterageM == null &&
             progress.progressPercent == null;

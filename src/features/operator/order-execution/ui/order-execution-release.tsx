@@ -1,12 +1,21 @@
 import { useMemo } from "react";
 
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
+import {
+    formatReleaseProductionEventCellValue,
+    getReleaseProductionEventCellValue,
+} from "../model/release/map-event-release-production-payload";
+import { RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS } from "../model/release/production-event-types";
+import { useOrderExecutionMachineStompState } from "../model/machine-stomp/order-execution-machine-stomp-context";
+import { resolveMachineStompPanelTone } from "../model/machine-stomp/resolve-machine-stomp-panel-tone";
+import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
 import { useRelease } from "../model/release/use-release";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Informer } from "@/shared/ui/kit/informer";
+import { Label } from "@/shared/ui/kit/label";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { cn } from "@/shared/lib/css";
 import {
@@ -26,26 +35,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 type OrderExecutionReleaseProps = {
     workAreaId?: string;
     enabled: boolean;
+    eventsSummary?: ReleaseProductionEventsSummarySnapshot;
+    eventsSummaryLoading?: boolean;
+    eventsSummaryError?: string | null;
 };
 
-export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionReleaseProps) {
+const productionEventSelectionColumnClassName = "w-10";
+const batchRollSelectionColumnClassName = "w-10";
+
+export function OrderExecutionRelease({
+    workAreaId,
+    enabled,
+    eventsSummary,
+    eventsSummaryLoading = false,
+    eventsSummaryError = null,
+}: OrderExecutionReleaseProps) {
     const {
         form,
         patchForm,
         setNetWeight,
-        setBlockReason,
         series,
         warehouseOptions,
         batchRolls,
         batchAsOf,
+        selectedBatchRollIds,
+        toggleBatchRollSelection,
         blockReasons,
-        isLoading,
-        error,
+        isBlockReasonsLoading,
+        blockReasonsError,
+        reloadBlockReasons,
+        selectedBlockReasonCode,
+        selectBlockReason,
+        blockComment,
+        setBlockComment,
         canSubmitBlock,
         isSubmittingBlock,
         blockSubmitError,
         blockSubmitMessage,
-        submitBlock,
+        submitBatchBlock,
+        isLoading,
+        error,
         canRegisterRelease,
         isRegisteringRelease,
         registerSubmitError,
@@ -57,24 +86,23 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
         productionEvent,
         isProductionEventLoading,
         productionEventError,
-        discardProductionEvent,
-        isDiscardingProductionEvent,
-        discardProductionEventError,
-        acceptProdFromEvent,
-        isAcceptingProdFromEvent,
-        acceptProdFromEventError,
-        manualReleaseBlocked,
+        selectedProductionEventId,
+        toggleProductionEventSignal,
     } = useRelease({ workAreaId, enabled });
 
-    const productionEventRows = useMemo(
+    const machineStompState = useOrderExecutionMachineStompState();
+
+    const eventsSummaryRows = useMemo(
         () =>
-            productionEvent.currentEvent?.displayRows.map((row) => ({
-                characteristic: row.characteristic,
-                value: row.value,
-                unit: row.unit,
+            eventsSummary?.fields.map((field) => ({
+                characteristic: field.label,
+                value: String(field.value),
+                unit: "",
             })) ?? [],
-        [productionEvent.currentEvent],
+        [eventsSummary?.fields],
     );
+
+    const eventsSummaryTone = resolveMachineStompPanelTone(machineStompState);
 
     const {
         pageItems: batchPageItems,
@@ -84,12 +112,46 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
         setPage: setBatchPage,
     } = useDataTablePagination(batchRolls, { initialPageSize: 10 });
 
+    const {
+        pageItems: productionEventPageItems,
+        pagination: productionEventPagination,
+        pageSize: productionEventPageSize,
+        setPageSize: setProductionEventPageSize,
+        setPage: setProductionEventPage,
+    } = useDataTablePagination(productionEvent.eventList, { initialPageSize: 5 });
+
     if (!enabled) {
         return null;
     }
 
     return (
         <div className="flex flex-col gap-4">
+            {eventsSummaryError ? (
+                <Informer
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Сводка сигналов выпуска"
+                    description={eventsSummaryError}
+                />
+            ) : null}
+
+            {eventsSummaryLoading ? (
+                <Informer tone="system" variant="bordered" size="s" title="Загрузка сводки сигналов…" />
+            ) : null}
+
+            {!eventsSummaryLoading && !eventsSummaryError && eventsSummary ? (
+                <MachineDataPanel
+                    title="Сводка сигналов выпуска"
+                    rows={eventsSummaryRows}
+                    tone={eventsSummaryTone}
+                    emptyText="Нет данных сводки"
+                    updatedAt={eventsSummary.changedAt || null}
+                    updatedAtLabel="Обновлено"
+                    showUnitColumn={false}
+                />
+            ) : null}
+
             {productionEventError ? (
                 <Informer
                     tone="alert"
@@ -100,58 +162,131 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                 />
             ) : null}
 
-            {!isProductionEventLoading && !productionEventError && productionEvent.currentEvent ? (
-                <MachineDataPanel
-                    title={
-                        [
-                            productionEvent.plateTitle,
-                            productionEvent.currentEvent.eventCodeLabel,
-                        ]
-                            .filter(Boolean)
-                            .join(" · ") || "Событие с машины"
-                    }
-                    rows={productionEventRows}
-                    tone="warning"
-                    updatedAt={productionEvent.currentEvent.eventAt || null}
-                    updatedAtLabel="Зарегистрировано от"
-                    emptyText="Нет характеристик события"
-                    footer={
-                        <div className="flex flex-col items-end gap-2">
-                            {discardProductionEventError || acceptProdFromEventError ? (
-                                <div className="w-full text-[12px] text-destructive">
-                                    {acceptProdFromEventError || discardProductionEventError}
-                                </div>
-                            ) : null}
-                            <div className="flex flex-wrap items-center justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    pending={isAcceptingProdFromEvent}
-                                    pendingLabel="Регистрация…"
-                                    disabled={isDiscardingProductionEvent || isAcceptingProdFromEvent}
-                                    onClick={() => {
-                                        void acceptProdFromEvent();
-                                    }}
-                                >
-                                    Зарегистрировать
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    pending={isDiscardingProductionEvent}
-                                    pendingLabel="Отклонение…"
-                                    disabled={isDiscardingProductionEvent || isAcceptingProdFromEvent}
-                                    onClick={() => {
-                                        void discardProductionEvent();
-                                    }}
-                                >
-                                    Отклонить
-                                </Button>
-                            </div>
+            {!isProductionEventLoading && !productionEventError ? (
+                <div className="grid gap-3">
+                    <div className={cnSectionBlockTitle()}>Сигналы машины (выпуск)</div>
+                    <div className={dataTableViewportShellClassName}>
+                        <div className="overflow-x-auto min-w-0">
+                            <Table
+                                className={cn(
+                                    dataTableInsetShellClassName,
+                                    "min-w-[480px] border-separate border-spacing-0 text-[12px]",
+                                )}
+                            >
+                                <TableHeader>
+                                    <TableRow className="hover:!bg-transparent">
+                                        <TableHead
+                                            className={cn(
+                                                dataTableHeadCellClassName,
+                                                "bg-muted/40",
+                                                productionEventSelectionColumnClassName,
+                                            )}
+                                            aria-label="Выбор сигнала"
+                                        />
+                                        {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => (
+                                            <TableHead
+                                                key={column.key}
+                                                className={cn(
+                                                    dataTableHeadCellClassName,
+                                                    "bg-muted/40",
+                                                    column.key === "length_m" && "text-right",
+                                                )}
+                                            >
+                                                {column.label}
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {productionEventPageItems.length > 0 ? (
+                                        productionEventPageItems.map((row) => {
+                                            const isSelected = selectedProductionEventId === row.id;
+                                            const eventDescription = formatReleaseProductionEventCellValue(
+                                                getReleaseProductionEventCellValue(row, "event_description"),
+                                            );
+
+                                            return (
+                                                <TableRow
+                                                    key={row.id}
+                                                    className={cn(isSelected && "bg-muted/50")}
+                                                >
+                                                    <TableCell
+                                                        className={cn(
+                                                            dataTableBodyCellClassName,
+                                                            productionEventSelectionColumnClassName,
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            disabled={isLoading || Boolean(error)}
+                                                            onChange={() => {
+                                                                toggleProductionEventSignal(row.id);
+                                                            }}
+                                                            aria-label={`Выбрать сигнал ${eventDescription}`}
+                                                            className="size-4 rounded border-input"
+                                                        />
+                                                    </TableCell>
+                                                    {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => {
+                                                        const cellValue = getReleaseProductionEventCellValue(
+                                                            row,
+                                                            column.key,
+                                                        );
+
+                                                        return (
+                                                            <TableCell
+                                                                key={`${row.id}-${column.key}`}
+                                                                className={cn(
+                                                                    dataTableBodyCellClassName,
+                                                                    column.key === "length_m" && "text-right",
+                                                                    column.key === "event_description" &&
+                                                                        "max-w-[240px] truncate",
+                                                                )}
+                                                                title={
+                                                                    column.key === "event_description"
+                                                                        ? formatReleaseProductionEventCellValue(
+                                                                              cellValue,
+                                                                          )
+                                                                        : undefined
+                                                                }
+                                                            >
+                                                                {formatReleaseProductionEventCellValue(cellValue)}
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.length + 1}
+                                                className={cn(
+                                                    dataTableBodyCellClassName,
+                                                    "py-6 text-center text-muted-foreground",
+                                                )}
+                                            >
+                                                {productionEvent.emptyStateMessage || "Нет событий с машины"}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
-                    }
-                />
+                        <div className={dataTableViewportFooterClassName}>
+                            <DataTablePaginationFooter
+                                totalCount={productionEventPagination.totalCount}
+                                rangeStart={productionEventPagination.rangeStart}
+                                rangeEnd={productionEventPagination.rangeEnd}
+                                page={productionEventPagination.page}
+                                totalPages={productionEventPagination.totalPages}
+                                pageSize={productionEventPageSize}
+                                onPageChange={setProductionEventPage}
+                                onPageSizeChange={setProductionEventPageSize}
+                            />
+                        </div>
+                    </div>
+                </div>
             ) : null}
 
             {error ? (
@@ -195,7 +330,7 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                             className="mt-1"
                             inputMode="decimal"
                             value={form.lengthM}
-                            disabled={isLoading || Boolean(error) || manualReleaseBlocked}
+                            disabled={isLoading || Boolean(error)}
                             onChange={(event) => patchForm({ lengthM: event.target.value })}
                         />
                     </div>
@@ -205,7 +340,7 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                             className="mt-1"
                             inputMode="decimal"
                             value={form.netWeightKg}
-                            disabled={isLoading || Boolean(error) || manualReleaseBlocked}
+                            disabled={isLoading || Boolean(error)}
                             onChange={(event) => setNetWeight(event.target.value)}
                         />
                     </div>
@@ -228,7 +363,6 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                             disabled={
                                 isLoading ||
                                 Boolean(error) ||
-                                manualReleaseBlocked ||
                                 warehouseOptions.length === 0
                             }
                             onChange={(event) => patchForm({ warehouse: event.target.value })}
@@ -242,16 +376,28 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                     </div>
                 </div>
 
-                <label className="flex h-9 items-center gap-2 text-sm text-foreground">
-                    <input
-                        type="checkbox"
-                        checked={form.requiresRewind}
-                        disabled={isLoading || Boolean(error) || manualReleaseBlocked}
-                        onChange={(event) => patchForm({ requiresRewind: event.target.checked })}
-                        className="h-4 w-4 accent-primary"
-                    />
-                    Требуется перемотка
-                </label>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label className="flex h-9 items-center gap-2 text-sm text-foreground">
+                        <input
+                            type="checkbox"
+                            checked={form.requiresRewind}
+                            disabled={isLoading || Boolean(error)}
+                            onChange={(event) => patchForm({ requiresRewind: event.target.checked })}
+                            className="h-4 w-4 accent-primary"
+                        />
+                        Требуется перемотка
+                    </label>
+                    <label className="flex h-9 items-center gap-2 text-sm text-foreground">
+                        <input
+                            type="checkbox"
+                            checked={form.isLastRoll}
+                            disabled={isLoading || Boolean(error)}
+                            onChange={(event) => patchForm({ isLastRoll: event.target.checked })}
+                            className="h-4 w-4 accent-primary"
+                        />
+                        Последний рулон
+                    </label>
+                </div>
             </div>
 
             <div className="grid gap-3">
@@ -272,6 +418,14 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         >
                             <TableHeader>
                                 <TableRow className="hover:!bg-transparent">
+                                    <TableHead
+                                        className={cn(
+                                            dataTableHeadCellClassName,
+                                            "bg-muted/40",
+                                            batchRollSelectionColumnClassName,
+                                        )}
+                                        aria-label="Выбор выпуска"
+                                    />
                                     <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
                                         Штрихкод
                                     </TableHead>
@@ -294,11 +448,35 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                             </TableHeader>
                             <TableBody>
                                 {batchPageItems.length > 0 ? (
-                                    batchPageItems.map((row) => (
+                                    batchPageItems.map((row) => {
+                                        const isRowSelectable = row.externalSeriesKey.trim() !== "";
+                                        const isSelected = selectedBatchRollIds.has(row.id);
+
+                                        return (
                                         <TableRow
                                             key={row.id}
-                                            className={cn(row.blocked && "bg-destructive/10 text-destructive")}
+                                            className={cn(
+                                                row.blocked && "bg-destructive/10 text-destructive",
+                                                isSelected && "bg-muted/50",
+                                            )}
                                         >
+                                            <TableCell
+                                                className={cn(
+                                                    dataTableBodyCellClassName,
+                                                    batchRollSelectionColumnClassName,
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    disabled={isLoading || Boolean(error) || !isRowSelectable}
+                                                    onChange={() => {
+                                                        toggleBatchRollSelection(row.id);
+                                                    }}
+                                                    aria-label={`Выбрать выпуск ${row.barcode}`}
+                                                    className="size-4 rounded border-input"
+                                                />
+                                            </TableCell>
                                             <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
                                             <TableCell
                                                 className={cn(dataTableBodyCellClassName, "max-w-[280px] truncate")}
@@ -337,11 +515,12 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={7}
+                                            colSpan={8}
                                             className={cn(
                                                 dataTableBodyCellClassName,
                                                 "py-6 text-center text-muted-foreground",
@@ -367,54 +546,70 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         />
                     </div>
                 </div>
-            </div>
 
-            <div className="space-y-3">
-                <div className={cnSectionBlockTitle("pb-2")}>Причины блокировки</div>
-                {blockSubmitMessage ? (
-                    <Informer tone="success" variant="filled" size="s" title={blockSubmitMessage} />
-                ) : null}
-                <div>
-                    <div className={comboboxFieldLabelClassName}>Выберите причину</div>
-                    <select
-                        className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                        value={form.blockReason}
-                        disabled={isLoading || Boolean(error) || blockReasons.length === 0}
-                        onChange={(event) => setBlockReason(event.target.value)}
-                    >
-                        {blockReasons.map((reason) => (
-                            <option key={reason.reasonCode} value={reason.reasonCode}>
-                                {reason.reasonLabel}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <div className={comboboxFieldLabelClassName}>Комментарий для склада</div>
-                    <textarea
-                        className="mt-1 min-h-20 w-full rounded-sm border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                        value={form.warehouseComment}
-                        disabled={isLoading || Boolean(error)}
-                        onChange={(event) => patchForm({ warehouseComment: event.target.value })}
-                    />
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                    {blockSubmitError ? (
-                        <div className="w-full text-[12px] text-destructive">{blockSubmitError}</div>
+                <section className="flex flex-col gap-3 border-t border-border pt-3">
+                    <div className={cnSectionBlockTitle()}>Причины блокировки</div>
+                    {blockSubmitMessage ? (
+                        <Informer tone="success" variant="filled" size="s" title={blockSubmitMessage} />
                     ) : null}
-                    <Button
-                        type="button"
-                        size="sm"
-                        pending={isSubmittingBlock}
-                        pendingLabel="Передача…"
-                        disabled={!canSubmitBlock || isLoading || Boolean(error) || isSubmittingBlock}
-                        onClick={() => {
-                            void submitBlock();
-                        }}
-                    >
-                        Передать блокировки
-                    </Button>
-                </div>
+                    <div className="grid gap-2">
+                        <div className={comboboxFieldLabelClassName}>Выберите причину</div>
+                        {blockReasonsError ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[12px] text-destructive">{blockReasonsError}</span>
+                                <Button type="button" size="sm" variant="outline" onClick={() => void reloadBlockReasons()}>
+                                    Повторить
+                                </Button>
+                            </div>
+                        ) : null}
+                        <select
+                            className="h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedBlockReasonCode ?? ""}
+                            disabled={isBlockReasonsLoading || blockReasons.length === 0 || isLoading || Boolean(error)}
+                            onChange={(event) => selectBlockReason(event.target.value || null)}
+                        >
+                            <option value="">
+                                {isBlockReasonsLoading ? "Загрузка…" : "Не выбрано"}
+                            </option>
+                            {blockReasons.map((reason) => (
+                                <option key={reason.reasonCode} value={reason.reasonCode}>
+                                    {reason.reasonLabel}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="release-block-comment">Комментарий для склада</Label>
+                        <textarea
+                            id="release-block-comment"
+                            rows={3}
+                            value={blockComment}
+                            disabled={isLoading || Boolean(error)}
+                            onChange={(event) => setBlockComment(event.target.value)}
+                            className={cn(
+                                "border-input bg-background placeholder:text-muted-foreground min-h-[72px] w-full resize-y rounded-sm border px-3 py-2 text-sm shadow-xs outline-none",
+                                "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                            )}
+                        />
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                        {blockSubmitError ? (
+                            <div className="w-full text-[12px] text-destructive">{blockSubmitError}</div>
+                        ) : null}
+                        <Button
+                            type="button"
+                            size="sm"
+                            pending={isSubmittingBlock}
+                            pendingLabel="Передача…"
+                            disabled={!canSubmitBlock || isSubmittingBlock || isLoading || Boolean(error)}
+                            onClick={() => {
+                                void submitBatchBlock();
+                            }}
+                        >
+                            Передать блокировки
+                        </Button>
+                    </div>
+                </section>
             </div>
 
             <div className="flex flex-col items-end gap-2">
@@ -433,8 +628,7 @@ export function OrderExecutionRelease({ workAreaId, enabled }: OrderExecutionRel
                         !canRegisterRelease ||
                         isLoading ||
                         Boolean(error) ||
-                        isRegisteringRelease ||
-                        manualReleaseBlocked
+                        isRegisteringRelease
                     }
                     onClick={() => {
                         void registerRelease();

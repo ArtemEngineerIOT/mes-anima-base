@@ -1,17 +1,23 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
-import type { ReleaseInputRollRow } from "./types";
+import type { ReleaseBatchRow } from "./types";
+
+export function collectReleaseBlockSeriesRefs(
+    batchRolls: ReleaseBatchRow[],
+    selectedBatchRollIds: ReadonlySet<string>,
+): string[] {
+    return batchRolls
+        .filter((row) => selectedBatchRollIds.has(row.id) && row.externalSeriesKey.trim() !== "")
+        .map((row) => row.externalSeriesKey.trim());
+}
 
 export function buildReleaseSubmitBlockBody(params: {
-    inputRolls: ReleaseInputRollRow[];
-    selectedInputRollIds: readonly string[];
+    batchRolls: ReleaseBatchRow[];
+    selectedBatchRollIds: ReadonlySet<string>;
     reasonCode: string;
     comment: string;
 }): ApiSchemas["SubmitBlockRequest"] {
-    const seriesRefs = params.inputRolls
-        .filter((row) => params.selectedInputRollIds.includes(row.id) && row.externalSeriesKey !== "")
-        .map((row) => row.externalSeriesKey)
-        .join(",");
+    const seriesRefs = collectReleaseBlockSeriesRefs(params.batchRolls, params.selectedBatchRollIds).join(",");
 
     return [
         {

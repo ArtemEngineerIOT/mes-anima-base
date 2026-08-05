@@ -49,9 +49,8 @@ export function mapStageProgressPayload(
     }
 
     return {
-        requiredMeterageM: pickNullableNumber(
-            resultItem.required_meterage_m ?? resultItem.requiredMeterageM,
-        ),
+        planMinM: pickNullableNumber(resultItem.plan_min_m ?? resultItem.planMinM),
+        planMaxM: pickNullableNumber(resultItem.plan_max_m ?? resultItem.planMaxM),
         releasedGoodMeterageM: pickNullableNumber(
             resultItem.released_good_meterage_m ?? resultItem.releasedGoodMeterageM,
         ),
@@ -69,7 +68,8 @@ export function toStageProgressInfoItems(
     const loading = options?.loading ?? false;
 
     return [
-        { key: "План", value: formatMeterageM(progress.requiredMeterageM, loading) },
+        { key: "План MAX", value: formatMeterageM(progress.planMaxM, loading) },
+        { key: "План MIN", value: formatMeterageM(progress.planMinM, loading) },
         { key: "Выпуск", value: formatMeterageM(progress.releasedGoodMeterageM, loading) },
         { key: "Остаток", value: formatMeterageM(progress.remainingMeterageM, loading) },
         { key: "Прогресс", value: formatProgressPercent(progress.progressPercent, loading) },

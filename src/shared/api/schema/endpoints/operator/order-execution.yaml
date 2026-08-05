@@ -252,8 +252,8 @@ postSubmitStageLkm:
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
 postEventReleaseProduction:
-    summary: Очередь событий выпуска с машины (UI-61)
-    description: Первый запрос при раскрытии блока «Выпуск» — плашка «Событие с машины»
+    summary: Список событий выпуска с машины (UI-61)
+    description: Первый запрос при раскрытии блока «Выпуск» — плашка и таблица событий
     security:
         - bearerAuth: []
     requestBody:
@@ -343,52 +343,6 @@ postAcceptRawFromEvent:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postDiscardEvent:
-    summary: Отклонить событие выпуска с машины (UI-61)
-    description: Кнопка «Отклонить» на плашке «Событие с машины» — discardEvent
-    security:
-        - bearerAuth: []
-    requestBody:
-        required: true
-        content:
-            application/json:
-                schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventRequest"
-    responses:
-        "200":
-            description: Событие отклонено (error_code OK — успех)
-            content:
-                application/json:
-                    schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionDiscardProductionEventResponse"
-        "400":
-            $ref: "../../shared/responses.yaml#/components/responses/Error"
-        "401":
-            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
-
-postAcceptProdFromEvent:
-    summary: Принять событие выпуска продукции с машины (UI-61)
-    description: Кнопка «Зарегистрировать» при register_action PREFILL_PROD — acceptProdFromEvent
-    security:
-        - bearerAuth: []
-    requestBody:
-        required: true
-        content:
-            application/json:
-                schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptProdFromEventRequest"
-    responses:
-        "200":
-            description: Событие принято, prefill для формы (error_code OK — успех)
-            content:
-                application/json:
-                    schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionAcceptProdFromEventResponse"
-        "400":
-            $ref: "../../shared/responses.yaml#/components/responses/Error"
-        "401":
-            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
-
 postGetReleaseFormInit:
     summary: Init формы выпуска по этапу
     description: Раскрытие блока «Выпуск» — данные по серии и склады назначения
@@ -439,7 +393,7 @@ postGetEventsSummary:
     summary: Сводка событий выпуска (SCR-06 / UC-25)
     description: >
         BFF `users.admin.models.rollReleaseProductionEventQueue.getEventsSummary`.
-        Badge в заголовке блока «Выпуск». Тело: `[{ workAreaId }]`.
+        Badge в заголовке блока «Выпуск»; вызывается при раскрытии секции. Тело: `[{ workAreaId }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -589,29 +543,6 @@ postSaveManualProcessParams:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postListStageInputRollsForWorkArea:
-    summary: Входные рулоны этапа для блокировки
-    description: Раскрытие блока «Выпуск» — таблица входных рулонов
-    security:
-        - bearerAuth: []
-    requestBody:
-        required: true
-        content:
-            application/json:
-                schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
-    responses:
-        "200":
-            description: Входные рулоны этапа (error_code OK — успех)
-            content:
-                application/json:
-                    schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseInputRollsResponse"
-        "400":
-            $ref: "../../shared/responses.yaml#/components/responses/Error"
-        "401":
-            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
-
 postJbPrintSheet2:
     summary: Отчёт «Список цилиндров» / лист 2 (JB)
     description: >
@@ -662,9 +593,11 @@ postJbPrintSheet1:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbMapParameters:
-    summary: Отчёт «Карта технологических параметров печати» (JB)
-    description: Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа»
+postJbPrintSheet3:
+    summary: Отчёт «Карта технологических параметров печати» / лист 3 (JB)
+    description: >
+        Кнопка печати «Карта технологических параметров печати» в блоке JB на экране «Исполнение заказа».
+        RPC `jbPrintSheet3`. Тело: `[{ order, workAreaStart }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -672,22 +605,24 @@ postJbMapParameters:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbMapParametersRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet3Request"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbMapParametersResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet3Response"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbMapPrint:
+postJbMapColorControl:
     summary: Отчёт «Карта контроля цвета» (JB)
-    description: Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа»
+    description: >
+        Кнопка печати «Карта контроля цвета» в блоке JB на экране «Исполнение заказа».
+        RPC `jbMapColorControl`. Тело: `[{ order }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -695,14 +630,14 @@ postJbMapPrint:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbMapPrintRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbMapColorControlRequest"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbMapPrintResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbMapColorControlResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
@@ -777,9 +712,11 @@ postJbPaintsRecipe:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postJbLabelSection:
+postJbPrintSheet6:
     summary: Отчёт «Этикетка на секцию» (JB)
-    description: Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа»
+    description: >
+        Кнопка печати «Этикетка на секцию» в блоке JB на экране «Исполнение заказа».
+        RPC `jbPrintSheet6`. Тело: `[{ order }]`.
     security:
         - bearerAuth: []
     requestBody:
@@ -787,14 +724,14 @@ postJbLabelSection:
         content:
             application/json:
                 schema:
-                    $ref: "../../shared/schemas.yaml#/components/schemas/JbLabelSectionRequest"
+                    $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet6Request"
     responses:
         "200":
-            description: Ссылка на PDF отчёта (error_code OK — успех)
+            description: Имя PDF в temp-каталоге клиента (`fileName`) при succeeded=true
             content:
                 application/json:
                     schema:
-                        $ref: "../../shared/schemas.yaml#/components/schemas/JbLabelSectionResponse"
+                        $ref: "../../shared/schemas.yaml#/components/schemas/JbPrintSheet6Response"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

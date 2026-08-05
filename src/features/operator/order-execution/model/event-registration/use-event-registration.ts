@@ -14,11 +14,7 @@ import { mapEventRegistrationInitWizardPayload } from "./map-event-registration-
 import { mapEventRegistrationProcessJournalPayload } from "./map-event-registration-process-journal-payload";
 import { mapEventRegistrationRegisterEventPayload } from "./map-event-registration-register-event-payload";
 import { EMPTY_EVENT_REGISTRATION_SNAPSHOT } from "./empty-event-registration-snapshot";
-import {
-    buildStep2SensorPrefill,
-    mergeStep2SensorPrefill,
-    resolveRemoveScrapDefault,
-} from "./prefill-event-registration-draft";
+import { buildStep2PrefillFromSignal, buildStep2SensorPrefill, mergeStep2SensorPrefill } from "./prefill-event-registration-draft";
 import type {
     EventRegistrationDraft,
     EventRegistrationSnapshot,
@@ -38,16 +34,20 @@ type UseEventRegistrationOptions = {
     journalEnabled: boolean;
 };
 
+const SETUP_RUN_EVENT_CODE = 120;
+
 function buildDraftForActiveSignal(
     snapshot: EventRegistrationSnapshot,
     signal: UnprocessedMachineEvent | null,
 ): EventRegistrationDraft {
-    const immediate = resolveRemoveScrapDefault(signal);
+    const signalPrefill = signal ? buildStep2PrefillFromSignal(signal) : {};
+
     return {
         ...createEmptyDraft(snapshot),
-        removeScrapImmediately: immediate,
-        roll: immediate ? snapshot.scrapRollDefault : snapshot.activeRollDefault,
-        side: immediate ? "" : snapshot.sideDefault,
+        removeScrapImmediately: false,
+        roll: snapshot.activeRollDefault,
+        side: snapshot.sideDefault,
+        ...signalPrefill,
     };
 }
 
@@ -223,33 +223,44 @@ export function useEventRegistration({
 
     const onEventCodeChange = useCallback(
         (code: number) => {
+            const isSetupRunCode = code === SETUP_RUN_EVENT_CODE;
             patchDraft({
                 eventCode: code,
                 setupRuns: [],
+                wholeStage: false,
+                ...(isSetupRunCode
+                    ? {
+                          removeScrapImmediately: true,
+                          roll: "",
+                          side: "",
+                      }
+                    : {
+                          removeScrapImmediately: false,
+                          roll: snapshot.activeRollDefault,
+                          side: snapshot.sideDefault,
+                      }),
             });
         },
-        [patchDraft],
+        [patchDraft, snapshot.activeRollDefault, snapshot.sideDefault],
     );
 
     const onRemoveScrapChange = useCallback(
         (immediate: boolean) => {
             patchDraft({
                 removeScrapImmediately: immediate,
-                roll: immediate ? snapshot.scrapRollDefault : snapshot.activeRollDefault,
-                wholeStage: immediate ? draft.wholeStage : false,
+                wholeStage: false,
+                roll: immediate ? "" : snapshot.activeRollDefault,
                 side: immediate ? "" : snapshot.sideDefault,
             });
         },
-        [draft.wholeStage, patchDraft, snapshot.activeRollDefault, snapshot.scrapRollDefault, snapshot.sideDefault],
+        [patchDraft, snapshot.activeRollDefault, snapshot.sideDefault],
     );
 
     const onWholeStageChange = useCallback(
         (checked: boolean) => {
             patchDraft({
                 wholeStage: checked,
-                ...(checked
-                    ? { meterFrom: "", meterTo: "", timeFrom: "", timeTo: "" }
-                    : {}),
+                ...(checked ? { meterFrom: "", meterTo: "", timeFrom: "", timeTo: "" } : {}),
             });
         },
         [patchDraft],
@@ -261,7 +272,12 @@ export function useEventRegistration({
             sensorFields: machineSnapshot.fields,
         });
 
-        setDraft((prev) => mergeStep2SensorPrefill(prev, prefill));
+        setDraft((prev) =>
+            mergeStep2SensorPrefill(prev, prefill, {
+                // При выбранном сигнале подставляем length_* и time_* с бэка
+                overwrite: Boolean(selectedUnprocessed),
+            }),
+        );
     }, [machineSnapshot.fields, selectedUnprocessed]);
 
     const canProceedStep1 = canProceedEventRegistrationStep1(draft);
@@ -285,17 +301,15 @@ export function useEventRegistration({
         if (isWizardDisabled) {
             return;
         }
-        setStep((current) => {
-            if (current === 1) {
-                applyStep2SensorPrefill();
-                return 2;
-            }
-            if (current < 3) {
-                return (current + 1) as EventRegistrationStep;
-            }
-            return current;
-        });
-    }, [applyStep2SensorPrefill, isWizardDisabled]);
+        if (step === 1) {
+            applyStep2SensorPrefill();
+            setStep(2);
+            return;
+        }
+        if (step < 3) {
+            setStep((current) => (current + 1) as EventRegistrationStep);
+        }
+    }, [applyStep2SensorPrefill, isWizardDisabled, step]);
 
     const goBack = useCallback(() => {
         if (isWizardDisabled) {

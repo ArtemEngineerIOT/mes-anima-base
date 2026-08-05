@@ -1,22 +1,49 @@
 import type { EventRegistrationDraft, UnprocessedMachineEvent } from "./types";
 
-/** «03-11-2028 10:15:00» / «2026-07-06 11:42:50» → `HH:MM:SS` */
+/**
+ * Дата/время сигнала → `HH:MM` для `<input type="time">`.
+ * Поддерживает:
+ * - `23.07.2026 20:35:22`
+ * - `2026-07-22 16:14:19`
+ * - `03-11-2028 10:15:00`
+ * - `16:14` / `16:14:19`
+ */
 export function parseSignalDateToTime(signalDate: string): string {
-    const match = signalDate.match(/(?:\d{2}-\d{2}-\d{4}|\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
-    if (!match) {
-        const timeOnly = signalDate.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
-        if (!timeOnly) return "";
-        const [, hh, mi, ss] = timeOnly;
-        return `${hh}:${mi}:${ss ?? "00"}`;
+    const trimmed = signalDate.trim();
+    if (!trimmed || trimmed === "—") {
+        return "";
     }
 
-    const [, hh, mi, ss] = match;
-    return `${hh}:${mi}:${ss ?? "00"}`;
+    const datetimeMatch = trimmed.match(
+        /(?:\d{2}[./-]\d{2}[./-]\d{4}|\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?/,
+    );
+    if (datetimeMatch) {
+        const [, hh, mi] = datetimeMatch;
+        return `${hh}:${mi}`;
+    }
+
+    const timeOnlyMatch = trimmed.match(/^(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/);
+    if (timeOnlyMatch) {
+        const [, hh, mi] = timeOnlyMatch;
+        return `${hh}:${mi}`;
+    }
+
+    return "";
+}
+
+/** Нормализует значение черновика под `<input type="time">` (`HH:MM`). */
+export function normalizeTimeInputValue(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return "";
+    }
+
+    return parseSignalDateToTime(trimmed);
 }
 
 /** @deprecated Используйте `parseSignalDateToTime` для шага 2 */
 export function parseSignalDateToDatetimeLocal(signalDate: string): string {
-    const match = signalDate.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})/);
+    const match = signalDate.match(/^(\d{2})[./-](\d{2})[./-](\d{4}) (\d{2}):(\d{2})/);
     if (!match) return "";
 
     const [, dd, mm, yyyy, hh, mi] = match;
@@ -41,23 +68,31 @@ function pickMeterValue(fields: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
+type Step2MeterTimePrefill = Partial<
+    Pick<EventRegistrationDraft, "meterFrom" | "meterTo" | "timeFrom" | "timeTo">
+>;
+
+/** Prefill шага 2 из выбранного сигнала: метраж (`length_*`) и время (`time_*`). */
+export function buildStep2PrefillFromSignal(signal: UnprocessedMachineEvent): Step2MeterTimePrefill {
+    return {
+        meterFrom: signal.meterFrom?.trim() ?? "",
+        meterTo: signal.meterTo?.trim() ?? "",
+        timeFrom: parseSignalDateToTime(signal.detectedAt),
+        timeTo: parseSignalDateToTime(signal.endedAt),
+    };
+}
+
 export function buildStep2SensorPrefill(params: {
     signal: UnprocessedMachineEvent | null;
     sensorFields?: Record<string, unknown>;
-}): Partial<Pick<EventRegistrationDraft, "meterFrom" | "meterTo" | "timeFrom" | "timeTo">> {
-    const patch: Partial<Pick<EventRegistrationDraft, "meterFrom" | "meterTo" | "timeFrom" | "timeTo">> = {};
-
+}): Step2MeterTimePrefill {
     if (params.signal) {
-        const timeFrom = parseSignalDateToTime(params.signal.detectedAt);
-        const timeTo = parseSignalDateToTime(params.signal.endedAt);
-        if (timeFrom) patch.timeFrom = timeFrom;
-        if (timeTo) patch.timeTo = timeTo;
-        if (params.signal.meterFrom) patch.meterFrom = params.signal.meterFrom;
-        if (params.signal.meterTo) patch.meterTo = params.signal.meterTo;
+        return buildStep2PrefillFromSignal(params.signal);
     }
 
+    const patch: Step2MeterTimePrefill = {};
     const currentMeter = params.sensorFields ? pickMeterValue(params.sensorFields) : undefined;
-    if (currentMeter && !patch.meterTo) {
+    if (currentMeter) {
         patch.meterTo = currentMeter;
     }
 
@@ -66,8 +101,19 @@ export function buildStep2SensorPrefill(params: {
 
 export function mergeStep2SensorPrefill(
     draft: EventRegistrationDraft,
-    prefill: Partial<Pick<EventRegistrationDraft, "meterFrom" | "meterTo" | "timeFrom" | "timeTo">>,
+    prefill: Step2MeterTimePrefill,
+    options?: { overwrite?: boolean },
 ): EventRegistrationDraft {
+    if (options?.overwrite) {
+        return {
+            ...draft,
+            ...(prefill.meterFrom !== undefined ? { meterFrom: prefill.meterFrom } : {}),
+            ...(prefill.meterTo !== undefined ? { meterTo: prefill.meterTo } : {}),
+            ...(prefill.timeFrom !== undefined ? { timeFrom: prefill.timeFrom } : {}),
+            ...(prefill.timeTo !== undefined ? { timeTo: prefill.timeTo } : {}),
+        };
+    }
+
     return {
         ...draft,
         meterFrom: draft.meterFrom || prefill.meterFrom || "",

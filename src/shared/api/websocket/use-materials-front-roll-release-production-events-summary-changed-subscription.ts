@@ -7,7 +7,7 @@ import {
 
 type UseMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscriptionOptions = {
     enabled: boolean;
-    onEvent: () => void;
+    onEvent: (payload: unknown) => void;
 };
 
 /**
@@ -42,7 +42,7 @@ export function useMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscr
                 return;
             }
 
-            onEventRef.current();
+            onEventRef.current(message.body);
         });
 
         void webSocket.subscribe({

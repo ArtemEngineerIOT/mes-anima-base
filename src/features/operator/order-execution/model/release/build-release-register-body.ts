@@ -6,6 +6,7 @@ export function buildReleaseRegisterBody(params: {
     length: number;
     weight: number;
     rewind: boolean;
+    lastRoll: boolean;
     warehouseCode: string;
 }): ApiSchemas["OrderExecutionRegisterReleaseRequest"] {
     return [
@@ -15,6 +16,7 @@ export function buildReleaseRegisterBody(params: {
             length: params.length,
             weight: params.weight,
             rewind: params.rewind,
+            lastRoll: params.lastRoll,
             warehouseCode: params.warehouseCode,
         },
     ];

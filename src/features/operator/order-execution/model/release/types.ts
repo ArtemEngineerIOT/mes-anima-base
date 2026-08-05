@@ -3,6 +3,11 @@ export type ReleaseWarehouseOption = {
     warehouseLabel: string;
 };
 
+export type ReleaseBlockReason = {
+    reasonCode: string;
+    reasonLabel: string;
+};
+
 export type ReleaseBatchRow = {
     id: string;
     barcode: string;
@@ -23,39 +28,13 @@ export type ReleaseBatchRow = {
     statusLabel: string;
 };
 
-export type ReleaseInputRollRow = {
-    id: string;
-    barcode: string;
-    externalSeriesKey: string;
-    materialRollId: string;
-    rollTraceContextId: string;
-    meterCardId: string;
-    nomenclature: string;
-    nomenclatureCode: string;
-    qty1: number;
-    unit1: string;
-    qty2: number;
-    unit2: string;
-    stageInputCardStatus: string;
-    rollStatus: string;
-    rollStatusLabel: string;
-    blockSelectable: boolean;
-};
-
-export type ReleaseBlockReason = {
-    reasonCode: string;
-    reasonLabel: string;
-};
-
 export type ReleaseFormState = {
     lengthM: string;
     netWeightKg: string;
     grossWeightKg: string;
     warehouse: string;
     requiresRewind: boolean;
-    selectedInputRollIds: string[];
-    blockReason: string;
-    warehouseComment: string;
+    isLastRoll: boolean;
 };
 
 export type ReleaseInitSnapshot = {
@@ -84,7 +63,5 @@ export const RELEASE_INITIAL_FORM: ReleaseFormState = {
     grossWeightKg: "",
     warehouse: "",
     requiresRewind: false,
-    selectedInputRollIds: [],
-    blockReason: "",
-    warehouseComment: "",
+    isLastRoll: false,
 };

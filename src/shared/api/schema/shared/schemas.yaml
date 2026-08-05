@@ -899,53 +899,87 @@ components:
             items:
                 $ref: "#/components/schemas/JbPrintSheet1ResponseItem"
 
-        JbMapParametersRequestItem:
+        JbPrintSheet3RequestItem:
             type: object
-            description: Запрос jbMapParameters — печать «Карта технологических параметров печати» (JB)
+            description: Запрос jbPrintSheet3 — печать «Карта технологических параметров печати» / лист 3 (JB)
             properties:
-                workAreaId:
+                order:
                     type: string
-                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                    description: Номер заказа (`order` / `header.order` из getOrderExecution)
+                workAreaStart:
+                    type: string
+                    description: Время старта рабочей области (`start_work_area` из getOrderExecution)
             required:
-                - workAreaId
+                - order
+                - workAreaStart
             additionalProperties: true
 
-        JbMapParametersRequest:
+        JbPrintSheet3Request:
             type: array
             minItems: 1
-            description: Тело `[{ workAreaId }]` для jbMapParameters
+            description: Тело `[{ order, workAreaStart }]` для jbPrintSheet3
             items:
-                $ref: "#/components/schemas/JbMapParametersRequestItem"
+                $ref: "#/components/schemas/JbPrintSheet3RequestItem"
 
-        JbMapParametersResponse:
-            type: array
-            minItems: 1
-            items:
-                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
-
-        JbMapPrintRequestItem:
+        JbPrintSheet3ResponseItem:
             type: object
-            description: Запрос jbMapPrint — печать «Карта контроля цвета» (JB)
+            description: Элемент ответа jbPrintSheet3
             properties:
-                workAreaId:
+                fileName:
                     type: string
-                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
-            required:
-                - workAreaId
+                    nullable: true
+                    description: Имя PDF в каталоге temp клиента
+                succeeded:
+                    type: boolean
+                    nullable: true
+                    description: Успешность генерации отчёта
             additionalProperties: true
 
-        JbMapPrintRequest:
+        JbPrintSheet3Response:
             type: array
             minItems: 1
-            description: Тело `[{ workAreaId }]` для jbMapPrint
+            description: Ответ jbPrintSheet3 — `[{ fileName, succeeded }]`
             items:
-                $ref: "#/components/schemas/JbMapPrintRequestItem"
+                $ref: "#/components/schemas/JbPrintSheet3ResponseItem"
 
-        JbMapPrintResponse:
+        JbMapColorControlRequestItem:
+            type: object
+            description: Запрос jbMapColorControl — печать «Карта контроля цвета» (JB)
+            properties:
+                order:
+                    type: string
+                    description: Номер заказа (`order` / `header.order` из getOrderExecution)
+            required:
+                - order
+            additionalProperties: true
+
+        JbMapColorControlRequest:
             type: array
             minItems: 1
+            description: Тело `[{ order }]` для jbMapColorControl
             items:
-                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+                $ref: "#/components/schemas/JbMapColorControlRequestItem"
+
+        JbMapColorControlResponseItem:
+            type: object
+            description: Элемент ответа jbMapColorControl
+            properties:
+                fileName:
+                    type: string
+                    nullable: true
+                    description: Имя PDF в каталоге temp клиента
+                succeeded:
+                    type: boolean
+                    nullable: true
+                    description: Успешность генерации отчёта
+            additionalProperties: true
+
+        JbMapColorControlResponse:
+            type: array
+            minItems: 1
+            description: Ответ jbMapColorControl — `[{ fileName, succeeded }]`
+            items:
+                $ref: "#/components/schemas/JbMapColorControlResponseItem"
 
         JbFullPrintRequestItem:
             type: object
@@ -1019,29 +1053,44 @@ components:
             items:
                 $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
 
-        JbLabelSectionRequestItem:
+        JbPrintSheet6RequestItem:
             type: object
-            description: Запрос jbLabelSection — печать «Этикетка на секцию» (JB)
+            description: Запрос jbPrintSheet6 — печать «Этикетка на секцию» (JB)
             properties:
-                workAreaId:
+                order:
                     type: string
-                    description: Идентификатор рабочей области этапа (`work_area_id` из getOrderExecution)
+                    description: Номер заказа (`order` / `header.order` из getOrderExecution)
             required:
-                - workAreaId
+                - order
             additionalProperties: true
 
-        JbLabelSectionRequest:
+        JbPrintSheet6Request:
             type: array
             minItems: 1
-            description: Тело `[{ workAreaId }]` для jbLabelSection
+            description: Тело `[{ order }]` для jbPrintSheet6
             items:
-                $ref: "#/components/schemas/JbLabelSectionRequestItem"
+                $ref: "#/components/schemas/JbPrintSheet6RequestItem"
 
-        JbLabelSectionResponse:
+        JbPrintSheet6ResponseItem:
+            type: object
+            description: Элемент ответа jbPrintSheet6
+            properties:
+                fileName:
+                    type: string
+                    nullable: true
+                    description: Имя PDF в каталоге temp клиента
+                succeeded:
+                    type: boolean
+                    nullable: true
+                    description: Успешность генерации отчёта
+            additionalProperties: true
+
+        JbPrintSheet6Response:
             type: array
             minItems: 1
+            description: Ответ jbPrintSheet6 — `[{ fileName, succeeded }]`
             items:
-                $ref: "#/components/schemas/OrderExecutionMaterialReturnLabelResultRow"
+                $ref: "#/components/schemas/JbPrintSheet6ResponseItem"
 
         ConvertConsumedLengthToWeightRequestItem:
             type: object
@@ -1397,7 +1446,7 @@ components:
 
         OrderExecutionReleaseProductionEventResultItem:
             type: object
-            description: Элемент `result` в ответе eventReleaseProduction (listPending)
+            description: Устаревший элемент `result` для eventRollWriteOff (плашка current_event)
             properties:
                 work_area_id:
                     type: string
@@ -1421,6 +1470,37 @@ components:
                         $ref: "#/components/schemas/OrderExecutionReleaseProductionCurrentEvent"
             additionalProperties: true
 
+        OrderExecutionReleaseProductionEventListRow:
+            type: object
+            description: Строка списка событий выпуска в ответе eventReleaseProduction
+            properties:
+                signal_id:
+                    type: string
+                    nullable: true
+                event_description:
+                    type: string
+                    nullable: true
+                event_name:
+                    type: string
+                    nullable: true
+                registered_at:
+                    type: string
+                    nullable: true
+                length_m:
+                    type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionReleaseProductionEventFieldLabel:
+            type: object
+            description: Подпись колонки таблицы событий (`result_field_labels`)
+            properties:
+                name:
+                    type: string
+                label:
+                    type: string
+            additionalProperties: true
+
         OrderExecutionReleaseProductionEventResponse:
             type: array
             minItems: 1
@@ -1431,12 +1511,19 @@ components:
                       properties:
                           result:
                               type: array
+                              description: Список событий выпуска или устаревшая обёртка очереди (eventRollWriteOff)
                               items:
-                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventResultItem"
+                                  type: object
+                                  additionalProperties: true
+                          result_field_labels:
+                              type: array
+                              description: Заголовки колонок таблицы событий выпуска
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
         OrderExecutionDiscardProductionEventRequestItem:
             type: object
-            description: Запрос discardEvent (UI-61 SCR-06)
+            description: Запрос discardEventRoll (UI-61a)
             properties:
                 workAreaId:
                     type: string
@@ -1460,7 +1547,7 @@ components:
 
         OrderExecutionDiscardProductionEventResultItem:
             type: object
-            description: Элемент `result` в ответе discardEvent
+            description: Элемент `result` в ответе discardEventRoll
             properties:
                 machine_event_signal_id:
                     type: string
@@ -1492,7 +1579,7 @@ components:
 
         OrderExecutionAcceptProdFromEventRequestItem:
             type: object
-            description: Запрос acceptProdFromEvent (UI-61 SCR-06)
+            description: Запрос acceptRawFromEvent (UI-61a) — общее тело accept*FromEvent
             properties:
                 workAreaId:
                     type: string
@@ -1513,44 +1600,6 @@ components:
             minItems: 1
             items:
                 $ref: "#/components/schemas/OrderExecutionAcceptProdFromEventRequestItem"
-
-        OrderExecutionAcceptProdFromEventResultItem:
-            type: object
-            description: Элемент `result` в ответе acceptProdFromEvent
-            properties:
-                machine_event_signal_id:
-                    type: string
-                    nullable: true
-                processing_status:
-                    type: string
-                    nullable: true
-                    description: OPERATOR_ACCEPTED
-                prefill_output_length_m:
-                    type: number
-                    nullable: true
-                prefill_output_weight_kg:
-                    type: number
-                    nullable: true
-                pending_count:
-                    type: integer
-                    nullable: true
-                manual_release_blocked:
-                    type: boolean
-                    nullable: true
-            additionalProperties: true
-
-        OrderExecutionAcceptProdFromEventResponse:
-            type: array
-            minItems: 1
-            items:
-                allOf:
-                    - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
-                    - type: object
-                      properties:
-                          result:
-                              type: array
-                              items:
-                                  $ref: "#/components/schemas/OrderExecutionAcceptProdFromEventResultItem"
 
         OrderExecutionAcceptRawFromEventResultItem:
             type: object
@@ -1704,63 +1753,6 @@ components:
                         $ref: "#/components/schemas/OrderExecutionReleaseFormingBatchRow"
             additionalProperties: true
 
-        OrderExecutionReleaseInputRollRow:
-            type: object
-            properties:
-                barcode:
-                    type: string
-                    nullable: true
-                external_series_key:
-                    type: string
-                    nullable: true
-                material_roll_id:
-                    type: string
-                    nullable: true
-                roll_trace_context_id:
-                    type: string
-                    nullable: true
-                meter_card_id:
-                    type: string
-                    nullable: true
-                nomenclature_name:
-                    type: string
-                    nullable: true
-                nomenclature_code:
-                    type: string
-                    nullable: true
-                quantity_primary:
-                    type: number
-                    nullable: true
-                uom_primary:
-                    type: string
-                    nullable: true
-                quantity_secondary:
-                    type: number
-                    nullable: true
-                uom_secondary:
-                    type: string
-                    nullable: true
-                stage_input_card_status:
-                    type: string
-                    nullable: true
-                roll_status:
-                    type: string
-                    nullable: true
-                roll_status_label:
-                    type: string
-                    nullable: true
-            additionalProperties: true
-
-        OrderExecutionReleaseInputRollsResultItem:
-            type: object
-            description: Устаревший вложенный `result`; предпочтительно `input_rolls` на корне обёртки
-            properties:
-                input_rolls:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/OrderExecutionReleaseInputRollRow"
-            additionalProperties: true
-
         OrderExecutionReleaseRpcResultRow:
             type: object
             description: Обёртка ответа RPC блока «Выпуск»
@@ -1810,20 +1802,11 @@ components:
                 work_area_id:
                     type: string
                     nullable: true
-                total_count:
+                unprocessed_count:
                     type: integer
                     nullable: true
-                last_event_at:
-                    type: string
-                    nullable: true
-                last_event_name:
-                    type: string
-                    nullable: true
-                last_event_description:
-                    type: string
-                    nullable: true
-                last_event_length_m:
-                    type: string
+                processed_count:
+                    type: integer
                     nullable: true
             additionalProperties: true
 
@@ -1840,6 +1823,11 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionReleaseProductionEventsSummaryResultItem"
+                          result_field_labels:
+                              type: array
+                              description: Подписи полей для плашки сводки
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
         OrderExecutionRollWriteOffEventsSummaryResultItem:
             type: object
@@ -2054,32 +2042,6 @@ components:
                                   type: object
                                   additionalProperties: true
 
-        OrderExecutionReleaseInputRollsResponse:
-            type: array
-            minItems: 1
-            items:
-                type: object
-                description: Обёртка ответа listStageInputRollsForWorkArea (домен traceability)
-                properties:
-                    error_code:
-                        type: string
-                        description: Пустая строка или `OK` — успех
-                    error_message:
-                        type: string
-                        nullable: true
-                    work_area_id:
-                        type: string
-                        nullable: true
-                    input_rolls:
-                        type: array
-                        items:
-                            $ref: "#/components/schemas/OrderExecutionReleaseInputRollRow"
-                    result:
-                        type: array
-                        items:
-                            $ref: "#/components/schemas/OrderExecutionReleaseInputRollsResultItem"
-                additionalProperties: true
-
         OrderExecutionRegisterReleaseRequestItem:
             type: object
             description: Запрос registerRelease (UI-60 SCR-06)
@@ -2099,6 +2061,9 @@ components:
                 rewind:
                     type: boolean
                     description: Требуется перемотка (`requires_rewind` на BFF)
+                lastRoll:
+                    type: boolean
+                    description: Последний рулон (`last_roll` на BFF)
                 warehouseCode:
                     type: string
                     description: Код склада назначения из формы (`destination_warehouse_code` на BFF)
@@ -2388,10 +2353,18 @@ components:
                 work_area_id:
                     type: string
                     nullable: true
+                plan_min_m:
+                    type: number
+                    nullable: true
+                    description: План MIN, м (`plan_min_m`)
+                plan_max_m:
+                    type: number
+                    nullable: true
+                    description: План MAX, м (`plan_max_m`)
                 required_meterage_m:
                     type: number
                     nullable: true
-                    description: План, м
+                    description: Требуемый метраж, м (legacy)
                 released_good_meterage_m:
                     type: number
                     nullable: true

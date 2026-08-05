@@ -24,12 +24,12 @@ import { orderExecutionProcessControlHandlers } from "./handlers/order-execution
 import { orderExecutionProductionEventWizardHandlers } from "./handlers/order-execution-production-event-wizard";
 import { orderExecutionPrintSheet2ReportHandlers } from "./handlers/order-execution-print-sheet2-report";
 import { orderExecutionPrintSheet1ReportHandlers } from "./handlers/order-execution-print-sheet1-report";
-import { orderExecutionMapParametersReportHandlers } from "./handlers/order-execution-map-parameters-report";
-import { orderExecutionMapPrintReportHandlers } from "./handlers/order-execution-map-print-report";
+import { orderExecutionPrintSheet3ReportHandlers } from "./handlers/order-execution-print-sheet3-report";
+import { orderExecutionMapColorControlReportHandlers } from "./handlers/order-execution-map-color-control-report";
 import { orderExecutionFullPrintReportHandlers } from "./handlers/order-execution-full-print-report";
 import { orderExecutionProcessControlReportHandlers } from "./handlers/order-execution-process-control-report";
 import { orderExecutionPaintsRecipeReportHandlers } from "./handlers/order-execution-paints-recipe-report";
-import { orderExecutionLabelSectionReportHandlers } from "./handlers/order-execution-label-section-report";
+import { orderExecutionPrintSheet6ReportHandlers } from "./handlers/order-execution-print-sheet6-report";
 import { orderExecutionStageCompletionInitHandlers } from "./handlers/order-execution-stage-completion-init";
 import { orderExecutionStageCompletionSubmitHandlers } from "./handlers/order-execution-stage-completion-submit";
 import { productionPlanHandlers } from "./handlers/production-plan";
@@ -79,12 +79,12 @@ export const worker = setupWorker(
     ...orderExecutionProductionEventWizardHandlers,
     ...orderExecutionPrintSheet2ReportHandlers,
     ...orderExecutionPrintSheet1ReportHandlers,
-    ...orderExecutionMapParametersReportHandlers,
-    ...orderExecutionMapPrintReportHandlers,
+    ...orderExecutionPrintSheet3ReportHandlers,
+    ...orderExecutionMapColorControlReportHandlers,
     ...orderExecutionFullPrintReportHandlers,
     ...orderExecutionProcessControlReportHandlers,
     ...orderExecutionPaintsRecipeReportHandlers,
-    ...orderExecutionLabelSectionReportHandlers,
+    ...orderExecutionPrintSheet6ReportHandlers,
     ...orderExecutionStageCompletionInitHandlers,
     ...orderExecutionStageCompletionSubmitHandlers,
 );
