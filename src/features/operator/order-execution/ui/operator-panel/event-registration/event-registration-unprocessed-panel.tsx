@@ -1,8 +1,11 @@
+import { useMemo, useState } from "react";
+
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
+import { Icon } from "@/shared/ui/kit/icon";
 import { Informer } from "@/shared/ui/kit/informer";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
@@ -15,6 +18,10 @@ import {
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
+import {
+    sortUnprocessedMachineEventsByDetectedAt,
+    type UnprocessedMachineEventDetectedAtSortDirection,
+} from "../../../model/event-registration/sort-unprocessed-machine-events-by-detected-at";
 import type { useEventRegistration } from "../../../model/event-registration/use-event-registration";
 
 type Registration = ReturnType<typeof useEventRegistration>;
@@ -43,9 +50,22 @@ export function EventRegistrationUnprocessedPanel({
         canDeleteSelectedSignals,
     } = registration;
 
-    const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(unprocessed, {
-        initialPageSize: 10,
-    });
+    const [detectedAtSortDirection, setDetectedAtSortDirection] =
+        useState<UnprocessedMachineEventDetectedAtSortDirection>("desc");
+
+    const sortedUnprocessed = useMemo(
+        () => sortUnprocessedMachineEventsByDetectedAt(unprocessed, detectedAtSortDirection),
+        [detectedAtSortDirection, unprocessed],
+    );
+
+    const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(
+        sortedUnprocessed,
+        {
+            initialPageSize: 10,
+        },
+    );
+
+    const sortLabel = detectedAtSortDirection === "asc" ? "по возрастанию" : "по убыванию";
 
     return (
         <div className="grid gap-3">
@@ -80,7 +100,35 @@ export function EventRegistrationUnprocessedPanel({
                                 aria-label="Выбор сигнала"
                             />
                             <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Описание</TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
+                            <TableHead
+                                className={cn(dataTableHeadCellClassName, "bg-muted/40")}
+                                aria-sort={
+                                    detectedAtSortDirection === "asc" ? "ascending" : "descending"
+                                }
+                            >
+                                <button
+                                    type="button"
+                                    className="inline-flex items-center gap-1 text-left uppercase hover:text-foreground"
+                                    onClick={() => {
+                                        setDetectedAtSortDirection((prev) =>
+                                            prev === "asc" ? "desc" : "asc",
+                                        );
+                                        setPage(1);
+                                    }}
+                                    aria-label={`Сортировать по началу: ${sortLabel}`}
+                                >
+                                    <span>{"Начало".toLocaleUpperCase("ru-RU")}</span>
+                                    <Icon
+                                        name={
+                                            detectedAtSortDirection === "asc"
+                                                ? "arrow_upward"
+                                                : "arrow_downward"
+                                        }
+                                        size="sm"
+                                        className="text-[14px] text-muted-foreground"
+                                    />
+                                </button>
+                            </TableHead>
                             <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Завершение</TableHead>
                         </TableRow>
                     </TableHeader>

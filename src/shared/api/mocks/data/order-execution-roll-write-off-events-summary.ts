@@ -1,6 +1,11 @@
-const MOCK_TOTAL_COUNT_BY_WORK_AREA: Record<string, number> = {
-    "207": 1,
-    "504": 2,
+const MOCK_SUMMARY_BY_WORK_AREA: Record<
+    string,
+    { unprocessedCount: number; processedCount: number }
+> = {
+    "191": { unprocessedCount: 1, processedCount: 0 },
+    "195": { unprocessedCount: 1, processedCount: 1 },
+    "207": { unprocessedCount: 1, processedCount: 0 },
+    "504": { unprocessedCount: 1, processedCount: 1 },
 };
 
 function buildErrorResponse(message: string) {
@@ -13,7 +18,11 @@ export function buildMockRollWriteOffEventsSummaryResponse(workAreaId: string) {
         return buildErrorResponse("Укажите workAreaId");
     }
 
-    const totalCount = MOCK_TOTAL_COUNT_BY_WORK_AREA[normalized] ?? 0;
+    const summary = MOCK_SUMMARY_BY_WORK_AREA[normalized] ?? {
+        unprocessedCount: 0,
+        processedCount: 0,
+    };
+    const totalCount = summary.unprocessedCount + summary.processedCount;
 
     return [
         {
@@ -22,12 +31,20 @@ export function buildMockRollWriteOffEventsSummaryResponse(workAreaId: string) {
             result: [
                 {
                     work_area_id: normalized,
+                    unprocessed_count: summary.unprocessedCount,
+                    processed_count: summary.processedCount,
                     total_count: totalCount,
-                    last_event_at: totalCount > 0 ? "2026-07-16 21:05:10" : "",
+                    // Как release_block.changed_at у «Выпуск»
+                    changed_at: "05.08.2026 12:46:53",
+                    last_event_at: totalCount > 0 ? "05.08.2026 12:46:53" : "",
                     last_event_name: totalCount > 0 ? "rawRelease" : "",
                     last_event_description: totalCount > 0 ? "Сырьевой выпуск" : "",
                     last_event_length_m: totalCount > 0 ? "85.0" : "",
                 },
+            ],
+            result_field_labels: [
+                { name: "unprocessed_count", label: "Необработанные сигналы" },
+                { name: "processed_count", label: "Обработанные сигналы" },
             ],
         },
     ];

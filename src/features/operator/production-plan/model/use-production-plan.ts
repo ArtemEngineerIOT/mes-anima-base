@@ -6,6 +6,7 @@ import { useSession } from "@/shared/model/session";
 
 import { mapProductionPlanMachinesPayload } from "./map-production-plan-machines-payload";
 import { mapProductionPlanPayload } from "./map-production-plan-payload";
+import { matchesProductionStageSearch } from "./production-stage-search";
 import { assertProductionPlanStageActionSuccess } from "./map-production-plan-stage-action-response";
 import {
     applyStageAction,
@@ -49,6 +50,7 @@ export function useProductionPlan() {
     filtersRef.current = filters;
 
     const refreshInFlightRef = useRef(0);
+    const refreshRequestIdRef = useRef(0);
 
     const { mutateAsync: fetchProductionPlan } = rqClient.useMutation(
         "post",
@@ -113,6 +115,7 @@ export function useProductionPlan() {
 
     const refresh = useCallback(async () => {
         const requestFilters = filtersRef.current;
+        const requestId = ++refreshRequestIdRef.current;
 
         refreshInFlightRef.current += 1;
         setIsRefreshing(true);
@@ -128,11 +131,20 @@ export function useProductionPlan() {
                     },
                 ],
             });
+
+            if (requestId !== refreshRequestIdRef.current) {
+                return;
+            }
+
             const mapped = mapProductionPlanPayload(payload);
             setStages(mapped);
             setSelectedId(null);
             setDataStatus(mapped.length > 0 ? "ready" : "empty");
         } catch (error) {
+            if (requestId !== refreshRequestIdRef.current) {
+                return;
+            }
+
             setStages([]);
             setSelectedId(null);
             setDataStatus("error");
@@ -157,26 +169,11 @@ export function useProductionPlan() {
     }, [refresh]);
 
     const filteredStages = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        if (!query) {
+        if (!searchQuery.trim()) {
             return stages;
         }
 
-        return stages.filter((stage) =>
-            [
-                stage.orderId,
-                stage.stageId,
-                stage.client,
-                stage.clientNumber,
-                stage.product,
-                stage.stageName,
-                stage.area,
-                stage.machine,
-                stage.operationNo,
-            ]
-                .filter(Boolean)
-                .some((value) => String(value).toLowerCase().includes(query)),
-        );
+        return stages.filter((stage) => matchesProductionStageSearch(stage, searchQuery));
     }, [searchQuery, stages]);
 
     const applyAction = useCallback(

@@ -414,11 +414,13 @@ postGetEventsSummary:
         "401":
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
-postGetRollEventsSummary:
+postGetMaterialEventsSummary:
     summary: Сводка событий списания (SCR-04 / UC-15)
     description: >
         BFF `users.admin.models.rollWriteOffRawEventQueue.getEventsSummary`
-        (REST: `getRollEventsSummary`). Badge в заголовке блока «Материалы. Списание/возврат».
+        (REST: `getMaterialEventsSummary`).
+        Старт экрана «Исполнение заказа»: badge и плашка блока «Материалы. Списание/возврат».
+        Дальше обновление по STOMP `rollWriteOffRawEventsSummaryChanged`.
         Тело: `[{ workAreaId }]`.
     security:
         - bearerAuth: []
@@ -435,6 +437,33 @@ postGetRollEventsSummary:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionRollWriteOffEventsSummaryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetListMaterialSignal:
+    summary: Список необработанных сигналов списания (SCR-04)
+    description: >
+        BFF `users.admin.models.rollWriteOffRawEventQueue.getListMaterialSignal`
+        (REST: `getListMaterialSignal`).
+        Таблица необработанных сигналов при раскрытии блока «Материалы. Списание/возврат».
+        Тело: `[{ workAreaId }]`. Формат строк как у eventReleaseProduction.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Список сигналов списания (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseProductionEventResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":
@@ -901,6 +930,34 @@ postGetUnprocessedSignalsSummary:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionUnprocessedSignalsSummaryResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postListUnprocessedSignals:
+    summary: Список необработанных сигналов машины (SCR-07 / UC-25)
+    description: >
+        BFF `users.admin.models.productionEventWizard.listUnprocessedSignals`
+        (REST: `listUnprocessedSignals`).
+        Таблица «Необработанные сигналы с машины» — silent-reload по STOMP
+        `machineSignalsSummaryChanged` с сохранением выбранных строк.
+        Тело: `[{ workAreaId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseWorkAreaRequest"
+    responses:
+        "200":
+            description: Список сигналов (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionListUnprocessedSignalsResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

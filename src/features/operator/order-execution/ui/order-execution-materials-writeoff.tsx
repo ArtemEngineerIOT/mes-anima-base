@@ -1,6 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, type MutableRefObject } from "react";
 import { useMaterialsWriteoff } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff";
-import { useMaterialsWriteoffRawEvent } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff-raw-event";
+import { useListMaterialSignals } from "@/features/operator/order-execution/model/materials-writeoff/use-list-material-signals";
+import type { RollWriteOffEventsSummarySnapshot } from "@/features/operator/order-execution/model/materials-writeoff/raw-events-summary/types";
+import { getReleaseProductionEventCellValue } from "@/features/operator/order-execution/model/release/map-event-release-production-payload";
+import { resolveMachineStompPanelTone } from "@/features/operator/order-execution/model/machine-stomp/resolve-machine-stomp-panel-tone";
+import { useOrderExecutionMachineStompState } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { MaterialsWriteoffFormPanel } from "@/features/operator/order-execution/ui/materials-writeoff-form-panel";
 import { MaterialsWriteoffPresenceTable } from "@/features/operator/order-execution/ui/materials-writeoff-presence-table";
@@ -14,14 +18,57 @@ import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title"
 type OrderExecutionMaterialsWriteoffProps = {
     workAreaId?: string;
     enabled?: boolean;
+    eventsSummary?: RollWriteOffEventsSummarySnapshot | null;
     onMonitoringSummaryReload?: () => void;
+    /** Регистрирует silent-reload таблицы необработанных сигналов списания */
+    materialSignalsSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function OrderExecutionMaterialsWriteoff({
     workAreaId,
     enabled = true,
+    eventsSummary = null,
     onMonitoringSummaryReload,
+    materialSignalsSilentReloadRef,
 }: OrderExecutionMaterialsWriteoffProps) {
+    const machineStompState = useOrderExecutionMachineStompState();
+    const {
+        signalList,
+        emptyStateMessage: signalsEmptyStateMessage,
+        isLoading: isSignalsLoading,
+        error: signalsError,
+        selectedSignalId,
+        toggleSignalSelection,
+        reloadSilent: reloadMaterialSignalsSilent,
+    } = useListMaterialSignals({ workAreaId, enabled });
+
+    useEffect(() => {
+        if (!materialSignalsSilentReloadRef) {
+            return;
+        }
+
+        materialSignalsSilentReloadRef.current = () => {
+            reloadMaterialSignalsSilent();
+        };
+
+        return () => {
+            materialSignalsSilentReloadRef.current = null;
+        };
+    }, [materialSignalsSilentReloadRef, reloadMaterialSignalsSilent]);
+
+    const selectedSignalLengthM = useMemo(() => {
+        if (!selectedSignalId) {
+            return null;
+        }
+
+        const row = signalList.find((item) => item.id === selectedSignalId);
+        if (!row) {
+            return null;
+        }
+
+        return getReleaseProductionEventCellValue(row, "length_m");
+    }, [selectedSignalId, signalList]);
+
     const {
         barcode,
         setBarcode,
@@ -44,6 +91,8 @@ export function OrderExecutionMaterialsWriteoff({
         canSearch,
         writeoffForm,
         updateWriteoffForm,
+        applySignalLengthPrefill,
+        clearSignalLengthPrefill,
         calculateWriteoffWeight,
         reflectMaterialReturn,
         writeOffMaterialFully,
@@ -52,7 +101,6 @@ export function OrderExecutionMaterialsWriteoff({
         movingToUnwindRowId,
         moveToUnwindError,
         selectForWriteoff,
-        applyRawEventPrefill,
         canCalculateWeight,
         isReflectReturnEnabled,
         isFullWriteoffEnabled,
@@ -70,37 +118,43 @@ export function OrderExecutionMaterialsWriteoff({
         writeoffWeightError,
         showWriteoffFlow,
         stageRegistry,
-        refreshWriteoffTables,
-    } = useMaterialsWriteoff({ workAreaId, enabled, onMonitoringSummaryReload });
-
-    const {
-        rawEvent,
-        rows: rawEventRows,
-        isLoading: isRawEventLoading,
-        error: rawEventError,
-        discardEventRoll,
-        isDiscarding,
-        discardError,
-        acceptRawFromEvent,
-        isAccepting,
-        acceptError,
-    } = useMaterialsWriteoffRawEvent({
+    } = useMaterialsWriteoff({
         workAreaId,
         enabled,
-        onAcceptPrefill: applyRawEventPrefill,
-        onResolved: refreshWriteoffTables,
+        signalId: selectedSignalId,
+        signalLengthM: selectedSignalLengthM,
+        onMonitoringSummaryReload,
     });
 
-    const rawEventPanelTitle = useMemo(() => {
-        if (!rawEvent.currentEvent) {
-            return rawEvent.plateTitle || "Событие с машины";
+    const handleToggleSignal = (rowId: string) => {
+        const willSelect = selectedSignalId !== rowId;
+        toggleSignalSelection(rowId);
+
+        if (willSelect) {
+            const row = signalList.find((item) => item.id === rowId);
+            const lengthM = row ? getReleaseProductionEventCellValue(row, "length_m") : null;
+            applySignalLengthPrefill(lengthM);
+            return;
         }
 
-        return (
-            [rawEvent.plateTitle, rawEvent.currentEvent.eventCodeLabel].filter(Boolean).join(" · ") ||
-            "Событие с машины"
-        );
-    }, [rawEvent.currentEvent, rawEvent.plateTitle]);
+        clearSignalLengthPrefill();
+    };
+
+    const eventsSummaryRows = useMemo(
+        () =>
+            eventsSummary?.fields.map((field) => ({
+                characteristic: field.label,
+                value: String(field.value),
+                unit: "",
+            })) ?? [],
+        [eventsSummary?.fields],
+    );
+
+    const eventsSummaryTone = resolveMachineStompPanelTone(machineStompState);
+
+    /** Плашка и комбобокс сигналов — только если есть необработанные сигналы с машины */
+    const hasMachineSignals =
+        signalList.length > 0 || (eventsSummary?.unprocessedCount ?? 0) > 0;
 
     const handleSearch = () => {
         void search();
@@ -108,6 +162,18 @@ export function OrderExecutionMaterialsWriteoff({
 
     return (
         <div className="flex flex-col gap-4">
+            {enabled && hasMachineSignals ? (
+                <MachineDataPanel
+                    title="Данные с машин"
+                    rows={eventsSummaryRows}
+                    tone={eventsSummaryTone}
+                    emptyText="Нет данных сводки"
+                    updatedAt={eventsSummary?.changedAt}
+                    updatedAtLabel="Обновлено"
+                    showUnitColumn={false}
+                />
+            ) : null}
+
             <div>
                 <div className={cnSectionBlockTitle("pb-2")}>Отсканируйте штрихкод рулона</div>
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -193,63 +259,6 @@ export function OrderExecutionMaterialsWriteoff({
                 onSelectForWriteoff={selectForWriteoff}
             />
 
-            {rawEventError ? (
-                <Informer
-                    tone="alert"
-                    variant="bordered"
-                    size="s"
-                    title="Событие с машины"
-                    description={rawEventError}
-                />
-            ) : null}
-
-            {enabled && !isRawEventLoading && !rawEventError && rawEvent.currentEvent ? (
-                <MachineDataPanel
-                    title={rawEventPanelTitle}
-                    rows={rawEventRows}
-                    tone="warning"
-                    updatedAt={rawEvent.currentEvent.eventAt || null}
-                    updatedAtLabel="Зарегистрировано от"
-                    emptyText="Нет характеристик события"
-                    footer={
-                        <div className="flex flex-col items-end gap-2">
-                            {acceptError || discardError ? (
-                                <div className="w-full text-[12px] text-destructive">
-                                    {acceptError || discardError}
-                                </div>
-                            ) : null}
-                            <div className="flex flex-wrap items-center justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    pending={isAccepting}
-                                    pendingLabel="Регистрация…"
-                                    disabled={isDiscarding || isAccepting}
-                                    onClick={() => {
-                                        void acceptRawFromEvent();
-                                    }}
-                                >
-                                    Зарегистрировать
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    pending={isDiscarding}
-                                    pendingLabel="Отклонение…"
-                                    disabled={isDiscarding || isAccepting}
-                                    onClick={() => {
-                                        void discardEventRoll();
-                                    }}
-                                >
-                                    Отклонить
-                                </Button>
-                            </div>
-                        </div>
-                    }
-                />
-            ) : null}
-
             {enabled ? (
                 <MaterialsWriteoffFormPanel
                     selectedNomenclature={selectedWriteoffRoll?.nomenclatureName ?? null}
@@ -270,6 +279,12 @@ export function OrderExecutionMaterialsWriteoff({
                     writeOffFullyError={writeOffFullyError}
                     submitStageLkmError={submitStageLkmError}
                     isFormEnabled={showWriteoffFlow}
+                    signalList={signalList}
+                    signalsEmptyStateMessage={signalsEmptyStateMessage}
+                    isSignalsLoading={isSignalsLoading}
+                    signalsError={signalsError}
+                    selectedSignalId={selectedSignalId}
+                    onToggleSignal={hasMachineSignals ? handleToggleSignal : undefined}
                     onCalculateWriteoffWeight={() => {
                         void calculateWriteoffWeight();
                     }}

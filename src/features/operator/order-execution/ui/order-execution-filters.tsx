@@ -18,7 +18,7 @@ type OrderExecutionFiltersProps = {
     onMachineChange: (resourceCode: string) => void;
     /** Если этапа нет — блок с данными заказа не показываем */
     jobInfo: MachineData["operator"]["jobInfo"] | null;
-    /** План / выпуск / остаток / прогресс (getProgress) */
+    /** План / выпуск / остаток (getProgress); «Прогресс» в шапке не показываем */
     progressInfo?: StageProgressInfoItem[] | null;
 };
 
@@ -56,7 +56,10 @@ export function OrderExecutionFilters({
     jobInfo,
     progressInfo,
 }: OrderExecutionFiltersProps) {
-    const stripItems: JobInfoItem[] = [...(jobInfo ?? []), ...(progressInfo ?? [])];
+    const stripItems: JobInfoItem[] = [
+        ...(jobInfo ?? []),
+        ...(progressInfo ?? []).filter((item) => item.key !== "Прогресс"),
+    ];
     const hasStrip = stripItems.length > 0;
 
     return (

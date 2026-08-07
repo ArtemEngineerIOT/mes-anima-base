@@ -1,7 +1,9 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
 import { buildOrderExecutionEmptyMachine } from "./mock-order-execution";
+import { mapOrderExecutionMachineSignalsBlockSummary } from "./map-order-execution-machine-signals-block-summary";
 import { mapOrderExecutionReleaseBlockSummary } from "./map-order-execution-release-block-summary";
+import { mapOrderExecutionWriteOffBlockSummary } from "./map-order-execution-write-off-block-summary";
 import type { MachineData, OrderInfo } from "./types";
 
 const OK_ERROR_CODE = "OK";
@@ -73,7 +75,7 @@ function buildJobInfo(headerRow: Record<string, unknown> | undefined) {
     return [
         { key: "Проект", value: pickString(headerRow, "project") ?? "—" },
         { key: "Продукт", value: pickString(headerRow, "product") ?? "—" },
-        { key: "Заказ", value: pickString(headerRow, "order") ?? "—" },
+        { key: "Этап", value: pickString(headerRow, "order") ?? "—" },
         { key: "Клиент", value: pickString(headerRow, "client") ?? "—" },
     ];
 }
@@ -97,6 +99,8 @@ export function mergeOrderExecutionMachineData(
         workAreaStart: apiData.workAreaStart,
         unprocessedEventsCount: apiData.unprocessedEventsCount,
         releaseBlockSummary: apiData.releaseBlockSummary,
+        writeOffBlockSummary: apiData.writeOffBlockSummary,
+        machineSignalsBlockSummary: apiData.machineSignalsBlockSummary,
         hasAssignedStage: apiData.hasAssignedStage,
         order: apiData.order,
         operator: {
@@ -144,6 +148,8 @@ export function mapOrderExecutionPayload(
 
     const unprocessedEventsCount = readUnprocessedEventsCount(record);
     const releaseBlockSummary = mapOrderExecutionReleaseBlockSummary(record, workAreaId);
+    const writeOffBlockSummary = mapOrderExecutionWriteOffBlockSummary(record, workAreaId);
+    const machineSignalsBlockSummary = mapOrderExecutionMachineSignalsBlockSummary(record, workAreaId);
 
     return {
         ...base,
@@ -151,6 +157,8 @@ export function mapOrderExecutionPayload(
         workAreaStart,
         unprocessedEventsCount,
         releaseBlockSummary,
+        writeOffBlockSummary,
+        machineSignalsBlockSummary,
         hasAssignedStage,
         order,
         operator: {

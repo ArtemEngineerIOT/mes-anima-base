@@ -5,6 +5,8 @@ export type SubmitFullWriteOffBodyParams = {
     materialRollId: string;
     barcode: string;
     operatorRef: string;
+    /** Id выбранного сигнала; пустая строка, если не выбран */
+    signalId: string;
 };
 
 export function buildSubmitFullWriteOffBody(
@@ -16,6 +18,7 @@ export function buildSubmitFullWriteOffBody(
             materialRollId: params.materialRollId,
             barcode: params.barcode,
             operatorRef: params.operatorRef,
+            signalId: params.signalId,
         },
     ];
 }

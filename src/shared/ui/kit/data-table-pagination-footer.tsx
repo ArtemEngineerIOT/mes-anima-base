@@ -2,6 +2,8 @@ import { Button } from "@/shared/ui/kit/button";
 import { Icon } from "@/shared/ui/kit/icon";
 import {
     DATA_TABLE_PAGE_SIZE_OPTIONS,
+    dataTableFooterSelectClassName,
+    dataTableFooterTextClassName,
     type DataTablePageSize,
 } from "@/shared/ui/kit/styles/data-table-stack";
 
@@ -29,19 +31,20 @@ export function DataTablePaginationFooter({
     const canGoPrev = page > 1;
     const canGoNext = page < totalPages;
 
-    return (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>
-                {totalCount === 0
-                    ? "Показано 0 из 0"
-                    : `Показано ${rangeStart.toLocaleString("ru-RU")}–${rangeEnd.toLocaleString("ru-RU")} из ${totalCount.toLocaleString("ru-RU")}`}
-            </span>
+    const rangeLabel =
+        totalCount === 0
+            ? "0 из 0"
+            : `${rangeStart.toLocaleString("ru-RU")}–${rangeEnd.toLocaleString("ru-RU")} из ${totalCount.toLocaleString("ru-RU")}`;
 
-            <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2">
-                    <span>Строк на странице</span>
+    return (
+        <div className={`flex flex-wrap items-center justify-between gap-2 ${dataTableFooterTextClassName}`}>
+            <span>{rangeLabel}</span>
+
+            <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1.5">
+                    <span>Строк:</span>
                     <select
-                        className="border-input h-8 rounded-sm border bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                        className={dataTableFooterSelectClassName}
                         value={pageSize}
                         onChange={(event) =>
                             onPageSizeChange(Number(event.target.value) as DataTablePageSize)
@@ -56,29 +59,31 @@ export function DataTablePaginationFooter({
                     </select>
                 </label>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                     <Button
                         type="button"
                         variant="outline"
                         size="icon-sm"
+                        className="size-7"
                         disabled={!canGoPrev}
                         onClick={() => onPageChange(page - 1)}
                         aria-label="Предыдущая страница"
                     >
-                        <Icon name="chevron_left" className="text-base" />
+                        <Icon name="chevron_left" className="text-sm" />
                     </Button>
-                    <span className="min-w-[7.5rem] text-center">
-                        Страница {page} из {totalPages}
+                    <span className="min-w-12 px-1 text-center tabular-nums">
+                        {page} / {totalPages}
                     </span>
                     <Button
                         type="button"
                         variant="outline"
                         size="icon-sm"
+                        className="size-7"
                         disabled={!canGoNext}
                         onClick={() => onPageChange(page + 1)}
                         aria-label="Следующая страница"
                     >
-                        <Icon name="chevron_right" className="text-base" />
+                        <Icon name="chevron_right" className="text-sm" />
                     </Button>
                 </div>
             </div>

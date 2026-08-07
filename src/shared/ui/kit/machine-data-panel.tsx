@@ -67,21 +67,16 @@ export function MachineDataPanel({
 }: MachineDataPanelProps) {
     const panelTone = resolvePanelTone(rows, tone);
     const panelIconName = iconName ?? (panelTone === "success" ? "settings" : undefined);
-    const titleContent = updatedAt ? (
-        <div className="flex min-w-0 items-center justify-between gap-3">
-            <span className="min-w-0 truncate">{title}</span>
-            <span className="shrink-0 text-[11px] font-normal text-muted-foreground">
-                {updatedAtLabel}: {updatedAt}
-            </span>
-        </div>
-    ) : (
-        title
-    );
+    const titleEnd =
+        updatedAt != null && String(updatedAt).trim()
+            ? `${updatedAtLabel}: ${String(updatedAt).trim()}`
+            : undefined;
 
     return (
         <InformerTablePanel
             tone={panelTone}
-            title={titleContent}
+            title={title}
+            titleEnd={titleEnd}
             iconName={panelIconName}
             showToneBar={showToneBar}
             footer={footer}

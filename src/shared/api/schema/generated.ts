@@ -1622,7 +1622,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/contexts/users.admin.models.rest/functions/getRollEventsSummary": {
+    "/v1/contexts/users.admin.models.rest/functions/getMaterialEventsSummary": {
         parameters: {
             query?: never;
             header?: never;
@@ -1633,7 +1633,7 @@ export interface paths {
         put?: never;
         /**
          * Сводка событий списания (SCR-04 / UC-15)
-         * @description BFF `users.admin.models.rollWriteOffRawEventQueue.getEventsSummary` (REST: `getRollEventsSummary`). Badge в заголовке блока «Материалы. Списание/возврат». Тело: `[{ workAreaId }]`.
+         * @description BFF `users.admin.models.rollWriteOffRawEventQueue.getEventsSummary` (REST: `getMaterialEventsSummary`). Старт экрана «Исполнение заказа»: badge и плашка блока «Материалы. Списание/возврат». Дальше обновление по STOMP `rollWriteOffRawEventsSummaryChanged`. Тело: `[{ workAreaId }]`.
          */
         post: {
             parameters: {
@@ -1655,6 +1655,51 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderExecutionRollWriteOffEventsSummaryResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getListMaterialSignal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Список необработанных сигналов списания (SCR-04)
+         * @description BFF `users.admin.models.rollWriteOffRawEventQueue.getListMaterialSignal` (REST: `getListMaterialSignal`). Таблица необработанных сигналов при раскрытии блока «Материалы. Списание/возврат». Тело: `[{ workAreaId }]`. Формат строк как у eventReleaseProduction.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Список сигналов списания (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionReleaseProductionEventResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -2522,6 +2567,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/contexts/users.admin.models.rest/functions/listUnprocessedSignals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Список необработанных сигналов машины (SCR-07 / UC-25)
+         * @description BFF `users.admin.models.productionEventWizard.listUnprocessedSignals` (REST: `listUnprocessedSignals`). Таблица «Необработанные сигналы с машины» — silent-reload по STOMP `machineSignalsSummaryChanged` с сохранением выбранных строк. Тело: `[{ workAreaId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionReleaseWorkAreaRequest"];
+                };
+            };
+            responses: {
+                /** @description Список сигналов (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionListUnprocessedSignalsResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/contexts/users.admin.models.rest/functions/initProductionEventWizard": {
         parameters: {
             query?: never;
@@ -3296,6 +3386,34 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Элемент `write_off_block` в ответе getOrderExecution (стартовая сводка блока «Материалы. Списание/возврат») */
+        OrderExecutionWriteOffBlockItem: {
+            work_area_id?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
+            total_count?: number | null;
+            changed_at?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Строка `summary` в `machine_signals_block` */
+        OrderExecutionMachineSignalsSummaryRow: {
+            signal_name?: string | null;
+            signal_description?: string | null;
+            count?: (string | number) | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Элемент `machine_signals_block` в ответе getOrderExecution (стартовая сводка блока «Регистрация события») */
+        OrderExecutionMachineSignalsBlockItem: {
+            work_area_id?: string | null;
+            total_count?: number | null;
+            last_event_at?: string | null;
+            changed_at?: string | null;
+            summary?: components["schemas"]["OrderExecutionMachineSignalsSummaryRow"][];
+        } & {
+            [key: string]: unknown;
+        };
         /** @description Элемент `result` в ответе getOrderExecution */
         OrderExecutionResultItem: {
             /** @description Пусто/null — на машине нет назначенного этапа */
@@ -3307,6 +3425,10 @@ export interface components {
             header?: components["schemas"]["OrderExecutionHeaderRow"][];
             /** @description Стартовая сводка блока «Выпуск» (badge + плашка до STOMP/getEventsSummary) */
             release_block?: components["schemas"]["OrderExecutionReleaseBlockItem"][];
+            /** @description Стартовая сводка блока «Материалы. Списание/возврат» (badge + плашка до STOMP) */
+            write_off_block?: components["schemas"]["OrderExecutionWriteOffBlockItem"][];
+            /** @description Стартовая сводка блока «Регистрация события» (badge + плашка до STOMP machineSignalsSummaryChanged) */
+            machine_signals_block?: components["schemas"]["OrderExecutionMachineSignalsBlockItem"][];
         } & {
             [key: string]: unknown;
         };
@@ -3619,6 +3741,8 @@ export interface components {
             warehouse: string;
             /** @description Ссылка на оператора в MES (`operator_ref`) */
             operatorRef: string;
+            /** @description Id выбранного сигнала из таблицы необработанных сигналов (`signal_id`). Пустая строка, если строка не выбрана. */
+            signalId: string;
         } & {
             [key: string]: unknown;
         };
@@ -3649,6 +3773,8 @@ export interface components {
             barcode: string;
             /** @description Ссылка на оператора в MES (`operator_ref`) */
             operatorRef: string;
+            /** @description Id выбранного сигнала из таблицы необработанных сигналов (`signal_id`). Пустая строка, если строка не выбрана. */
+            signalId: string;
         } & {
             [key: string]: unknown;
         };
@@ -3844,10 +3970,14 @@ export interface components {
             /** @description Подписи полей для плашки сводки */
             result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
-        /** @description Элемент result getRollEventsSummary (SCR-04 / UC-15) */
+        /** @description Элемент result getMaterialEventsSummary (SCR-04 / UC-15) */
         OrderExecutionRollWriteOffEventsSummaryResultItem: {
             work_area_id?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
             total_count?: number | null;
+            /** @description Время последнего изменения сводки */
+            changed_at?: string | null;
             last_event_at?: string | null;
             last_event_name?: string | null;
             last_event_description?: string | null;
@@ -3855,9 +3985,11 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description Ответ getRollEventsSummary (SCR-04 / UC-15) */
+        /** @description Ответ getMaterialEventsSummary (SCR-04 / UC-15) */
         OrderExecutionRollWriteOffEventsSummaryResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionRollWriteOffEventsSummaryResultItem"][];
+            /** @description Подписи полей для плашки сводки */
+            result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
         /** @description Строка result getLastProcessParamsSlices (JB Process control) */
         OrderExecutionLastProcessParamsSliceRow: {
@@ -4132,7 +4264,7 @@ export interface components {
         OrderExecutionMonitoringLineMetersOutputItem: {
             /** @description Выход общий, м */
             output_total?: number | null;
-            /** @description Выход ролик (последний выход), м */
+            /** @description Последний ролик (`output_roll`), м */
             output_roll?: number | null;
         } & {
             [key: string]: unknown;
@@ -4270,6 +4402,8 @@ export interface components {
         OrderExecutionUnprocessedSignalsSummaryResponse: (components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionUnprocessedSignalsSummaryResultItem"][];
         })[];
+        /** @description Ответ listUnprocessedSignals (SCR-07 / UC-25) — таблица необработанных сигналов машины. В `result[0].unprocessed_signals` — строки как у initProductionEventWizard. */
+        OrderExecutionListUnprocessedSignalsResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
         /** @description Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события */
         OrderExecutionProductionEventWizardInitRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */

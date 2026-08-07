@@ -45,6 +45,13 @@ type ScanBannerState = {
 type UseMaterialsWriteoffOptions = {
     workAreaId?: string;
     enabled?: boolean;
+    /**
+     * Id выбранной строки таблицы необработанных сигналов.
+     * В `submitPartialReturn` / `submitFullWriteOff` уходит как `signalId` (или `""`).
+     */
+    signalId?: string | null;
+    /** Длина (`length_m`) выбранного сигнала — подставляется в метраж формы */
+    signalLengthM?: string | number | null;
     /** После успешного возврата/полного списания — silent-reload мониторинга (summary + roll tables) */
     onMonitoringSummaryReload?: () => void;
 };
@@ -81,12 +88,18 @@ function resolveDefaultWarehouse(
 export function useMaterialsWriteoff({
     workAreaId,
     enabled = true,
+    signalId = null,
+    signalLengthM = null,
     onMonitoringSummaryReload,
 }: UseMaterialsWriteoffOptions) {
     const { session } = useSession();
     const operatorRef = resolveMaterialsWriteoffOperatorRef(session);
     const onMonitoringSummaryReloadRef = useRef(onMonitoringSummaryReload);
     onMonitoringSummaryReloadRef.current = onMonitoringSummaryReload;
+    const signalIdRef = useRef(signalId);
+    signalIdRef.current = signalId;
+    const signalLengthMRef = useRef(signalLengthM);
+    signalLengthMRef.current = signalLengthM;
     const [barcode, setBarcode] = useState("");
     const [installationPlace, setInstallationPlace] = useState<MaterialsInstallationPlace>(
         DEFAULT_MATERIALS_INSTALLATION_PLACE,
@@ -366,8 +379,16 @@ export function useMaterialsWriteoff({
 
     const selectForWriteoff = useCallback(
         (row: MaterialsPresenceRow) => {
+            const nextForm = buildWriteoffFormFromSelection(row, returnWarehouses.warehouseOptions);
+            const lengthFromSignal = signalLengthMRef.current;
+
+            if (lengthFromSignal !== null && lengthFromSignal !== undefined && lengthFromSignal !== "") {
+                nextForm.meters = sanitizeWriteoffMetersInput(String(lengthFromSignal));
+                nextForm.weight = "";
+            }
+
             setSelectedWriteoffRoll(row);
-            setWriteoffForm(buildWriteoffFormFromSelection(row, returnWarehouses.warehouseOptions));
+            setWriteoffForm(nextForm);
             reset();
         },
         [reset, returnWarehouses.warehouseOptions],
@@ -434,7 +455,11 @@ export function useMaterialsWriteoff({
                 }
 
                 const next = { ...prev, ...normalizedPatch };
-                if ("meters" in normalizedPatch && normalizedPatch.meters !== prev.meters) {
+                if (
+                    "meters" in normalizedPatch &&
+                    normalizedPatch.meters !== prev.meters &&
+                    !("weight" in normalizedPatch)
+                ) {
                     next.weight = "";
                 }
                 return next;
@@ -446,6 +471,33 @@ export function useMaterialsWriteoff({
         },
         [reset],
     );
+
+    /** Подставить метраж из выбранного сигнала; вес сбрасывается — доступен пересчёт. */
+    const applySignalLengthPrefill = useCallback(
+        (lengthM: string | number | null | undefined) => {
+            if (lengthM === null || lengthM === undefined || lengthM === "") {
+                return;
+            }
+
+            updateWriteoffForm({ meters: String(lengthM) });
+        },
+        [updateWriteoffForm],
+    );
+
+    /** Снять подстановку сигнала: вернуть метраж/вес рулона или очистить. */
+    const clearSignalLengthPrefill = useCallback(() => {
+        if (!selectedWriteoffRoll) {
+            updateWriteoffForm({ meters: "", weight: "" });
+            return;
+        }
+
+        const metersFromRoll =
+            selectedWriteoffRoll.currentLengthM > 0 ? String(selectedWriteoffRoll.currentLengthM) : "";
+        const weightFromRoll =
+            selectedWriteoffRoll.currentWeightKg > 0 ? String(selectedWriteoffRoll.currentWeightKg) : "";
+
+        updateWriteoffForm({ meters: metersFromRoll, weight: weightFromRoll });
+    }, [selectedWriteoffRoll, updateWriteoffForm]);
 
     const calculateWriteoffWeight = useCallback(async () => {
         const barcode = selectedWriteoffRoll?.barcode ?? "";
@@ -503,6 +555,7 @@ export function useMaterialsWriteoff({
                     weight,
                     warehouse,
                     operatorRef: operatorRefValue,
+                    signalId: signalIdRef.current?.trim() ?? "",
                 }),
             });
             mapSubmitPartialReturnPayload(payload);
@@ -561,6 +614,7 @@ export function useMaterialsWriteoff({
                     materialRollId,
                     barcode: activeRoll.barcode,
                     operatorRef: operatorRefValue,
+                    signalId: signalIdRef.current?.trim() ?? "",
                 }),
             });
             mapSubmitFullWriteOffPayload(payload);
@@ -633,6 +687,8 @@ export function useMaterialsWriteoff({
         scanBanner,
         writeoffForm,
         updateWriteoffForm,
+        applySignalLengthPrefill,
+        clearSignalLengthPrefill,
         calculateWriteoffWeight,
         reflectMaterialReturn,
         writeOffMaterialFully,

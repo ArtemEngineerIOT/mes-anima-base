@@ -3,6 +3,10 @@ import type { ReleaseProductionEventListRow } from "./production-event-types";
 
 export type ReleaseProductionEventTimeSortDirection = "asc" | "desc";
 
+export type ReleaseProductionEventSortColumn = "registered_at" | "length_m";
+
+export type ReleaseProductionEventSortDirection = ReleaseProductionEventTimeSortDirection;
+
 /** Парсит `registered_at` вида `24.07.2026 08:32:48` (и ISO) в timestamp для сортировки. */
 export function parseReleaseProductionEventRegisteredAt(
     value: string | number | null | undefined,
@@ -34,6 +38,82 @@ export function parseReleaseProductionEventRegisteredAt(
 
     const parsed = Date.parse(trimmed);
     return Number.isNaN(parsed) ? null : parsed;
+}
+
+/** Парсит `length_m` в число для сортировки. */
+export function parseReleaseProductionEventLengthM(
+    value: string | number | null | undefined,
+): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const trimmed = value.trim().replace(",", ".");
+    if (!trimmed) {
+        return null;
+    }
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function compareNullableNumbers(
+    left: number | null,
+    right: number | null,
+    multiplier: number,
+    tieBreaker: (leftId: string, rightId: string) => number,
+    leftId: string,
+    rightId: string,
+): number {
+    if (left === null && right === null) {
+        return tieBreaker(leftId, rightId);
+    }
+    if (left === null) {
+        return 1;
+    }
+    if (right === null) {
+        return -1;
+    }
+
+    if (left !== right) {
+        return (left - right) * multiplier;
+    }
+
+    return tieBreaker(leftId, rightId);
+}
+
+export function sortReleaseProductionEventListByLengthM(
+    rows: readonly ReleaseProductionEventListRow[],
+    direction: ReleaseProductionEventSortDirection,
+): ReleaseProductionEventListRow[] {
+    const multiplier = direction === "asc" ? 1 : -1;
+
+    return [...rows].sort((left, right) =>
+        compareNullableNumbers(
+            parseReleaseProductionEventLengthM(getReleaseProductionEventCellValue(left, "length_m")),
+            parseReleaseProductionEventLengthM(getReleaseProductionEventCellValue(right, "length_m")),
+            multiplier,
+            (leftId, rightId) => leftId.localeCompare(rightId),
+            left.id,
+            right.id,
+        ),
+    );
+}
+
+export function sortReleaseProductionEventList(
+    rows: readonly ReleaseProductionEventListRow[],
+    column: ReleaseProductionEventSortColumn,
+    direction: ReleaseProductionEventSortDirection,
+): ReleaseProductionEventListRow[] {
+    if (column === "length_m") {
+        return sortReleaseProductionEventListByLengthM(rows, direction);
+    }
+
+    return sortReleaseProductionEventListByRegisteredAt(rows, direction);
 }
 
 export function sortReleaseProductionEventListByRegisteredAt(

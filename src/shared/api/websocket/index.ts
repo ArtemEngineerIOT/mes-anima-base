@@ -27,9 +27,16 @@ export {
     MATERIALS_FRONT_ROLL_RELEASE_PRODUCTION_EVENTS_SUMMARY_CHANGED_STOMP_DESTINATION,
 } from "./materials-front-roll-release-production-events-summary-changed-destination";
 export {
+    MATERIALS_FRONT_MACHINE_SIGNALS_SUMMARY_CHANGED_STOMP_DESTINATION,
+} from "./materials-front-machine-signals-summary-changed-destination";
+export {
     useMaterialsFrontRollWriteOffRawEventsSummaryChangedSubscription,
 } from "./use-materials-front-roll-write-off-raw-events-summary-changed-subscription";
 export {
     useMaterialsFrontRollReleaseProductionEventsSummaryChangedSubscription,
 } from "./use-materials-front-roll-release-production-events-summary-changed-subscription";
+export {
+    useMaterialsFrontMachineSignalsSummaryChangedSubscription,
+} from "./use-materials-front-machine-signals-summary-changed-subscription";
 export { useMaterialsFrontMachineProductionReleaseRegisteredSubscription } from "./use-materials-front-machine-production-release-registered-subscription";
+

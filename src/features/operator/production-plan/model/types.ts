@@ -1,14 +1,21 @@
 export type StageStatus = "planned" | "in_progress" | "paused" | "done" | "cancelled";
 
 export type ProductionStage = {
+    /** Номер операции (`operation_number`); отображается в колонке «ID этапа». */
     stageId: string;
+    /** Внутренний id операции (`id_operacii`), если бэк отдаёт отдельно от `operation_number`. */
+    internalStageId?: string;
     /** Идентификатор рабочей области (`work_area_id` в ответе); в запросах — `workAreaId`. */
     workAreaId: string;
     orderId: string;
+    /** Номер проекта (`project_number`). */
+    projectNumber?: string;
     client?: string;
     /** Номер клиента (`client_number`). */
     clientNumber?: string;
     product?: string;
+    /** Наименование из `stage_name`, если отличается от `output_item_name`. */
+    itemStageName?: string;
     operationNo?: string;
     stageName: string;
     area: string;

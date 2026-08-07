@@ -22,8 +22,8 @@ async function enableMocking() {
 
 enableMocking().then(() => {
     createRoot(document.getElementById("root")!).render(
-        <StrictMode>
+        // <StrictMode>
             <RouterProvider router={router} />
-        </StrictMode>,
+        // </StrictMode>,
     );
 });

@@ -13,6 +13,7 @@ import { mapEventRegistrationDiscardSignalsPayload } from "./map-event-registrat
 import { mapEventRegistrationInitWizardPayload } from "./map-event-registration-init-wizard-payload";
 import { mapEventRegistrationProcessJournalPayload } from "./map-event-registration-process-journal-payload";
 import { mapEventRegistrationRegisterEventPayload } from "./map-event-registration-register-event-payload";
+import { mapListUnprocessedSignalsPayload } from "./map-list-unprocessed-signals-payload";
 import { EMPTY_EVENT_REGISTRATION_SNAPSHOT } from "./empty-event-registration-snapshot";
 import { buildStep2PrefillFromSignal, buildStep2SensorPrefill, mergeStep2SensorPrefill } from "./prefill-event-registration-draft";
 import type {
@@ -26,6 +27,7 @@ import { useEventRegistrationDiscardSignals } from "./use-event-registration-dis
 import { useEventRegistrationInitWizard } from "./use-event-registration-init-wizard";
 import { useEventRegistrationProcessJournal } from "./use-event-registration-process-journal";
 import { useEventRegistrationRegisterEvent } from "./use-event-registration-register-event";
+import { useListUnprocessedSignals } from "./use-list-unprocessed-signals";
 
 type UseEventRegistrationOptions = {
     machineId: MachineId;
@@ -59,6 +61,7 @@ export function useEventRegistration({
 }: UseEventRegistrationOptions) {
     const machineSnapshot = useOrderExecutionMachineStompSnapshot();
     const { initWizard } = useEventRegistrationInitWizard();
+    const { listSignals } = useListUnprocessedSignals();
     const { discardSignals, isDiscardSignalsPending } = useEventRegistrationDiscardSignals();
     const { loadProcessJournal } = useEventRegistrationProcessJournal();
     const { registerEvent: registerProductionEvent, isRegisterEventPending } =
@@ -85,6 +88,8 @@ export function useEventRegistration({
     const lastAppliedSignalIdRef = useRef<string | null>(null);
     const initWizardRef = useRef(initWizard);
     initWizardRef.current = initWizard;
+    const listSignalsRef = useRef(listSignals);
+    listSignalsRef.current = listSignals;
     const discardSignalsRef = useRef(discardSignals);
     discardSignalsRef.current = discardSignals;
     const loadProcessJournalRef = useRef(loadProcessJournal);
@@ -92,6 +97,8 @@ export function useEventRegistration({
     const registerProductionEventRef = useRef(registerProductionEvent);
     registerProductionEventRef.current = registerProductionEvent;
     const journalFallbackRef = useRef<ProcessJournalEntry[]>([]);
+    const selectedUnprocessedIdRef = useRef(selectedUnprocessedId);
+    selectedUnprocessedIdRef.current = selectedUnprocessedId;
 
     const resetToEmptySnapshot = useCallback(() => {
         setSnapshot(EMPTY_EVENT_REGISTRATION_SNAPSHOT);
@@ -121,6 +128,34 @@ export function useEventRegistration({
             );
         }
     }, [resetToEmptySnapshot, workAreaId]);
+
+    /**
+     * Silent-reload таблицы необработанных сигналов по STOMP `machineSignalsSummaryChanged`.
+     * Выбор строки сохраняется, если сигнал ещё есть в ответе (как в списании / выпуске).
+     */
+    const reloadUnprocessedSilent = useCallback(() => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            return;
+        }
+
+        void (async () => {
+            try {
+                const payload = await listSignalsRef.current(trimmedWorkAreaId);
+                const nextUnprocessed = mapListUnprocessedSignalsPayload(payload);
+                setUnprocessed(nextUnprocessed);
+
+                const previousSelectedId = selectedUnprocessedIdRef.current;
+                const nextSelectedId =
+                    previousSelectedId && nextUnprocessed.some((event) => event.id === previousSelectedId)
+                        ? previousSelectedId
+                        : null;
+                setSelectedUnprocessedId(nextSelectedId);
+            } catch {
+                // Silent: не ломаем текущую таблицу и выбор оператора при сбое фона.
+            }
+        })();
+    }, [workAreaId]);
 
     const loadJournal = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -468,5 +503,6 @@ export function useEventRegistration({
         toggleUnprocessedSelection,
         deleteSelectedSignals,
         setDeleteComment,
+        reloadUnprocessedSilent,
     };
 }

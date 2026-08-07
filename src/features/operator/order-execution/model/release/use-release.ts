@@ -37,6 +37,11 @@ type LoadProductionEventOptions = {
     silent?: boolean;
 };
 
+/** Сколько держать информер успешного выпуска до начала fade-out */
+export const REGISTER_SUBMIT_MESSAGE_VISIBLE_MS = 4000;
+/** Длительность плавного исчезновения информера успешного выпуска */
+export const REGISTER_SUBMIT_MESSAGE_FADE_MS = 300;
+
 export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseReleaseOptions) {
     const [form, setForm] = useState<ReleaseFormState>(RELEASE_INITIAL_FORM);
     const [initSnapshot, setInitSnapshot] = useState<ReleaseInitSnapshot>(RELEASE_EMPTY_INIT);
@@ -46,6 +51,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const [isRegisteringRelease, setIsRegisteringRelease] = useState(false);
     const [registerSubmitError, setRegisterSubmitError] = useState<string | null>(null);
     const [registerSubmitMessage, setRegisterSubmitMessage] = useState<string | null>(null);
+    const [registerSubmitMessageKey, setRegisterSubmitMessageKey] = useState(0);
     const [printingReleaseId, setPrintingReleaseId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
     const [productionEvent, setProductionEvent] = useState<ReleaseProductionEventSnapshot>(
@@ -127,7 +133,13 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         setBlockComment("");
         setBlockSubmitError(null);
         setBlockSubmitMessage(null);
+        setRegisterSubmitError(null);
+        setRegisterSubmitMessage(null);
     }, [resetFormState]);
+
+    const dismissRegisterSubmitMessage = useCallback(() => {
+        setRegisterSubmitMessage(null);
+    }, []);
 
     const selectedProductionEventIdRef = useRef(selectedProductionEventId);
     selectedProductionEventIdRef.current = selectedProductionEventId;
@@ -256,6 +268,12 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
 
         void load();
     }, [enabled, load]);
+
+    /** Сворачивание / разворачивание блока — сразу убираем информер успеха */
+    useEffect(() => {
+        setRegisterSubmitMessage(null);
+        setRegisterSubmitError(null);
+    }, [enabled]);
 
     const patchForm = useCallback((patch: Partial<ReleaseFormState>) => {
         const normalizedPatch = { ...patch };
@@ -445,6 +463,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             const payload = await registerReleaseRequestRef.current({ body });
             const result = mapReleaseRegisterPayload(payload);
             setRegisterSubmitMessage(result.message);
+            setRegisterSubmitMessageKey((key) => key + 1);
             setForm((prev) => ({
                 ...prev,
                 lengthM: "",
@@ -549,6 +568,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         isRegisteringRelease,
         registerSubmitError,
         registerSubmitMessage,
+        registerSubmitMessageKey,
+        dismissRegisterSubmitMessage,
         registerRelease,
         printError,
         printingReleaseId,
