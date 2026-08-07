@@ -86,7 +86,7 @@
     /* Таблицы: высота строки и viewport на 10 строк тела (см. data-table-stack) */
     --data-table-row-height: 2.5rem;
     --data-table-header-height: 2.5rem;
-    --data-table-footer-height: 2.75rem;
+    --data-table-footer-height: 2.25rem;
     --data-table-visible-body-rows: 10;
 }
 

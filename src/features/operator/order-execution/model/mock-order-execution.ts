@@ -593,7 +593,7 @@ export const ORDER_EXECUTION_MOCK: MachineData[] = [
             jobInfo: [
                 { key: "Проект", value: "111780" },
                 { key: "Продукт", value: "4045725 MMS Plain Black Currant 45g RU-BY FSI" },
-                { key: "Заказ", value: "123345" },
+                { key: "Этап", value: "123345" },
                 { key: "Клиент", value: 'ООО "Марс"' },
             ],
             orderDetails: pr120OrderDetails,
@@ -632,7 +632,7 @@ export const ORDER_EXECUTION_MOCK: MachineData[] = [
             jobInfo: [
                 { key: "Проект", value: "—" },
                 { key: "Продукт", value: "—" },
-                { key: "Заказ", value: "—" },
+                { key: "Этап", value: "—" },
                 { key: "Клиент", value: "—" },
             ],
             orderDetails: emptyOrderDetails,
@@ -683,7 +683,7 @@ export const ORDER_EXECUTION_MOCK: MachineData[] = [
             jobInfo: [
                 { key: "Проект", value: "111781" },
                 { key: "Продукт", value: "MS Plain Apple 45g RU-BY FSI" },
-                { key: "Заказ", value: "777020" },
+                { key: "Этап", value: "777020" },
                 { key: "Клиент", value: 'ООО "C"' },
             ],
             orderDetails: {

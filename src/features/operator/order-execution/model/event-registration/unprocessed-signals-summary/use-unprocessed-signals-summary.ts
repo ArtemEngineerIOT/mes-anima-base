@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
+import { useMaterialsFrontMachineSignalsSummaryChangedSubscription } from "@/shared/api/websocket";
 
+import {
+    mapMachineSignalsSummaryChangedPayload,
+    readMachineSignalsSummaryChangedWorkAreaId,
+} from "./map-machine-signals-summary-changed-payload";
 import { mapUnprocessedSignalsSummaryPayload } from "./map-unprocessed-signals-summary-payload";
 import { UNPROCESSED_SIGNALS_SUMMARY_EMPTY, type UnprocessedSignalsSummarySnapshot } from "./types";
 
@@ -12,11 +17,34 @@ type LoadOptions = {
 
 type UseUnprocessedSignalsSummaryOptions = {
     workAreaId?: string;
+    /** Стартовая сводка из getOrderExecution (`machine_signals_block`) */
+    initialSnapshot?: UnprocessedSignalsSummarySnapshot | null;
     enabled?: boolean;
+    /** После STOMP / fallback — silent-reload таблицы необработанных сигналов */
+    onSummaryChanged?: () => void;
 };
 
-export function useUnprocessedSignalsSummary({ workAreaId, enabled = true }: UseUnprocessedSignalsSummaryOptions) {
-    const [snapshot, setSnapshot] = useState<UnprocessedSignalsSummarySnapshot>(UNPROCESSED_SIGNALS_SUMMARY_EMPTY);
+function resolveInitialSnapshot(
+    initialSnapshot?: UnprocessedSignalsSummarySnapshot | null,
+): UnprocessedSignalsSummarySnapshot {
+    return initialSnapshot ?? UNPROCESSED_SIGNALS_SUMMARY_EMPTY;
+}
+
+/**
+ * Сводка блока «Регистрация события»:
+ * - старт экрана: `getOrderExecution` (`machine_signals_block`)
+ * - дальше: STOMP `machineSignalsSummaryChanged`
+ * - fallback: `getUnprocessedSignalsSummary`, если в STOMP нет данных сводки
+ */
+export function useUnprocessedSignalsSummary({
+    workAreaId,
+    initialSnapshot = null,
+    enabled = true,
+    onSummaryChanged,
+}: UseUnprocessedSignalsSummaryOptions) {
+    const [snapshot, setSnapshot] = useState<UnprocessedSignalsSummarySnapshot>(() =>
+        resolveInitialSnapshot(initialSnapshot),
+    );
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,11 +56,26 @@ export function useUnprocessedSignalsSummary({ workAreaId, enabled = true }: Use
 
     const fetchSummaryRef = useRef(fetchSummary);
     fetchSummaryRef.current = fetchSummary;
+    const workAreaIdRef = useRef(workAreaId);
+    workAreaIdRef.current = workAreaId;
+    const onSummaryChangedRef = useRef(onSummaryChanged);
+    onSummaryChangedRef.current = onSummaryChanged;
 
     const resetState = useCallback(() => {
-        setSnapshot(UNPROCESSED_SIGNALS_SUMMARY_EMPTY);
+        setSnapshot(resolveInitialSnapshot(initialSnapshot));
         setError(null);
-    }, []);
+    }, [initialSnapshot]);
+
+    useEffect(() => {
+        if (!enabled) {
+            resetState();
+            setIsLoading(false);
+            return;
+        }
+
+        resetState();
+        setIsLoading(false);
+    }, [enabled, resetState, workAreaId]);
 
     const load = useCallback(
         async (options?: LoadOptions) => {
@@ -75,15 +118,29 @@ export function useUnprocessedSignalsSummary({ workAreaId, enabled = true }: Use
         [resetState, workAreaId],
     );
 
-    useEffect(() => {
-        if (!enabled) {
-            resetState();
-            setIsLoading(false);
-            return;
-        }
+    useMaterialsFrontMachineSignalsSummaryChangedSubscription({
+        enabled: enabled && Boolean(workAreaId?.trim()),
+        onEvent: (payload) => {
+            const currentWorkAreaId = workAreaIdRef.current?.trim();
+            const eventWorkAreaId = readMachineSignalsSummaryChangedWorkAreaId(payload);
 
-        void load();
-    }, [enabled, load, resetState]);
+            if (eventWorkAreaId && currentWorkAreaId && eventWorkAreaId !== currentWorkAreaId) {
+                return;
+            }
+
+            const nextSnapshot = mapMachineSignalsSummaryChangedPayload(payload);
+            if (nextSnapshot) {
+                setSnapshot(nextSnapshot);
+                setError(null);
+                onSummaryChangedRef.current?.();
+                return;
+            }
+
+            void load({ silent: true }).then(() => {
+                onSummaryChangedRef.current?.();
+            });
+        },
+    });
 
     return {
         snapshot,

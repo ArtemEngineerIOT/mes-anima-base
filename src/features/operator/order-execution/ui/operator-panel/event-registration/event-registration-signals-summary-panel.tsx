@@ -5,6 +5,8 @@ import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 
 import type { UnprocessedSignalsSummarySnapshot } from "../../../model/event-registration/unprocessed-signals-summary/types";
 import { toUnprocessedSignalsSummaryPanelRows } from "../../../model/event-registration/unprocessed-signals-summary/map-unprocessed-signals-summary-payload";
+import { useOrderExecutionMachineStompState } from "../../../model/machine-stomp/order-execution-machine-stomp-context";
+import { resolveMachineStompPanelTone } from "../../../model/machine-stomp/resolve-machine-stomp-panel-tone";
 
 type EventRegistrationSignalsSummaryPanelProps = {
     snapshot: UnprocessedSignalsSummarySnapshot;
@@ -17,6 +19,9 @@ export function EventRegistrationSignalsSummaryPanel({
     isLoading,
     error,
 }: EventRegistrationSignalsSummaryPanelProps) {
+    const machineStompState = useOrderExecutionMachineStompState();
+    const panelTone = resolveMachineStompPanelTone(machineStompState);
+
     const rows = useMemo(() => {
         if (isLoading && snapshot.summaryRows.length === 0) {
             return [{ characteristic: "Загрузка…", value: "…", unit: "" }];
@@ -30,7 +35,7 @@ export function EventRegistrationSignalsSummaryPanel({
                 tone="alert"
                 variant="bordered"
                 size="s"
-                title="Сигналы с машины"
+                title="Данные с машин"
                 description={error}
             />
         );
@@ -38,10 +43,10 @@ export function EventRegistrationSignalsSummaryPanel({
 
     return (
         <MachineDataPanel
-            title="Сигналы с машины"
+            title="Данные с машин"
             rows={rows}
-            tone={snapshot.totalCount > 0 ? "warning" : "success"}
-            updatedAt={snapshot.lastEventAt || null}
+            tone={panelTone}
+            updatedAt={snapshot.changedAt || snapshot.lastEventAt || null}
             updatedAtLabel="Обновлено"
             emptyText="Нет необработанных сигналов"
         />

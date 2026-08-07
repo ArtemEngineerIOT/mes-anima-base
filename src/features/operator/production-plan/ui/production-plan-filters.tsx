@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import { Button } from "@/shared/ui/kit/button";
+import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
@@ -108,18 +109,31 @@ export function ProductionPlanFilters({
                 <Label htmlFor="production-plan-search" className={comboboxFieldLabelClassName}>
                     Поиск
                 </Label>
-                <div className="relative max-w-xl">
-                    <Input
-                        id="production-plan-search"
-                        value={searchQuery}
-                        onChange={(event) => onSearchQueryChange(event.target.value)}
-                        placeholder="Поиск по таблице…"
-                        className="pr-9"
-                    />
-                    <Search
-                        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-                        aria-hidden
-                    />
+                <div className="flex max-w-xl items-center gap-2">
+                    <div className="relative min-w-0 flex-1">
+                        <Input
+                            id="production-plan-search"
+                            value={searchQuery}
+                            onChange={(event) => onSearchQueryChange(event.target.value)}
+                            placeholder="Поиск по таблице…"
+                            className="pr-9"
+                        />
+                        <Search
+                            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            aria-hidden
+                        />
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        className="shrink-0"
+                        onClick={() => onSearchQueryChange("")}
+                        disabled={!searchQuery.trim()}
+                        aria-label="Очистить поиск"
+                    >
+                        <Icon name="delete_sweep" className="text-base" />
+                    </Button>
                 </div>
             </div>
         </div>

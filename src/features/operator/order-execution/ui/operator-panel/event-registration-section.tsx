@@ -1,5 +1,6 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
+import type { UnprocessedSignalsSummarySnapshot } from "../../model/event-registration/unprocessed-signals-summary/types";
 import { useEventRegistrationContext } from "../../model/event-registration/event-registration-context";
 import { useUnprocessedSignalsSummary } from "../../model/event-registration/unprocessed-signals-summary/use-unprocessed-signals-summary";
 import { Informer } from "@/shared/ui/kit/informer";
@@ -14,14 +15,18 @@ import {
 } from "./event-registration/event-registration-steps";
 import { EventRegistrationUnprocessedPanel } from "./event-registration/event-registration-unprocessed-panel";
 
+const UNPROCESSED_SIGNALS_SILENT_RELOAD_DEBOUNCE_MS = 300;
+
 type OrderExecutionEventRegistrationSectionProps = {
     workAreaId?: string;
+    initialMachineSignalsSummary?: UnprocessedSignalsSummarySnapshot | null;
     signalsSummaryEnabled: boolean;
     onExpandedChange?: (expanded: boolean) => void;
 };
 
 export function OrderExecutionEventRegistrationSection({
     workAreaId,
+    initialMachineSignalsSummary = null,
     signalsSummaryEnabled,
     onExpandedChange,
 }: OrderExecutionEventRegistrationSectionProps) {
@@ -37,30 +42,49 @@ export function OrderExecutionEventRegistrationSection({
         registerEvent,
         loadError,
         isWizardDisabled,
+        reloadUnprocessedSilent,
     } = registration;
+
+    const silentReloadDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const reloadUnprocessedSilentRef = useRef(reloadUnprocessedSilent);
+    reloadUnprocessedSilentRef.current = reloadUnprocessedSilent;
+
+    useEffect(() => {
+        return () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+        };
+    }, []);
 
     const {
         snapshot: signalsSummary,
         isLoading: isSignalsSummaryLoading,
         error: signalsSummaryError,
-        reload: reloadSignalsSummary,
     } = useUnprocessedSignalsSummary({
         workAreaId,
+        initialSnapshot: initialMachineSignalsSummary,
         enabled: signalsSummaryEnabled,
+        onSummaryChanged: () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+
+            silentReloadDebounceTimerRef.current = setTimeout(() => {
+                reloadUnprocessedSilentRef.current();
+            }, UNPROCESSED_SIGNALS_SILENT_RELOAD_DEBOUNCE_MS);
+        },
     });
 
     const handleExpandedChange = useCallback(
         (expanded: boolean) => {
             onExpandedChange?.(expanded);
-            if (expanded) {
-                void reloadSignalsSummary();
-            }
         },
-        [onExpandedChange, reloadSignalsSummary],
+        [onExpandedChange],
     );
 
     const headerCount = signalsSummary.totalCount > 0 ? signalsSummary.totalCount : unprocessedCount;
-    const headerTone = headerCount > 0 ? "warning" : undefined;
+    const headerTone = headerCount > 0 ? "warning" : "success";
 
     return (
         <OrderExecutionCollapsibleSection

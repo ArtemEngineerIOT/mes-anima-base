@@ -8,6 +8,11 @@ import { informerToneTokens, type InformerTone } from "@/shared/ui/kit/styles/in
 export type InformerTablePanelProps = Omit<React.ComponentProps<"div">, "title"> & {
     tone?: InformerTone;
     title: React.ReactNode;
+    /**
+     * Мета справа от заголовка (например «Обновлено: …»).
+     * Вне `sectionBlockTitle`, чтобы не наследовать uppercase и не сжиматься вместе с title.
+     */
+    titleEnd?: React.ReactNode;
     /** По умолчанию — иконка тона из `informerToneTokens` */
     iconName?: string;
     /** Левая цветовая полоса с иконкой. По умолчанию `true`. */
@@ -20,6 +25,7 @@ export type InformerTablePanelProps = Omit<React.ComponentProps<"div">, "title">
 export function InformerTablePanel({
     tone = "success",
     title,
+    titleEnd,
     iconName,
     showToneBar = true,
     footer,
@@ -46,8 +52,15 @@ export function InformerTablePanel({
                 </div>
             ) : null}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="shrink-0 border-b border-border bg-muted/40 px-4 py-3">
-                    <div className={cnSectionBlockTitle()}>{title}</div>
+                <div className="min-w-0 shrink-0 border-b border-border bg-muted/40 px-4 py-3">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                        <div className={cnSectionBlockTitle("min-w-0 flex-1 truncate")}>{title}</div>
+                        {titleEnd ? (
+                            <div className="shrink-0 text-[11px] font-normal normal-case leading-[1.4] tracking-normal text-muted-foreground">
+                                {titleEnd}
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
                 <div className="min-h-0 flex-1 app-scroll overflow-auto py-3">{children}</div>
                 {footer ? (

@@ -1,5 +1,7 @@
 import {
     DATA_TABLE_PAGE_SIZE_OPTIONS,
+    dataTableFooterSelectClassName,
+    dataTableFooterTextClassName,
     type DataTablePageSize,
 } from "@/shared/ui/kit/styles/data-table-stack";
 
@@ -17,13 +19,13 @@ export function DataTablePageSizeFooter({
     onPageSizeChange,
 }: DataTablePageSizeFooterProps) {
     return (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-            <span>Всего записей: {totalCount.toLocaleString("ru-RU")}</span>
+        <div className={`flex flex-wrap items-center justify-between gap-2 ${dataTableFooterTextClassName}`}>
+            <span>Всего: {totalCount.toLocaleString("ru-RU")}</span>
             {showPageSize && pageSize != null && onPageSizeChange != null && (
-                <label className="flex items-center gap-2">
-                    <span>Строк на экране</span>
+                <label className="flex items-center gap-1.5">
+                    <span>Строк:</span>
                     <select
-                        className="border-input h-8 rounded-sm border bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                        className={dataTableFooterSelectClassName}
                         value={pageSize}
                         onChange={(event) =>
                             onPageSizeChange(Number(event.target.value) as DataTablePageSize)

@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import type { MachineData, MachineId } from "../model/types";
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
+import type { RollWriteOffEventsSummarySnapshot } from "../model/materials-writeoff/raw-events-summary/types";
+import type { UnprocessedSignalsSummarySnapshot } from "../model/event-registration/unprocessed-signals-summary/types";
 import { EventRegistrationProvider } from "../model/event-registration/event-registration-context";
 import {
     OrderExecutionEventRegistrationSection,
@@ -20,6 +22,8 @@ type OrderExecutionOperatorPanelProps = {
     workAreaStart?: string;
     order?: string;
     releaseBlockSummary?: ReleaseProductionEventsSummarySnapshot | null;
+    writeOffBlockSummary?: RollWriteOffEventsSummarySnapshot | null;
+    machineSignalsBlockSummary?: UnprocessedSignalsSummarySnapshot | null;
     onMonitoringSummaryReload?: () => void;
     /** После успешного registerRelease — silent-reload мониторинга / прогресса */
     onReleaseRegistered?: () => void;
@@ -32,6 +36,8 @@ export function OrderExecutionOperatorPanel({
     workAreaStart,
     order,
     releaseBlockSummary,
+    writeOffBlockSummary,
+    machineSignalsBlockSummary,
     onMonitoringSummaryReload,
     onReleaseRegistered,
 }: OrderExecutionOperatorPanelProps) {
@@ -55,6 +61,7 @@ export function OrderExecutionOperatorPanel({
                 
                 <OrderExecutionMaterialsSection
                     workAreaId={workAreaId}
+                    initialWriteOffSummary={writeOffBlockSummary}
                     eventsSummaryEnabled={Boolean(workAreaId?.trim())}
                     onMonitoringSummaryReload={onMonitoringSummaryReload}
                 />
@@ -62,6 +69,7 @@ export function OrderExecutionOperatorPanel({
                 <OrderExecutionProcessJournalSection onExpandedChange={setProcessJournalExpanded} />
                 <OrderExecutionEventRegistrationSection
                     workAreaId={workAreaId}
+                    initialMachineSignalsSummary={machineSignalsBlockSummary}
                     signalsSummaryEnabled={Boolean(workAreaId?.trim())}
                     onExpandedChange={setEventRegistrationExpanded}
                 />

@@ -92,10 +92,11 @@ function ProductionPlanPage() {
                 )}
             </div>
 
-            <div className="mt-3 flex min-h-0 flex-1 flex-col">
+            <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden">
                 {dataStatus === "ready" && (
                     <ProductionPlanTable
                         stages={filteredStages}
+                        searchQuery={searchQuery}
                         selectedId={selectedId}
                         onSelect={setSelectedId}
                     />

@@ -73,6 +73,8 @@ function OrderExecutionPage() {
                             workAreaStart={current.workAreaStart}
                             order={current.order.orderId}
                             releaseBlockSummary={current.releaseBlockSummary}
+                            writeOffBlockSummary={current.writeOffBlockSummary}
+                            machineSignalsBlockSummary={current.machineSignalsBlockSummary}
                             onMonitoringSummaryReload={() => {
                                 lineMetersSilentReloadRef.current?.();
                                 rollTablesSilentReloadRef.current?.();

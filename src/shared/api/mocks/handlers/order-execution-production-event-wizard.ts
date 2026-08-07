@@ -91,6 +91,27 @@ function readInitWizardParams(
 }
 
 export const orderExecutionProductionEventWizardHandlers = [
+    http.post("/v1/contexts/users.admin.models.rest/functions/listUnprocessedSignals", async ({ request }) => {
+        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
+        const workAreaId = body?.[0]?.workAreaId?.trim() ?? "";
+
+        if (!workAreaId) {
+            return HttpResponse.json({ message: "Укажите workAreaId" }, { status: 400 });
+        }
+
+        return HttpResponse.json([
+            {
+                error_code: "OK",
+                error_message: null,
+                result: [
+                    {
+                        unprocessed_signals: getUnprocessedSignals(workAreaId),
+                    },
+                ],
+            },
+        ] satisfies ApiSchemas["OrderExecutionListUnprocessedSignalsResponse"]);
+    }),
+
     http.post("/v1/contexts/users.admin.models.rest/functions/initProductionEventWizard", async ({ request }) => {
         const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionProductionEventWizardInitRequest"];
         const { workAreaId, operatorRef } = readInitWizardParams(body);

@@ -62,7 +62,13 @@ export const dataTableSplitScrollBodyClassName = "app-scroll";
 
 /** Панель футера под таблицей внутри {@link DataTableViewport}. */
 export const dataTableViewportFooterClassName =
-    "data-table-viewport-footer shrink-0 bg-muted/40 px-3 py-2 shadow-[inset_0_1px_0_var(--border)]";
+    "data-table-viewport-footer shrink-0 bg-muted/40 px-2 py-1 shadow-[inset_0_1px_0_var(--border)]";
+
+/** Текст и контролы футера таблицы (пагинация, счётчик строк). */
+export const dataTableFooterTextClassName = "text-xs text-muted-foreground";
+
+export const dataTableFooterSelectClassName =
+    "border-input h-7 rounded-sm border bg-background px-1.5 text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 /**
  * Ячейка шапки: те же размер/начертание, что у заголовка блока (`section-block-title`), + отступы ячейки.
@@ -90,7 +96,7 @@ export const dataTableStickyHeadCellOnBackgroundClassName = cn(
  * Ячейка футера внутри {@link dataTableScrollViewportClassName}: липкая при вертикальном скролле.
  */
 export const dataTableStickyFootCellClassName = cn(
-    "sticky bottom-0 z-10 bg-muted/40 px-3 py-2 shadow-[inset_0_1px_0_var(--border)]",
+    "sticky bottom-0 z-10 bg-muted/40 px-2 py-1 shadow-[inset_0_1px_0_var(--border)]",
 );
 
 /**

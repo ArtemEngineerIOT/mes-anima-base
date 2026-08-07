@@ -211,7 +211,7 @@ export function OrderExecutionMonitoringContent({
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                        Выход ролик
+                                        Последний ролик
                                     </TableCell>
                                     <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
                                         {formatLength(lineMeters.outLine.rollOutM)}

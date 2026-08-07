@@ -154,9 +154,13 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetEventsSummary"
 
-    /v1/contexts/users.admin.models.rest/functions/getRollEventsSummary:
+    /v1/contexts/users.admin.models.rest/functions/getMaterialEventsSummary:
         post:
-            $ref: "./endpoints/operator/order-execution.yaml#/postGetRollEventsSummary"
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetMaterialEventsSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/getListMaterialSignal:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetListMaterialSignal"
 
     /v1/contexts/users.admin.models.rest/functions/getLastProcessParamsSlices:
         post:
@@ -233,6 +237,10 @@ paths:
     /v1/contexts/users.admin.models.rest/functions/getUnprocessedSignalsSummary:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetUnprocessedSignalsSummary"
+
+    /v1/contexts/users.admin.models.rest/functions/listUnprocessedSignals:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postListUnprocessedSignals"
 
     /v1/contexts/users.admin.models.rest/functions/initProductionEventWizard:
         post:

@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
-import {
-    formatReleaseProductionEventCellValue,
-    getReleaseProductionEventCellValue,
-} from "../model/release/map-event-release-production-payload";
-import { RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS } from "../model/release/production-event-types";
-import {
-    sortReleaseProductionEventListByRegisteredAt,
-    type ReleaseProductionEventTimeSortDirection,
-} from "../model/release/sort-release-production-events-by-registered-at";
 import { useOrderExecutionMachineStompState } from "../model/machine-stomp/order-execution-machine-stomp-context";
 import { resolveMachineStompPanelTone } from "../model/machine-stomp/resolve-machine-stomp-panel-tone";
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
-import { useRelease } from "../model/release/use-release";
+import {
+    REGISTER_SUBMIT_MESSAGE_FADE_MS,
+    REGISTER_SUBMIT_MESSAGE_VISIBLE_MS,
+    useRelease,
+} from "../model/release/use-release";
+import { MachineSignalsCombobox } from "@/features/operator/order-execution/ui/machine-signals-combobox";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { Icon } from "@/shared/ui/kit/icon";
@@ -26,9 +22,6 @@ import {
     dataTableBodyCellClassName,
     dataTableHeadCellClassName,
     dataTableInsetShellClassName,
-    dataTableScrollViewportClassName,
-    dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
     dataTableViewportFooterClassName,
     dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
@@ -41,12 +34,51 @@ type OrderExecutionReleaseProps = {
     enabled: boolean;
     eventsSummary?: ReleaseProductionEventsSummarySnapshot;
     onReleaseRegistered?: () => void;
-    /** Регистрирует silent-reload таблицы «Сигналы машины (выпуск)» */
+    /** Регистрирует silent-reload списка сигналов выпуска */
     productionEventsSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
-const productionEventSelectionColumnClassName = "w-10";
 const batchRollSelectionColumnClassName = "w-10";
+
+type ReleaseSuccessInformerProps = {
+    title: string;
+    onDismiss: () => void;
+};
+
+function ReleaseSuccessInformer({ title, onDismiss }: ReleaseSuccessInformerProps) {
+    const [opaque, setOpaque] = useState(true);
+    const onDismissRef = useRef(onDismiss);
+    onDismissRef.current = onDismiss;
+
+    useEffect(() => {
+        const fadeTimer = window.setTimeout(() => {
+            setOpaque(false);
+        }, REGISTER_SUBMIT_MESSAGE_VISIBLE_MS);
+
+        const dismissTimer = window.setTimeout(() => {
+            onDismissRef.current();
+        }, REGISTER_SUBMIT_MESSAGE_VISIBLE_MS + REGISTER_SUBMIT_MESSAGE_FADE_MS);
+
+        return () => {
+            window.clearTimeout(fadeTimer);
+            window.clearTimeout(dismissTimer);
+        };
+    }, [title]);
+
+    return (
+        <Informer
+            tone="success"
+            variant="filled"
+            size="s"
+            title={title}
+            className={cn(
+                "w-full transition-opacity ease-out",
+                opaque ? "opacity-100" : "opacity-0",
+            )}
+            style={{ transitionDuration: `${REGISTER_SUBMIT_MESSAGE_FADE_MS}ms` }}
+        />
+    );
+}
 
 export function OrderExecutionRelease({
     workAreaId,
@@ -84,6 +116,8 @@ export function OrderExecutionRelease({
         isRegisteringRelease,
         registerSubmitError,
         registerSubmitMessage,
+        registerSubmitMessageKey,
+        dismissRegisterSubmitMessage,
         registerRelease,
         printError,
         printingReleaseId,
@@ -111,17 +145,6 @@ export function OrderExecutionRelease({
     }, [productionEventsSilentReloadRef, reloadProductionEventsSilent]);
 
     const machineStompState = useOrderExecutionMachineStompState();
-    const [registeredAtSortDirection, setRegisteredAtSortDirection] =
-        useState<ReleaseProductionEventTimeSortDirection>("desc");
-
-    const sortedProductionEventList = useMemo(
-        () =>
-            sortReleaseProductionEventListByRegisteredAt(
-                productionEvent.eventList,
-                registeredAtSortDirection,
-            ),
-        [productionEvent.eventList, registeredAtSortDirection],
-    );
 
     const eventsSummaryRows = useMemo(
         () =>
@@ -135,18 +158,12 @@ export function OrderExecutionRelease({
 
     const eventsSummaryTone = resolveMachineStompPanelTone(machineStompState);
 
-    const hasEventsSummaryData = useMemo(() => {
-        if (!eventsSummary) {
-            return false;
-        }
+    /** Плашка и комбобокс сигналов — только если есть необработанные сигналы с машины */
+    const hasMachineSignals =
+        productionEvent.eventList.length > 0 || (eventsSummary?.unprocessedCount ?? 0) > 0;
 
-        return (
-            eventsSummary.totalCount > 0 ||
-            eventsSummary.unprocessedCount > 0 ||
-            eventsSummary.processedCount > 0 ||
-            Boolean(eventsSummary.changedAt)
-        );
-    }, [eventsSummary]);
+    const showSignalsCombobox =
+        hasMachineSignals || isProductionEventLoading || Boolean(productionEventError);
 
     const {
         pageItems: batchPageItems,
@@ -156,23 +173,15 @@ export function OrderExecutionRelease({
         setPage: setBatchPage,
     } = useDataTablePagination(batchRolls, { initialPageSize: 10 });
 
-    const {
-        pageItems: productionEventPageItems,
-        pagination: productionEventPagination,
-        pageSize: productionEventPageSize,
-        setPageSize: setProductionEventPageSize,
-        setPage: setProductionEventPage,
-    } = useDataTablePagination(sortedProductionEventList, { initialPageSize: 5 });
-
     if (!enabled) {
         return null;
     }
 
     return (
         <div className="flex flex-col gap-4">
-            {hasEventsSummaryData ? (
+            {hasMachineSignals ? (
                 <MachineDataPanel
-                    title="Сводка сигналов выпуска"
+                    title="Данные с машин"
                     rows={eventsSummaryRows}
                     tone={eventsSummaryTone}
                     emptyText="Нет данных сводки"
@@ -180,190 +189,6 @@ export function OrderExecutionRelease({
                     updatedAtLabel="Обновлено"
                     showUnitColumn={false}
                 />
-            ) : null}
-
-            {productionEventError ? (
-                <Informer
-                    tone="alert"
-                    variant="bordered"
-                    size="s"
-                    title="Событие с машины"
-                    description={productionEventError}
-                />
-            ) : null}
-
-            {!isProductionEventLoading && !productionEventError ? (
-                <div className="grid gap-3">
-                    <div className={cnSectionBlockTitle()}>Сигналы машины (выпуск)</div>
-                    <div className={dataTableViewportShellClassName}>
-                        <div className="overflow-x-auto min-w-0">
-                            <Table
-                                className={cn(
-                                    dataTableInsetShellClassName,
-                                    "min-w-[480px] border-separate border-spacing-0 text-[12px]",
-                                )}
-                            >
-                                <TableHeader>
-                                    <TableRow className="hover:!bg-transparent">
-                                        <TableHead
-                                            className={cn(
-                                                dataTableHeadCellClassName,
-                                                "bg-muted/40",
-                                                productionEventSelectionColumnClassName,
-                                            )}
-                                            aria-label="Выбор сигнала"
-                                        />
-                                        {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => {
-                                            if (column.key === "registered_at") {
-                                                const sortLabel =
-                                                    registeredAtSortDirection === "asc"
-                                                        ? "по возрастанию"
-                                                        : "по убыванию";
-
-                                                return (
-                                                    <TableHead
-                                                        key={column.key}
-                                                        className={cn(
-                                                            dataTableHeadCellClassName,
-                                                            "bg-muted/40",
-                                                        )}
-                                                        aria-sort={
-                                                            registeredAtSortDirection === "asc"
-                                                                ? "ascending"
-                                                                : "descending"
-                                                        }
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            className="inline-flex items-center gap-1 text-left hover:text-foreground"
-                                                            onClick={() => {
-                                                                setRegisteredAtSortDirection((prev) =>
-                                                                    prev === "asc" ? "desc" : "asc",
-                                                                );
-                                                                setProductionEventPage(1);
-                                                            }}
-                                                            aria-label={`Сортировать по времени: ${sortLabel}`}
-                                                        >
-                                                            <span>{column.label}</span>
-                                                            <Icon
-                                                                name={
-                                                                    registeredAtSortDirection === "asc"
-                                                                        ? "arrow_upward"
-                                                                        : "arrow_downward"
-                                                                }
-                                                                size="sm"
-                                                                className="text-[14px] text-muted-foreground"
-                                                            />
-                                                        </button>
-                                                    </TableHead>
-                                                );
-                                            }
-
-                                            return (
-                                                <TableHead
-                                                    key={column.key}
-                                                    className={cn(
-                                                        dataTableHeadCellClassName,
-                                                        "bg-muted/40",
-                                                        column.key === "length_m" && "text-right",
-                                                    )}
-                                                >
-                                                    {column.label}
-                                                </TableHead>
-                                            );
-                                        })}
-                        </TableRow>
-                    </TableHeader>
-                                <TableBody>
-                                    {productionEventPageItems.length > 0 ? (
-                                        productionEventPageItems.map((row) => {
-                                            const isSelected = selectedProductionEventId === row.id;
-                                            const eventDescription = formatReleaseProductionEventCellValue(
-                                                getReleaseProductionEventCellValue(row, "event_description"),
-                                            );
-
-                                            return (
-                                                <TableRow
-                                                    key={row.id}
-                                                    className={cn(isSelected && "bg-muted/50")}
-                                                >
-                                                    <TableCell
-                                                        className={cn(
-                                                            dataTableBodyCellClassName,
-                                                            productionEventSelectionColumnClassName,
-                                                        )}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            disabled={isLoading || Boolean(error)}
-                                                            onChange={() => {
-                                                                toggleProductionEventSignal(row.id);
-                                                            }}
-                                                            aria-label={`Выбрать сигнал ${eventDescription}`}
-                                                            className="size-4 rounded border-input"
-                                                        />
-                                                    </TableCell>
-                                                    {RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.map((column) => {
-                                                        const cellValue = getReleaseProductionEventCellValue(
-                                                            row,
-                                                            column.key,
-                                                        );
-
-                                                        return (
-                                                            <TableCell
-                                                                key={`${row.id}-${column.key}`}
-                                                                className={cn(
-                                                                    dataTableBodyCellClassName,
-                                                                    column.key === "length_m" && "text-right",
-                                                                    column.key === "event_description" &&
-                                                                        "max-w-[240px] truncate",
-                                                                )}
-                                                                title={
-                                                                    column.key === "event_description"
-                                                                        ? formatReleaseProductionEventCellValue(
-                                                                              cellValue,
-                                                                          )
-                                                                        : undefined
-                                                                }
-                                                            >
-                                                                {formatReleaseProductionEventCellValue(cellValue)}
-                                                            </TableCell>
-                                                        );
-                                                    })}
-                        </TableRow>
-                                            );
-                                        })
-                                    ) : (
-                        <TableRow>
-                                            <TableCell
-                                                colSpan={RELEASE_PRODUCTION_EVENT_VISIBLE_COLUMNS.length + 1}
-                                                className={cn(
-                                                    dataTableBodyCellClassName,
-                                                    "py-6 text-center text-muted-foreground",
-                                                )}
-                                            >
-                                                {productionEvent.emptyStateMessage || "Нет событий с машины"}
-                                            </TableCell>
-                        </TableRow>
-                                    )}
-                    </TableBody>
-                </Table>
-                        </div>
-                        <div className={dataTableViewportFooterClassName}>
-                            <DataTablePaginationFooter
-                                totalCount={productionEventPagination.totalCount}
-                                rangeStart={productionEventPagination.rangeStart}
-                                rangeEnd={productionEventPagination.rangeEnd}
-                                page={productionEventPagination.page}
-                                totalPages={productionEventPagination.totalPages}
-                                pageSize={productionEventPageSize}
-                                onPageChange={setProductionEventPage}
-                                onPageSizeChange={setProductionEventPageSize}
-                            />
-                        </div>
-                    </div>
-                </div>
             ) : null}
 
             {error ? (
@@ -374,32 +199,59 @@ export function OrderExecutionRelease({
                 <Informer tone="system" variant="bordered" size="s" title="Загрузка данных выпуска…" />
             ) : null}
 
-            <div className="space-y-2">
-                <div className={cnSectionBlockTitle("pb-2")}>Данные по серии</div>
-                <div className={dataTableScrollViewportClassName}>
-                    <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                        <TableHeader className="bg-muted/40">
-                            <TableRow>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[45%]")}>
-                                    Характеристика
-                                </TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Значение</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                    Серия
-                                    </TableCell>
-                                <TableCell className={dataTableBodyCellClassName}>{series || "—"}</TableCell>
+            <div className="grid gap-3">
+                <div className={cnSectionBlockTitle()}>Данные по серии</div>
+                <div className={dataTableViewportShellClassName}>
+                    <div className="min-w-0 overflow-x-auto">
+                        <Table
+                            className={cn(
+                                dataTableInsetShellClassName,
+                                "min-w-[480px] border-separate border-spacing-0 text-[12px]",
+                            )}
+                        >
+                            <TableHeader>
+                                <TableRow className="hover:!bg-transparent">
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[45%]")}>
+                                        Характеристика
+                                    </TableHead>
+                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                                        Значение
+                                    </TableHead>
                                 </TableRow>
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        Серия
+                                    </TableCell>
+                                    <TableCell className={dataTableBodyCellClassName}>{series || "—"}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
             </div>
 
             <div className="space-y-3">
                 <div className={cnSectionBlockTitle("pb-2")}>Данные для выпуска</div>
+
+                {showSignalsCombobox ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2">
+                        <MachineSignalsCombobox
+                            rows={productionEvent.eventList}
+                            emptyStateMessage={productionEvent.emptyStateMessage}
+                            isLoading={isProductionEventLoading}
+                            error={productionEventError}
+                            selectedSignalId={selectedProductionEventId}
+                            onToggleSignal={toggleProductionEventSignal}
+                            fieldLabel="Сигналы с машин"
+                            placeholder="Выберите сигнал с машины"
+                            loadingTitle="Загрузка сигналов выпуска…"
+                            errorTitle="Сигналы выпуска"
+                        />
+                    </div>
+                ) : null}
+
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div>
                         <div className={comboboxFieldLabelClassName}>Метраж</div>
@@ -694,7 +546,11 @@ export function OrderExecutionRelease({
                     <div className="w-full text-[12px] text-destructive">{registerSubmitError}</div>
                 ) : null}
                 {registerSubmitMessage ? (
-                    <Informer tone="success" variant="filled" size="s" title={registerSubmitMessage} className="w-full" />
+                    <ReleaseSuccessInformer
+                        key={registerSubmitMessageKey}
+                        title={registerSubmitMessage}
+                        onDismiss={dismissRegisterSubmitMessage}
+                    />
                 ) : null}
                 <Button
                     type="button"

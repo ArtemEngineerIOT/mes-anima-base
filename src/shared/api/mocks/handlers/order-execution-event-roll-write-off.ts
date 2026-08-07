@@ -7,6 +7,7 @@ import {
     buildMockEventRollWriteOffResponse,
 } from "../data/order-execution-event-roll-write-off";
 import { buildMockRollWriteOffEventsSummaryResponse } from "../data/order-execution-roll-write-off-events-summary";
+import { buildMockListMaterialSignalResponse } from "../data/order-execution-list-material-signal";
 
 export const orderExecutionEventRollWriteOffHandlers = [
     http.post("/v1/contexts/users.admin.models.rest/functions/eventRollWriteOff", async ({ request }) => {
@@ -62,7 +63,7 @@ export const orderExecutionEventRollWriteOffHandlers = [
         );
     }),
 
-    http.post("/v1/contexts/users.admin.models.rest/functions/getRollEventsSummary", async ({ request }) => {
+    http.post("/v1/contexts/users.admin.models.rest/functions/getMaterialEventsSummary", async ({ request }) => {
         const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
         const workAreaId = body?.[0]?.workAreaId?.trim() ?? "";
 
@@ -71,5 +72,16 @@ export const orderExecutionEventRollWriteOffHandlers = [
         }
 
         return HttpResponse.json(buildMockRollWriteOffEventsSummaryResponse(workAreaId));
+    }),
+
+    http.post("/v1/contexts/users.admin.models.rest/functions/getListMaterialSignal", async ({ request }) => {
+        const body = (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionReleaseWorkAreaRequest"];
+        const workAreaId = body?.[0]?.workAreaId?.trim() ?? "";
+
+        if (!workAreaId) {
+            return HttpResponse.json({ message: "Укажите workAreaId" }, { status: 400 });
+        }
+
+        return HttpResponse.json(buildMockListMaterialSignalResponse(workAreaId));
     }),
 ];

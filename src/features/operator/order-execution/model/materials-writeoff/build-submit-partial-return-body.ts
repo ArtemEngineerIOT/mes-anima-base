@@ -8,6 +8,8 @@ export type SubmitPartialReturnBodyParams = {
     weight: number;
     warehouse: string;
     operatorRef: string;
+    /** Id выбранного сигнала; пустая строка, если не выбран */
+    signalId: string;
 };
 
 export function buildSubmitPartialReturnBody(
@@ -22,6 +24,7 @@ export function buildSubmitPartialReturnBody(
             weight: params.weight,
             warehouse: params.warehouse,
             operatorRef: params.operatorRef,
+            signalId: params.signalId,
         },
     ];
 }

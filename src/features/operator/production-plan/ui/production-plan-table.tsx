@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { cn } from "@/shared/lib/css";
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
@@ -21,6 +21,7 @@ import {
 
 type ProductionPlanTableProps = {
     stages: ProductionStage[];
+    searchQuery: string;
     selectedId: string | null;
     onSelect: (stageId: string | null) => void;
 };
@@ -30,14 +31,20 @@ const selectionColumnClassName = "w-10";
 
 export const ProductionPlanTable = memo(function ProductionPlanTable({
     stages,
+    searchQuery,
     selectedId,
     onSelect,
 }: ProductionPlanTableProps) {
     const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(stages);
 
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, stages, setPage]);
+
     return (
         <DataTableViewport
             layout="fill"
+            className="min-h-0 w-full flex-1"
             footer={
                 <DataTablePaginationFooter
                     totalCount={pagination.totalCount}
@@ -75,7 +82,7 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                 <TableBody className={dataTableSplitScrollBodyClassName}>
                     {pageItems.map((stage) => (
                         <TableRow
-                            key={stage.stageId}
+                            key={`${stage.workAreaId}:${stage.stageId}`}
                             className={cn(
                                 "cursor-pointer",
                                 selectedId === stage.stageId && "bg-accent/40",

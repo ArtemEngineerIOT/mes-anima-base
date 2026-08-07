@@ -1,5 +1,7 @@
 import type { MaterialsWriteoffFormState } from "@/features/operator/order-execution/model/materials-writeoff/materials-writeoff-form";
 import type { MaterialsReturnWarehouseOption } from "@/features/operator/order-execution/model/materials-writeoff/types";
+import type { ReleaseProductionEventListRow } from "@/features/operator/order-execution/model/release/production-event-types";
+import { MaterialsWriteoffSignalsCombobox } from "@/features/operator/order-execution/ui/materials-writeoff-signals-combobox";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
@@ -23,6 +25,12 @@ type MaterialsWriteoffFormPanelProps = {
     writeOffFullyError?: string | null;
     submitStageLkmError?: string | null;
     isFormEnabled?: boolean;
+    signalList?: ReleaseProductionEventListRow[];
+    signalsEmptyStateMessage?: string;
+    isSignalsLoading?: boolean;
+    signalsError?: string | null;
+    selectedSignalId?: string | null;
+    onToggleSignal?: (rowId: string) => void;
     onCalculateWriteoffWeight: () => void;
     onReflectMaterialReturn: () => void;
     onWriteOffMaterialFully: () => void;
@@ -49,6 +57,12 @@ export function MaterialsWriteoffFormPanel({
     writeOffFullyError = null,
     submitStageLkmError = null,
     isFormEnabled = false,
+    signalList = [],
+    signalsEmptyStateMessage,
+    isSignalsLoading = false,
+    signalsError = null,
+    selectedSignalId = null,
+    onToggleSignal,
     onCalculateWriteoffWeight,
     onReflectMaterialReturn,
     onWriteOffMaterialFully,
@@ -63,17 +77,40 @@ export function MaterialsWriteoffFormPanel({
           ? "Склады недоступны"
           : "Выберите склад";
 
+    const showSignalsCombobox =
+        Boolean(onToggleSignal) &&
+        (signalList.length > 0 || isSignalsLoading || Boolean(signalsError));
+
     return (
         <div className="space-y-3">
-            <div>
-                <div className={comboboxFieldLabelClassName}>Списываемая номенклатура</div>
-                <Input
-                    value={selectedNomenclature ?? ""}
-                    readOnly
-                    disabled
-                    placeholder="Выберите рулон кнопкой «Списать»"
-                    className="mt-1"
-                />
+            <div
+                className={
+                    showSignalsCombobox
+                        ? "grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start"
+                        : "grid grid-cols-1 gap-4"
+                }
+            >
+                {showSignalsCombobox && onToggleSignal ? (
+                    <MaterialsWriteoffSignalsCombobox
+                        rows={signalList}
+                        emptyStateMessage={signalsEmptyStateMessage}
+                        isLoading={isSignalsLoading}
+                        error={signalsError}
+                        selectedSignalId={selectedSignalId}
+                        onToggleSignal={onToggleSignal}
+                    />
+                ) : null}
+
+                <div className="min-w-0">
+                    <div className={comboboxFieldLabelClassName}>Списываемая номенклатура</div>
+                    <Input
+                        value={selectedNomenclature ?? ""}
+                        readOnly
+                        disabled
+                        placeholder="Выберите рулон кнопкой «Списать»"
+                        className="mt-1"
+                    />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">

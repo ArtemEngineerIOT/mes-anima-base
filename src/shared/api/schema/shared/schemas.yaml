@@ -278,6 +278,66 @@ components:
                     nullable: true
             additionalProperties: true
 
+        OrderExecutionWriteOffBlockItem:
+            type: object
+            description: Элемент `write_off_block` в ответе getOrderExecution (стартовая сводка блока «Материалы. Списание/возврат»)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                unprocessed_count:
+                    type: integer
+                    nullable: true
+                processed_count:
+                    type: integer
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                changed_at:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMachineSignalsSummaryRow:
+            type: object
+            description: Строка `summary` в `machine_signals_block`
+            properties:
+                signal_name:
+                    type: string
+                    nullable: true
+                signal_description:
+                    type: string
+                    nullable: true
+                count:
+                    oneOf:
+                        - type: string
+                        - type: number
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionMachineSignalsBlockItem:
+            type: object
+            description: Элемент `machine_signals_block` в ответе getOrderExecution (стартовая сводка блока «Регистрация события»)
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                total_count:
+                    type: integer
+                    nullable: true
+                last_event_at:
+                    type: string
+                    nullable: true
+                changed_at:
+                    type: string
+                    nullable: true
+                summary:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMachineSignalsSummaryRow"
+            additionalProperties: true
+
         OrderExecutionResultItem:
             type: object
             description: Элемент `result` в ответе getOrderExecution
@@ -306,6 +366,16 @@ components:
                     description: Стартовая сводка блока «Выпуск» (badge + плашка до STOMP/getEventsSummary)
                     items:
                         $ref: "#/components/schemas/OrderExecutionReleaseBlockItem"
+                write_off_block:
+                    type: array
+                    description: Стартовая сводка блока «Материалы. Списание/возврат» (badge + плашка до STOMP)
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionWriteOffBlockItem"
+                machine_signals_block:
+                    type: array
+                    description: Стартовая сводка блока «Регистрация события» (badge + плашка до STOMP machineSignalsSummaryChanged)
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionMachineSignalsBlockItem"
             additionalProperties: true
 
         OrderExecutionResultRow:
@@ -1268,6 +1338,11 @@ components:
                 operatorRef:
                     type: string
                     description: Ссылка на оператора в MES (`operator_ref`)
+                signalId:
+                    type: string
+                    description: >
+                        Id выбранного сигнала из таблицы необработанных сигналов (`signal_id`).
+                        Пустая строка, если строка не выбрана.
             required:
                 - workAreaId
                 - materialRollId
@@ -1276,6 +1351,7 @@ components:
                 - weight
                 - warehouse
                 - operatorRef
+                - signalId
             additionalProperties: true
 
         SubmitPartialReturnRequest:
@@ -1333,11 +1409,17 @@ components:
                 operatorRef:
                     type: string
                     description: Ссылка на оператора в MES (`operator_ref`)
+                signalId:
+                    type: string
+                    description: >
+                        Id выбранного сигнала из таблицы необработанных сигналов (`signal_id`).
+                        Пустая строка, если строка не выбрана.
             required:
                 - workAreaId
                 - materialRollId
                 - barcode
                 - operatorRef
+                - signalId
             additionalProperties: true
 
         SubmitFullWriteOffRequest:
@@ -1871,14 +1953,24 @@ components:
 
         OrderExecutionRollWriteOffEventsSummaryResultItem:
             type: object
-            description: Элемент result getRollEventsSummary (SCR-04 / UC-15)
+            description: Элемент result getMaterialEventsSummary (SCR-04 / UC-15)
             properties:
                 work_area_id:
                     type: string
                     nullable: true
+                unprocessed_count:
+                    type: integer
+                    nullable: true
+                processed_count:
+                    type: integer
+                    nullable: true
                 total_count:
                     type: integer
                     nullable: true
+                changed_at:
+                    type: string
+                    nullable: true
+                    description: Время последнего изменения сводки
                 last_event_at:
                     type: string
                     nullable: true
@@ -1896,7 +1988,7 @@ components:
         OrderExecutionRollWriteOffEventsSummaryResponse:
             type: array
             minItems: 1
-            description: Ответ getRollEventsSummary (SCR-04 / UC-15)
+            description: Ответ getMaterialEventsSummary (SCR-04 / UC-15)
             items:
                 allOf:
                     - $ref: "#/components/schemas/OrderExecutionReleaseRpcResultRow"
@@ -1906,6 +1998,11 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionRollWriteOffEventsSummaryResultItem"
+                          result_field_labels:
+                              type: array
+                              description: Подписи полей для плашки сводки
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
         OrderExecutionLastProcessParamsSliceRow:
             type: object
@@ -2214,7 +2311,7 @@ components:
                 output_roll:
                     type: number
                     nullable: true
-                    description: Выход ролик (последний выход), м
+                    description: Последний ролик (`output_roll`), м
             additionalProperties: true
 
         OrderExecutionMonitoringLineMetersItem:
@@ -3283,6 +3380,16 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionUnprocessedSignalsSummaryResultItem"
+
+        OrderExecutionListUnprocessedSignalsResponse:
+            type: array
+            minItems: 1
+            description: >
+                Ответ listUnprocessedSignals (SCR-07 / UC-25) —
+                таблица необработанных сигналов машины.
+                В `result[0].unprocessed_signals` — строки как у initProductionEventWizard.
+            items:
+                $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
 
         OrderExecutionProductionEventWizardInitResponse:
             type: array

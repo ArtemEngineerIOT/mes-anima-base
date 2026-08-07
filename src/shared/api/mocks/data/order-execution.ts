@@ -7,12 +7,36 @@ export type MockOrderExecutionReleaseBlockItem = {
     changed_at: string;
 };
 
+export type MockOrderExecutionWriteOffBlockItem = {
+    work_area_id: string;
+    unprocessed_count: number;
+    processed_count: number;
+    total_count: number;
+    changed_at: string;
+};
+
+export type MockOrderExecutionMachineSignalsSummaryRow = {
+    count: string | number;
+    signal_name: string;
+    signal_description: string;
+};
+
+export type MockOrderExecutionMachineSignalsBlockItem = {
+    work_area_id: string;
+    total_count: number;
+    last_event_at: string;
+    changed_at: string;
+    summary: MockOrderExecutionMachineSignalsSummaryRow[];
+};
+
 export type MockOrderExecutionResultItem = {
     work_area_id: string | null;
     start_work_area: string | null;
     resource_id: string;
     sidebar_badges: { unprocessed_events_count: number }[];
     release_block?: MockOrderExecutionReleaseBlockItem[];
+    write_off_block?: MockOrderExecutionWriteOffBlockItem[];
+    machine_signals_block?: MockOrderExecutionMachineSignalsBlockItem[];
     header: {
         product: string;
         project: string;
@@ -34,6 +58,60 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
                 processed_count: 45,
                 total_count: 348,
                 changed_at: "05.08.2026 12:46:53",
+            },
+        ],
+        write_off_block: [
+            {
+                work_area_id: "191",
+                unprocessed_count: 21,
+                processed_count: 0,
+                total_count: 21,
+                changed_at: "07.08.2026 12:20:39",
+            },
+        ],
+        machine_signals_block: [
+            {
+                work_area_id: "191",
+                last_event_at: "2026-08-07 12:49:40",
+                total_count: 148,
+                changed_at: "07.08.2026 12:56:16",
+                summary: [
+                    {
+                        count: "21",
+                        signal_name: "inSplice",
+                        signal_description: "Сращивание на входе",
+                    },
+                    {
+                        count: "21",
+                        signal_name: "outSplice",
+                        signal_description: "Сращивание на выходе",
+                    },
+                    {
+                        count: "20",
+                        signal_name: "lostConn",
+                        signal_description: "Потеря связи с машиной",
+                    },
+                    {
+                        count: "20",
+                        signal_name: "reConn",
+                        signal_description: "Восстановление связи с машиной",
+                    },
+                    {
+                        count: "21",
+                        signal_name: "printStart",
+                        signal_description: "Старт печати",
+                    },
+                    {
+                        count: "24",
+                        signal_name: "printStop",
+                        signal_description: "Стоп печати",
+                    },
+                    {
+                        count: "21",
+                        signal_name: "markedDefect",
+                        signal_description: "Нажата кнопка Брак у машины",
+                    },
+                ],
             },
         ],
         header: [
