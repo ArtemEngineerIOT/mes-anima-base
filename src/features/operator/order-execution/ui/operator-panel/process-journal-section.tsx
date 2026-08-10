@@ -48,7 +48,7 @@ export function OrderExecutionProcessJournalSection({
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
     const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(journal, {
-        initialPageSize: 10,
+        initialPageSize: 5,
     });
 
     const totalLengthLabel = useMemo(() => formatTotalLength(totalLengthM), [totalLengthM]);

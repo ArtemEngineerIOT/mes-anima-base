@@ -74,11 +74,16 @@ export function useMaterialsWriteoffRollPresence({
         void load();
     }, [enabled, load, refreshKey]);
 
+    const clearError = useCallback(() => {
+        setError(null);
+    }, []);
+
     return {
         rows,
         asOf,
         isLoading,
         error,
+        clearError,
         reload: load,
     };
 }

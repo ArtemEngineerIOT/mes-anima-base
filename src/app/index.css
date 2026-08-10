@@ -177,6 +177,8 @@
 .data-table-split-scroll > table > thead,
 .data-table-split-scroll > table > tbody {
     display: block;
+    /* Как у `tbody.app-scroll`: иначе шапка шире тела и колонки съезжают */
+    scrollbar-gutter: stable;
 }
 
 .data-table-viewport-shell--fixed .data-table-split-scroll > table > tbody {

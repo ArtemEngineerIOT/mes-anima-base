@@ -69,6 +69,11 @@ export function useDataTablePagination<T>(
     const [pageSize, setPageSize] = useState<DataTablePageSize>(initialPageSize);
     const [page, setPage] = useState(1);
 
+    useEffect(() => {
+        setPageSize(initialPageSize);
+        setPage(1);
+    }, [initialPageSize]);
+
     const totalCount = items.length;
     const totalPages = getDataTableTotalPages(totalCount, pageSize);
 

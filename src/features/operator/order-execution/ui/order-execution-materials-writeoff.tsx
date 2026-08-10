@@ -5,13 +5,13 @@ import type { RollWriteOffEventsSummarySnapshot } from "@/features/operator/orde
 import { getReleaseProductionEventCellValue } from "@/features/operator/order-execution/model/release/map-event-release-production-payload";
 import { resolveMachineStompPanelTone } from "@/features/operator/order-execution/model/machine-stomp/resolve-machine-stomp-panel-tone";
 import { useOrderExecutionMachineStompState } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
+import { AutoDismissInformer } from "@/shared/ui/kit/auto-dismiss-informer";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { MaterialsWriteoffFormPanel } from "@/features/operator/order-execution/ui/materials-writeoff-form-panel";
 import { MaterialsWriteoffPresenceTable } from "@/features/operator/order-execution/ui/materials-writeoff-presence-table";
 import { MaterialsWriteoffStageRegistry } from "@/features/operator/order-execution/ui/materials-writeoff-stage-registry";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
-import { Informer } from "@/shared/ui/kit/informer";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 
@@ -79,6 +79,10 @@ export function OrderExecutionMaterialsWriteoff({
         isPresenceLoading,
         presenceAsOf,
         presenceError,
+        dismissPresenceError,
+        dismissScanBanner,
+        dismissSearchError,
+        dismissMoveToUnwindError,
         expandedPresenceRowId,
         setExpandedPresenceRowId,
         selectedWriteoffRoll,
@@ -221,29 +225,49 @@ export function OrderExecutionMaterialsWriteoff({
             </div>
 
             {searchError ? (
-                <Informer tone="alert" variant="filled" size="s" title="Ошибка регистрации" description={searchError} />
+                <AutoDismissInformer
+                    key={`search-error:${searchError}`}
+                    tone="alert"
+                    variant="filled"
+                    size="s"
+                    title="Ошибка регистрации"
+                    description={searchError}
+                    onDismiss={dismissSearchError}
+                />
             ) : null}
 
             {scanBanner?.stageSpecBannerVisible ? (
-                <Informer
+                <AutoDismissInformer
+                    key={`scan-banner:${scanBanner.stageSpecBannerTitle}:${scanBanner.stageSpecBannerDetail}`}
                     tone="warning"
                     variant="filled"
                     title={scanBanner.stageSpecBannerTitle || "Внимание"}
                     description={scanBanner.stageSpecBannerDetail || undefined}
+                    onDismiss={dismissScanBanner}
                 />
             ) : null}
 
             {presenceError ? (
-                <Informer tone="alert" variant="filled" size="s" title="Рулоны в машине" description={presenceError} />
+                <AutoDismissInformer
+                    key={`presence-error:${presenceError}`}
+                    tone="alert"
+                    variant="filled"
+                    size="s"
+                    title="Рулоны в машине"
+                    description={presenceError}
+                    onDismiss={dismissPresenceError}
+                />
             ) : null}
 
             {moveToUnwindError ? (
-                <Informer
+                <AutoDismissInformer
+                    key={`move-to-unwind:${moveToUnwindError}`}
                     tone="alert"
                     variant="filled"
                     size="s"
                     title="На размотку"
                     description={moveToUnwindError}
+                    onDismiss={dismissMoveToUnwindError}
                 />
             ) : null}
 

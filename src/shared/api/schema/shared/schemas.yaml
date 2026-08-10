@@ -318,10 +318,18 @@ components:
 
         OrderExecutionMachineSignalsBlockItem:
             type: object
-            description: Элемент `machine_signals_block` в ответе getOrderExecution (стартовая сводка блока «Регистрация события»)
+            description: >
+                Сводка сигналов блока «Регистрация события»: старт — `machine_signals_block` в getOrderExecution;
+                дальше — STOMP `machineSignalsSummaryChanged` (тело: JSON-массив `[{ … }]`, один элемент).
             properties:
                 work_area_id:
                     type: string
+                    nullable: true
+                unprocessed_count:
+                    type: integer
+                    nullable: true
+                processed_count:
+                    type: integer
                     nullable: true
                 total_count:
                     type: integer
@@ -334,6 +342,7 @@ components:
                     nullable: true
                 summary:
                     type: array
+                    description: Устаревший детальный breakdown по типам сигналов (не используется в плашке UI)
                     items:
                         $ref: "#/components/schemas/OrderExecutionMachineSignalsSummaryRow"
             additionalProperties: true
@@ -3354,6 +3363,12 @@ components:
                 work_area_id:
                     type: string
                     nullable: true
+                unprocessed_count:
+                    type: integer
+                    nullable: true
+                processed_count:
+                    type: integer
+                    nullable: true
                 total_count:
                     type: integer
                     nullable: true
@@ -3361,8 +3376,12 @@ components:
                     type: string
                     nullable: true
                     description: Время последнего события (`yyyy-MM-dd HH:mm:ss` или пусто)
+                changed_at:
+                    type: string
+                    nullable: true
                 summary:
                     type: array
+                    description: Устаревший детальный breakdown по типам сигналов (не используется в плашке UI)
                     items:
                         $ref: "#/components/schemas/OrderExecutionUnprocessedSignalsSummaryItem"
             additionalProperties: true
@@ -3380,6 +3399,11 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionUnprocessedSignalsSummaryResultItem"
+                          result_field_labels:
+                              type: array
+                              description: Подписи полей для плашки сводки
+                              items:
+                                  $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
         OrderExecutionListUnprocessedSignalsResponse:
             type: array
@@ -3387,7 +3411,8 @@ components:
             description: >
                 Ответ listUnprocessedSignals (SCR-07 / UC-25) —
                 таблица необработанных сигналов машины.
-                В `result[0].unprocessed_signals` — строки как у initProductionEventWizard.
+                `result` — массив строк сигнала (`signal_id`, `signal_description`, `time_start`, …).
+                Устаревший вариант: `result[0].unprocessed_signals[]`.
             items:
                 $ref: "#/components/schemas/OrderExecutionProductionEventWizardRpcResultRow"
 

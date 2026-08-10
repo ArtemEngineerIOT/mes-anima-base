@@ -671,6 +671,16 @@ export function useMaterialsWriteoff({
     const isFullWriteoffEnabled = isWriteoffFormComplete && !isWriteoffActionInProgress;
     const isWriteoffActionsEnabled = isWriteoffFormComplete && !isWriteoffActionInProgress;
 
+    const dismissScanBanner = useCallback(() => {
+        setScanBanner(null);
+    }, []);
+    const dismissSearchError = useCallback(() => {
+        setSearchError(null);
+    }, []);
+    const dismissMoveToUnwindError = useCallback(() => {
+        setMoveToUnwindError(null);
+    }, []);
+
     return {
         barcode,
         setBarcode,
@@ -681,6 +691,10 @@ export function useMaterialsWriteoff({
         isPresenceLoading: rollPresence.isLoading,
         presenceAsOf: rollPresence.asOf,
         presenceError: rollPresence.error,
+        dismissPresenceError: rollPresence.clearError,
+        dismissScanBanner,
+        dismissSearchError,
+        dismissMoveToUnwindError,
         expandedPresenceRowId,
         setExpandedPresenceRowId,
         selectedWriteoffRoll,

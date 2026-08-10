@@ -3404,12 +3404,15 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description Элемент `machine_signals_block` в ответе getOrderExecution (стартовая сводка блока «Регистрация события») */
+        /** @description Сводка сигналов блока «Регистрация события»: старт — `machine_signals_block` в getOrderExecution; дальше — STOMP `machineSignalsSummaryChanged` (тело: JSON-массив `[{ … }]`, один элемент). */
         OrderExecutionMachineSignalsBlockItem: {
             work_area_id?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
             total_count?: number | null;
             last_event_at?: string | null;
             changed_at?: string | null;
+            /** @description Устаревший детальный breakdown по типам сигналов (не используется в плашке UI) */
             summary?: components["schemas"]["OrderExecutionMachineSignalsSummaryRow"][];
         } & {
             [key: string]: unknown;
@@ -4391,9 +4394,13 @@ export interface components {
         /** @description Элемент result getUnprocessedSignalsSummary (SCR-07 / UC-25) */
         OrderExecutionUnprocessedSignalsSummaryResultItem: {
             work_area_id?: string | null;
+            unprocessed_count?: number | null;
+            processed_count?: number | null;
             total_count?: number | null;
             /** @description Время последнего события (`yyyy-MM-dd HH:mm:ss` или пусто) */
             last_event_at?: string | null;
+            changed_at?: string | null;
+            /** @description Устаревший детальный breakdown по типам сигналов (не используется в плашке UI) */
             summary?: components["schemas"]["OrderExecutionUnprocessedSignalsSummaryItem"][];
         } & {
             [key: string]: unknown;
@@ -4401,8 +4408,10 @@ export interface components {
         /** @description Ответ getUnprocessedSignalsSummary (SCR-07 / UC-25) */
         OrderExecutionUnprocessedSignalsSummaryResponse: (components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"] & {
             result?: components["schemas"]["OrderExecutionUnprocessedSignalsSummaryResultItem"][];
+            /** @description Подписи полей для плашки сводки */
+            result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
-        /** @description Ответ listUnprocessedSignals (SCR-07 / UC-25) — таблица необработанных сигналов машины. В `result[0].unprocessed_signals` — строки как у initProductionEventWizard. */
+        /** @description Ответ listUnprocessedSignals (SCR-07 / UC-25) — таблица необработанных сигналов машины. `result` — массив строк сигнала (`signal_id`, `signal_description`, `time_start`, …). Устаревший вариант: `result[0].unprocessed_signals[]`. */
         OrderExecutionListUnprocessedSignalsResponse: components["schemas"]["OrderExecutionProductionEventWizardRpcResultRow"][];
         /** @description Запрос initWizard (SCR-07 / UC-25) — init мастера регистрации события */
         OrderExecutionProductionEventWizardInitRequestItem: {

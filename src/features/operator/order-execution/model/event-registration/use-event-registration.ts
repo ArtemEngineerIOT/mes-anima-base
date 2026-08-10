@@ -105,45 +105,26 @@ export function useEventRegistration({
         setWizardSessionId(null);
     }, []);
 
-    const load = useCallback(async () => {
-        const trimmedWorkAreaId = workAreaId?.trim();
-        if (!trimmedWorkAreaId) {
-            resetToEmptySnapshot();
-            setLoadError("Не удалось определить workAreaId этапа");
-            return;
-        }
+    type LoadUnprocessedTableOptions = {
+        silent?: boolean;
+        resetSelection?: boolean;
+    };
 
-        setWizardSessionId(null);
-        setLoadError(null);
+    const loadUnprocessedTable = useCallback(
+        async (trimmedWorkAreaId: string, options?: LoadUnprocessedTableOptions) => {
+            const silent = options?.silent ?? false;
+            const resetSelection = options?.resetSelection ?? !silent;
 
-        try {
-            const payload = await initWizardRef.current({ workAreaId: trimmedWorkAreaId });
-            const mapped = mapEventRegistrationInitWizardPayload(payload, EMPTY_EVENT_REGISTRATION_SNAPSHOT);
-            setWizardSessionId(mapped.wizardSessionId || null);
-            setSnapshot(mapped.snapshot);
-        } catch (error) {
-            resetToEmptySnapshot();
-            setLoadError(
-                error instanceof Error ? error.message : "Не удалось загрузить данные регистрации события",
-            );
-        }
-    }, [resetToEmptySnapshot, workAreaId]);
-
-    /**
-     * Silent-reload таблицы необработанных сигналов по STOMP `machineSignalsSummaryChanged`.
-     * Выбор строки сохраняется, если сигнал ещё есть в ответе (как в списании / выпуске).
-     */
-    const reloadUnprocessedSilent = useCallback(() => {
-        const trimmedWorkAreaId = workAreaId?.trim();
-        if (!trimmedWorkAreaId) {
-            return;
-        }
-
-        void (async () => {
             try {
                 const payload = await listSignalsRef.current(trimmedWorkAreaId);
                 const nextUnprocessed = mapListUnprocessedSignalsPayload(payload);
                 setUnprocessed(nextUnprocessed);
+
+                if (resetSelection) {
+                    setSelectedUnprocessedId(null);
+                    lastAppliedSignalIdRef.current = null;
+                    return;
+                }
 
                 const previousSelectedId = selectedUnprocessedIdRef.current;
                 const nextSelectedId =
@@ -151,11 +132,61 @@ export function useEventRegistration({
                         ? previousSelectedId
                         : null;
                 setSelectedUnprocessedId(nextSelectedId);
-            } catch {
-                // Silent: не ломаем текущую таблицу и выбор оператора при сбое фона.
+                if (previousSelectedId && !nextSelectedId) {
+                    lastAppliedSignalIdRef.current = null;
+                }
+            } catch (error) {
+                if (!silent) {
+                    throw error;
+                }
+                // Silent: не обнуляем таблицу и выбор оператора при сбое фонового запроса.
             }
-        })();
-    }, [workAreaId]);
+        },
+        [],
+    );
+
+    const load = useCallback(async () => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            resetToEmptySnapshot();
+            setUnprocessed([]);
+            setSelectedUnprocessedId(null);
+            lastAppliedSignalIdRef.current = null;
+            setLoadError("Не удалось определить workAreaId этапа");
+            return;
+        }
+
+        setWizardSessionId(null);
+        setLoadError(null);
+        setSelectedUnprocessedId(null);
+        lastAppliedSignalIdRef.current = null;
+
+        try {
+            const [initPayload] = await Promise.all([
+                initWizardRef.current({ workAreaId: trimmedWorkAreaId }),
+                loadUnprocessedTable(trimmedWorkAreaId, { resetSelection: true }),
+            ]);
+            const mapped = mapEventRegistrationInitWizardPayload(initPayload, EMPTY_EVENT_REGISTRATION_SNAPSHOT);
+            setWizardSessionId(mapped.wizardSessionId || null);
+            setSnapshot(mapped.snapshot);
+        } catch (error) {
+            resetToEmptySnapshot();
+            setUnprocessed([]);
+            setLoadError(
+                error instanceof Error ? error.message : "Не удалось загрузить данные регистрации события",
+            );
+        }
+    }, [loadUnprocessedTable, resetToEmptySnapshot, workAreaId]);
+
+    /** Silent-reload таблицы по STOMP `machineSignalsSummaryChanged` — выбор строки сохраняется. */
+    const reloadUnprocessedSilent = useCallback(() => {
+        const trimmedWorkAreaId = workAreaId?.trim();
+        if (!trimmedWorkAreaId) {
+            return;
+        }
+
+        void loadUnprocessedTable(trimmedWorkAreaId, { silent: true, resetSelection: false });
+    }, [loadUnprocessedTable, workAreaId]);
 
     const loadJournal = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -207,17 +238,17 @@ export function useEventRegistration({
         setJournal([]);
         setTotalLengthM(null);
         setJournalLoadError(null);
+        setUnprocessed([]);
+        setSelectedUnprocessedId(null);
+        lastAppliedSignalIdRef.current = null;
     }, [machineId, resetToEmptySnapshot]);
 
     useEffect(() => {
         setStep(1);
         setDraft(createEmptyDraft(snapshot));
-        setUnprocessed(snapshot.unprocessedEvents);
-        setSelectedUnprocessedId(null);
         setDeleteComment("");
         setDiscardError(null);
         setRegisterError(null);
-        lastAppliedSignalIdRef.current = null;
     }, [snapshot]);
 
     useEffect(() => {
