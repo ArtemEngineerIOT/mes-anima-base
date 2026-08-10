@@ -1,14 +1,19 @@
 import { Fragment } from "react";
 
 import type { MaterialsStageOperation } from "@/features/operator/order-execution/model/materials-writeoff/types";
-import { Button } from "@/shared/ui/kit/button";
-import { Icon } from "@/shared/ui/kit/icon";
+import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
+import { Button } from "@/shared/ui/kit/button";
+import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { Icon } from "@/shared/ui/kit/icon";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
+    dataTableHeadCellClassName,
+    dataTableInsetShellClassName,
     dataTableShellClassName,
     dataTableStickyHeadCellClassName,
+    dataTableViewportFooterClassName,
+    dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -25,6 +30,9 @@ type MaterialsWriteoffStageRegistryProps = {
     onPrintReturnLabel: (materialRollId: string) => void;
 };
 
+const headCellClassName = cn(dataTableHeadCellClassName, "bg-muted/40 whitespace-nowrap");
+const bodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
+
 export function MaterialsWriteoffStageRegistry({
     stageOperations,
     isStageRegistryLoading = false,
@@ -36,34 +44,51 @@ export function MaterialsWriteoffStageRegistry({
     onToggleExpandedOpId,
     onPrintReturnLabel,
 }: MaterialsWriteoffStageRegistryProps) {
+    const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(
+        stageOperations,
+        {
+            initialPageSize: 5,
+        },
+    );
+
     return (
-        <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3 pb-2">
-                    <div className={cnSectionBlockTitle()}>Выполненные операции на этапе</div>
-                    {isStageRegistryLoading ? (
-                        <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
-                    ) : stageRegistryAsOf ? (
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                            Актуально на {stageRegistryAsOf}
-                        </span>
-                    ) : null}
-                </div>
-                {stageRegistryError ? (
-                    <div className="text-[12px] text-destructive">{stageRegistryError}</div>
+        <div className="grid gap-2">
+            <div className="flex items-center justify-between gap-3">
+                <div className={cnSectionBlockTitle()}>Выполненные операции на этапе</div>
+                {isStageRegistryLoading ? (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
+                ) : stageRegistryAsOf ? (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                        Актуально на {stageRegistryAsOf}
+                    </span>
                 ) : null}
-                {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
-                <div className={dataTableScrollViewportClassName}>
-                    <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                        <TableHeader className="bg-muted/40">
-                            <TableRow>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-9")} />
-                                <TableHead className={dataTableStickyHeadCellClassName}>Штрихкод</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Номенклатура</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Кол-во 1</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 1</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Кол-во 2</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Ед. изм. 2</TableHead>
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-12 text-right")} />
+            </div>
+            {stageRegistryError ? (
+                <div className="text-[12px] text-destructive">{stageRegistryError}</div>
+            ) : null}
+            {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
+
+            <div className={dataTableViewportShellClassName}>
+                <div className="min-w-0 overflow-x-auto">
+                    <Table
+                        className={cn(
+                            dataTableInsetShellClassName,
+                            "w-full border-separate border-spacing-0 text-[12px]",
+                        )}
+                    >
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={cn(headCellClassName, "w-9")} />
+                                <TableHead className={headCellClassName}>Штрихкод</TableHead>
+                                <TableHead className={headCellClassName}>Номенклатура</TableHead>
+                                <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 1</TableHead>
+                                <TableHead className={headCellClassName}>Ед. изм. 1</TableHead>
+                                <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 2</TableHead>
+                                <TableHead className={headCellClassName}>Ед. изм. 2</TableHead>
+                                <TableHead
+                                    className={cn(headCellClassName, "w-12 text-right")}
+                                    aria-label="Печать этикетки"
+                                />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -71,27 +96,33 @@ export function MaterialsWriteoffStageRegistry({
                                 <TableRow>
                                     <TableCell
                                         colSpan={8}
-                                        className={cn(dataTableBodyCellClassName, "text-center text-muted-foreground")}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
                                     >
                                         Загрузка…
                                     </TableCell>
                                 </TableRow>
-                            ) : stageOperations.length === 0 ? (
+                            ) : pageItems.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={8}
-                                        className={cn(dataTableBodyCellClassName, "text-center text-muted-foreground")}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
                                     >
                                         Нет операций на этапе
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                stageOperations.map((op) => {
+                                pageItems.map((op) => {
                                     const isExpanded = expandedOpIds.has(op.id);
                                     return (
                                         <Fragment key={op.id}>
                                             <TableRow>
-                                                <TableCell className={cn(dataTableBodyCellClassName, "w-9")}>
+                                                <TableCell className={cn(bodyCellClassName, "w-9")}>
                                                     {op.details ? (
                                                         <button
                                                             type="button"
@@ -110,22 +141,19 @@ export function MaterialsWriteoffStageRegistry({
                                                         </button>
                                                     ) : null}
                                                 </TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{op.barcode}</TableCell>
-                                                <TableCell
-                                                    className={cn(dataTableBodyCellClassName, "max-w-[380px] truncate")}
-                                                    title={op.nomenclature}
-                                                >
+                                                <TableCell className={bodyCellClassName}>{op.barcode}</TableCell>
+                                                <TableCell className={bodyCellClassName} title={op.nomenclature}>
                                                     {op.nomenclature}
                                                 </TableCell>
-                                                <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                <TableCell className={cn(bodyCellClassName, "text-right")}>
                                                     {op.qty1}
                                                 </TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{op.unit1}</TableCell>
-                                                <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                <TableCell className={bodyCellClassName}>{op.unit1}</TableCell>
+                                                <TableCell className={cn(bodyCellClassName, "text-right")}>
                                                     {op.qty2}
                                                 </TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{op.unit2}</TableCell>
-                                                <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                <TableCell className={bodyCellClassName}>{op.unit2}</TableCell>
+                                                <TableCell className={cn(bodyCellClassName, "w-12 text-right")}>
                                                     <div className="flex justify-end">
                                                         <Button
                                                             type="button"
@@ -142,91 +170,107 @@ export function MaterialsWriteoffStageRegistry({
                                                 </TableCell>
                                             </TableRow>
 
-                                            {op.details && isExpanded && (
+                                            {op.details && isExpanded ? (
                                                 <TableRow className="bg-muted/20">
                                                     <TableCell className={dataTableBodyCellClassName} />
                                                     <TableCell colSpan={7} className="p-0">
                                                         <div className="px-4 py-2">
-                                                            <div className={dataTableScrollViewportClassName}>
-                                                                <Table
-                                                                    className={cn(dataTableShellClassName, "text-[12px]")}
-                                                                >
-                                                                    <TableHeader className="bg-muted/40">
-                                                                        <TableRow>
-                                                                            <TableHead
+                                                            <Table
+                                                                className={cn(dataTableShellClassName, "text-[12px]")}
+                                                            >
+                                                                <TableHeader className="bg-muted/40">
+                                                                    <TableRow>
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "w-[45%]",
+                                                                            )}
+                                                                        />
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "whitespace-nowrap text-right",
+                                                                            )}
+                                                                        >
+                                                                            Кол-во 1
+                                                                        </TableHead>
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "whitespace-nowrap",
+                                                                            )}
+                                                                        >
+                                                                            Ед. изм. 1
+                                                                        </TableHead>
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "whitespace-nowrap text-right",
+                                                                            )}
+                                                                        >
+                                                                            Кол-во 2
+                                                                        </TableHead>
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "whitespace-nowrap",
+                                                                            )}
+                                                                        >
+                                                                            Ед. изм. 2
+                                                                        </TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {op.details.map((detail) => (
+                                                                        <TableRow key={detail.label}>
+                                                                            <TableCell
                                                                                 className={cn(
-                                                                                    dataTableStickyHeadCellClassName,
-                                                                                    "w-[45%]",
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "text-muted-foreground",
                                                                                 )}
                                                                             >
-                                                                                {" "}
-                                                                            </TableHead>
-                                                                            <TableHead
+                                                                                {detail.label}
+                                                                            </TableCell>
+                                                                            <TableCell
                                                                                 className={cn(
-                                                                                    dataTableStickyHeadCellClassName,
-                                                                                    "text-right",
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "whitespace-nowrap text-right",
                                                                                 )}
                                                                             >
-                                                                                Кол-во 1
-                                                                            </TableHead>
-                                                                            <TableHead className={dataTableStickyHeadCellClassName}>
-                                                                                Ед. изм. 1
-                                                                            </TableHead>
-                                                                            <TableHead
+                                                                                {detail.qty1}
+                                                                            </TableCell>
+                                                                            <TableCell
                                                                                 className={cn(
-                                                                                    dataTableStickyHeadCellClassName,
-                                                                                    "text-right",
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "whitespace-nowrap",
                                                                                 )}
                                                                             >
-                                                                                Кол-во 2
-                                                                            </TableHead>
-                                                                            <TableHead className={dataTableStickyHeadCellClassName}>
-                                                                                Ед. изм. 2
-                                                                            </TableHead>
+                                                                                {detail.unit1}
+                                                                            </TableCell>
+                                                                            <TableCell
+                                                                                className={cn(
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "whitespace-nowrap text-right",
+                                                                                )}
+                                                                            >
+                                                                                {detail.qty2}
+                                                                            </TableCell>
+                                                                            <TableCell
+                                                                                className={cn(
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "whitespace-nowrap",
+                                                                                )}
+                                                                            >
+                                                                                {detail.unit2}
+                                                                            </TableCell>
                                                                         </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
-                                                                        {op.details.map((detail) => (
-                                                                            <TableRow key={detail.label}>
-                                                                                <TableCell
-                                                                                    className={cn(
-                                                                                        dataTableBodyCellClassName,
-                                                                                        "text-muted-foreground",
-                                                                                    )}
-                                                                                >
-                                                                                    {detail.label}
-                                                                                </TableCell>
-                                                                                <TableCell
-                                                                                    className={cn(
-                                                                                        dataTableBodyCellClassName,
-                                                                                        "text-right",
-                                                                                    )}
-                                                                                >
-                                                                                    {detail.qty1}
-                                                                                </TableCell>
-                                                                                <TableCell className={dataTableBodyCellClassName}>
-                                                                                    {detail.unit1}
-                                                                                </TableCell>
-                                                                                <TableCell
-                                                                                    className={cn(
-                                                                                        dataTableBodyCellClassName,
-                                                                                        "text-right",
-                                                                                    )}
-                                                                                >
-                                                                                    {detail.qty2}
-                                                                                </TableCell>
-                                                                                <TableCell className={dataTableBodyCellClassName}>
-                                                                                    {detail.unit2}
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        ))}
-                                                                    </TableBody>
-                                                                </Table>
-                                                            </div>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
-                                            )}
+                                            ) : null}
                                         </Fragment>
                                     );
                                 })
@@ -234,6 +278,19 @@ export function MaterialsWriteoffStageRegistry({
                         </TableBody>
                     </Table>
                 </div>
+                <div className={dataTableViewportFooterClassName}>
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, type MutableRefObject } from "react";
 
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { useOrderExecutionMachineStompState } from "../model/machine-stomp/order-execution-machine-stomp-context";
 import { resolveMachineStompPanelTone } from "../model/machine-stomp/resolve-machine-stomp-panel-tone";
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
-import {
-    REGISTER_SUBMIT_MESSAGE_FADE_MS,
-    REGISTER_SUBMIT_MESSAGE_VISIBLE_MS,
-    useRelease,
-} from "../model/release/use-release";
+import { useRelease } from "../model/release/use-release";
 import { MachineSignalsCombobox } from "@/features/operator/order-execution/ui/machine-signals-combobox";
+import { AutoDismissInformer } from "@/shared/ui/kit/auto-dismiss-informer";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { Icon } from "@/shared/ui/kit/icon";
@@ -40,46 +37,6 @@ type OrderExecutionReleaseProps = {
 
 const batchRollSelectionColumnClassName = "w-10";
 
-type ReleaseSuccessInformerProps = {
-    title: string;
-    onDismiss: () => void;
-};
-
-function ReleaseSuccessInformer({ title, onDismiss }: ReleaseSuccessInformerProps) {
-    const [opaque, setOpaque] = useState(true);
-    const onDismissRef = useRef(onDismiss);
-    onDismissRef.current = onDismiss;
-
-    useEffect(() => {
-        const fadeTimer = window.setTimeout(() => {
-            setOpaque(false);
-        }, REGISTER_SUBMIT_MESSAGE_VISIBLE_MS);
-
-        const dismissTimer = window.setTimeout(() => {
-            onDismissRef.current();
-        }, REGISTER_SUBMIT_MESSAGE_VISIBLE_MS + REGISTER_SUBMIT_MESSAGE_FADE_MS);
-
-        return () => {
-            window.clearTimeout(fadeTimer);
-            window.clearTimeout(dismissTimer);
-        };
-    }, [title]);
-
-    return (
-        <Informer
-            tone="success"
-            variant="filled"
-            size="s"
-            title={title}
-            className={cn(
-                "w-full transition-opacity ease-out",
-                opaque ? "opacity-100" : "opacity-0",
-            )}
-            style={{ transitionDuration: `${REGISTER_SUBMIT_MESSAGE_FADE_MS}ms` }}
-        />
-    );
-}
-
 export function OrderExecutionRelease({
     workAreaId,
     enabled,
@@ -109,6 +66,8 @@ export function OrderExecutionRelease({
         isSubmittingBlock,
         blockSubmitError,
         blockSubmitMessage,
+        blockSubmitMessageKey,
+        dismissBlockSubmitMessage,
         submitBatchBlock,
         isLoading,
         error,
@@ -171,7 +130,7 @@ export function OrderExecutionRelease({
         pageSize: batchPageSize,
         setPageSize: setBatchPageSize,
         setPage: setBatchPage,
-    } = useDataTablePagination(batchRolls, { initialPageSize: 10 });
+    } = useDataTablePagination(batchRolls, { initialPageSize: 5 });
 
     if (!enabled) {
         return null;
@@ -479,7 +438,14 @@ export function OrderExecutionRelease({
                 <section className="flex flex-col gap-3 border-t border-border pt-3">
                     <div className={cnSectionBlockTitle()}>Причины блокировки</div>
                     {blockSubmitMessage ? (
-                        <Informer tone="success" variant="filled" size="s" title={blockSubmitMessage} />
+                        <AutoDismissInformer
+                            key={blockSubmitMessageKey}
+                            tone="success"
+                            variant="filled"
+                            size="s"
+                            title={blockSubmitMessage}
+                            onDismiss={dismissBlockSubmitMessage}
+                        />
                     ) : null}
                     <div className="grid gap-2">
                         <div className={comboboxFieldLabelClassName}>Выберите причину</div>
@@ -546,8 +512,11 @@ export function OrderExecutionRelease({
                     <div className="w-full text-[12px] text-destructive">{registerSubmitError}</div>
                 ) : null}
                 {registerSubmitMessage ? (
-                    <ReleaseSuccessInformer
+                    <AutoDismissInformer
                         key={registerSubmitMessageKey}
+                        tone="success"
+                        variant="filled"
+                        size="s"
                         title={registerSubmitMessage}
                         onDismiss={dismissRegisterSubmitMessage}
                     />

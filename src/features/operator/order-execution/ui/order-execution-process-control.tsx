@@ -5,9 +5,9 @@ import { cn } from "@/shared/lib/css";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
-    dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
+    dataTableHeadCellClassName,
+    dataTableInsetShellClassName,
+    dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -79,44 +79,59 @@ export function OrderExecutionProcessControl({
                 </div>
             </div>
 
-            <div className={dataTableScrollViewportClassName}>
-                <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                    <TableHeader className="bg-muted/40">
-                        <TableRow>
-                            <TableHead className={dataTableStickyHeadCellClassName}>Участок</TableHead>
-                            <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[220px] text-center")}>
-                                Признак
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {checklistRows.map((row) => (
-                            <TableRow key={row.id}>
-                                <TableCell className={dataTableBodyCellClassName}>{row.section}</TableCell>
-                                <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
-                                    {row.hasValue ? (
-                                        <Input
-                                            className="mx-auto h-8 max-w-[180px] text-center text-[12px]"
-                                            value={form.checklistValues[row.id] ?? ""}
-                                            onChange={(event) => setChecklistValue(row.id, event.target.value)}
-                                            disabled={fieldsDisabled}
-                                            aria-label={row.section}
-                                        />
-                                    ) : (
-                                        <input
-                                            type="checkbox"
-                                            checked={Boolean(form.flags[row.id])}
-                                            onChange={() => toggleFlag(row.id)}
-                                            disabled={fieldsDisabled}
-                                            className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
-                                            aria-label={row.section}
-                                        />
-                                    )}
-                                </TableCell>
+            <div className={dataTableViewportShellClassName}>
+                <div className="min-w-0 overflow-x-auto">
+                    <Table
+                        className={cn(
+                            dataTableInsetShellClassName,
+                            "min-w-[480px] border-separate border-spacing-0 text-[12px]",
+                        )}
+                    >
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[70%]")}>
+                                    Участок
+                                </TableHead>
+                                <TableHead
+                                    className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[30%] text-center")}
+                                >
+                                    Признак
+                                </TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {checklistRows.map((row) => (
+                                <TableRow key={row.id}>
+                                    <TableCell
+                                        className={cn(dataTableBodyCellClassName, "text-muted-foreground")}
+                                    >
+                                        {row.section}
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
+                                        {row.hasValue ? (
+                                            <Input
+                                                className="mx-auto h-8 max-w-[180px] text-center text-[12px]"
+                                                value={form.checklistValues[row.id] ?? ""}
+                                                onChange={(event) => setChecklistValue(row.id, event.target.value)}
+                                                disabled={fieldsDisabled}
+                                                aria-label={row.section}
+                                            />
+                                        ) : (
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(form.flags[row.id])}
+                                                onChange={() => toggleFlag(row.id)}
+                                                disabled={fieldsDisabled}
+                                                className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                                                aria-label={row.section}
+                                            />
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             {infoBlocks.map((block) => (

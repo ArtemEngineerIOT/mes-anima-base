@@ -61,7 +61,7 @@ export function EventRegistrationUnprocessedPanel({
     const { pageItems, pagination, pageSize, setPageSize, setPage } = useDataTablePagination(
         sortedUnprocessed,
         {
-            initialPageSize: 10,
+            initialPageSize: 5,
         },
     );
 

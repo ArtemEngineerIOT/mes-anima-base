@@ -102,12 +102,8 @@ export const orderExecutionProductionEventWizardHandlers = [
         return HttpResponse.json([
             {
                 error_code: "OK",
-                error_message: null,
-                result: [
-                    {
-                        unprocessed_signals: getUnprocessedSignals(workAreaId),
-                    },
-                ],
+                error_message: "",
+                result: getUnprocessedSignals(workAreaId),
             },
         ] satisfies ApiSchemas["OrderExecutionListUnprocessedSignalsResponse"]);
     }),

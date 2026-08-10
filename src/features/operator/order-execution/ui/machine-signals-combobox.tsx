@@ -31,7 +31,10 @@ import {
 } from "../model/release/sort-release-production-events-by-registered-at";
 
 const selectionColumnClassName = "w-10";
-const timeColumnClassName = "w-[9.25rem] shrink-0 whitespace-nowrap";
+const timeColumnClassName = "w-[9.25rem] whitespace-nowrap";
+/** Колонка «Длина»: компактная фиксированная ширина (header + иконка сортировки) */
+const lengthColumnClassName = "w-[5.5rem] whitespace-nowrap";
+const nameColumnClassName = "min-w-0";
 
 /** Число строк тела в выпадающем списке (~max-h-60 с учётом шапки). */
 const COMBOBOX_VISIBLE_BODY_ROWS = 5;
@@ -223,19 +226,19 @@ export function MachineSignalsCombobox({
 
                 <PopoverContent
                     align="start"
-                    className="w-[var(--radix-popover-trigger-width)] min-w-[480px] p-0"
+                    className="w-[var(--radix-popover-trigger-width)] min-w-[480px] overflow-hidden p-0"
                     onOpenAutoFocus={(event) => {
                         event.preventDefault();
                     }}
                 >
                     <DataTableViewport
                         visibleBodyRows={COMBOBOX_VISIBLE_BODY_ROWS}
-                        className="rounded-none border-0 shadow-none"
+                        className="rounded-none border-0 shadow-none [&_.data-table-split-scroll]:overflow-x-hidden"
                     >
                         <Table
                             className={cn(
                                 dataTableInsetShellClassName,
-                                "min-w-[460px] border-separate border-spacing-0 text-[12px]",
+                                "border-separate border-spacing-0 text-[12px]",
                             )}
                         >
                             <TableHeader>
@@ -264,7 +267,8 @@ export function MachineSignalsCombobox({
                                                     className={cn(
                                                         dataTableHeadCellClassName,
                                                         "bg-muted/40",
-                                                        column.key === "length_m" && "text-right",
+                                                        column.key === "length_m" &&
+                                                            cn("text-right", lengthColumnClassName),
                                                         column.key === "registered_at" && timeColumnClassName,
                                                     )}
                                                     aria-sort={
@@ -278,7 +282,7 @@ export function MachineSignalsCombobox({
                                                     <button
                                                         type="button"
                                                         className={cn(
-                                                            "inline-flex items-center gap-1 hover:text-foreground",
+                                                            "inline-flex max-w-full items-center gap-1 hover:text-foreground",
                                                             column.key === "registered_at" &&
                                                                 "text-left uppercase whitespace-nowrap",
                                                             column.key === "length_m" && "ml-auto",
@@ -291,7 +295,7 @@ export function MachineSignalsCombobox({
                                                             isActiveSort ? sort.direction : "desc",
                                                         )}
                                                     >
-                                                        <span>{headerLabel}</span>
+                                                        <span className="truncate">{headerLabel}</span>
                                                         {isActiveSort ? (
                                                             <SortDirectionIcon direction={sort.direction} />
                                                         ) : (
@@ -308,7 +312,11 @@ export function MachineSignalsCombobox({
                                         return (
                                             <TableHead
                                                 key={column.key}
-                                                className={cn(dataTableHeadCellClassName, "bg-muted/40")}
+                                                className={cn(
+                                                    dataTableHeadCellClassName,
+                                                    "bg-muted/40",
+                                                    column.key === "event_description" && nameColumnClassName,
+                                                )}
                                             >
                                                 {headerLabel}
                                             </TableHead>
@@ -356,10 +364,12 @@ export function MachineSignalsCombobox({
                                                             key={`${row.id}-${column.key}`}
                                                             className={cn(
                                                                 dataTableBodyCellClassName,
-                                                                column.key === "length_m" && "text-right",
-                                                                column.key === "registered_at" && timeColumnClassName,
+                                                                column.key === "length_m" &&
+                                                                    cn("text-right", lengthColumnClassName),
+                                                                column.key === "registered_at" &&
+                                                                    timeColumnClassName,
                                                                 column.key === "event_description" &&
-                                                                    "max-w-[180px] truncate",
+                                                                    cn(nameColumnClassName, "truncate"),
                                                             )}
                                                             title={
                                                                 column.key === "event_description"

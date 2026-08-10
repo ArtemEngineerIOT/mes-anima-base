@@ -2,14 +2,16 @@ import { Fragment } from "react";
 
 import type { MaterialsPresenceRow } from "@/features/operator/order-execution/model/materials-writeoff/types";
 import { Button } from "@/shared/ui/kit/button";
+import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { Icon } from "@/shared/ui/kit/icon";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
+    dataTableHeadCellClassName,
+    dataTableInsetShellClassName,
     dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
+    dataTableSplitScrollBodyClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -56,7 +58,7 @@ export function MaterialsWriteoffPresenceTable({
     onSelectForWriteoff,
 }: MaterialsWriteoffPresenceTableProps) {
     return (
-        <div className="space-y-2">
+        <div className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
                 <div className={cnSectionBlockTitle()}>Рулоны в машине</div>
                 {isLoading ? (
@@ -65,24 +67,39 @@ export function MaterialsWriteoffPresenceTable({
                     <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {presenceAsOf}</span>
                 ) : null}
             </div>
-            <div className={dataTableScrollViewportClassName}>
-                <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                    <TableHeader className="bg-muted/40">
-                        <TableRow>
-                            <TableHead className={cn(dataTableStickyHeadCellClassName, "w-9")} />
-                            <TableHead className={dataTableStickyHeadCellClassName}>Номенклатура</TableHead>
-                            <TableHead className={dataTableStickyHeadCellClassName}>Серия</TableHead>
-                            <TableHead className={dataTableStickyHeadCellClassName}>Время сканирования</TableHead>
-                            <TableHead className={dataTableStickyHeadCellClassName}>Статус</TableHead>
-                            <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>Действие</TableHead>
+
+            <DataTableViewport layout="fixed">
+                <Table
+                    className={cn(
+                        dataTableInsetShellClassName,
+                        "min-w-[720px] border-separate border-spacing-0 text-[12px]",
+                    )}
+                >
+                    <TableHeader>
+                        <TableRow className="hover:!bg-transparent">
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-9")} />
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                                Номенклатура
+                            </TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Серия</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                                Время сканирования
+                            </TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Статус</TableHead>
+                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                Действие
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={dataTableSplitScrollBodyClassName}>
                         {isLoading ? (
                             <TableRow>
                                 <TableCell
                                     colSpan={6}
-                                    className={cn(dataTableBodyCellClassName, "text-center text-muted-foreground")}
+                                    className={cn(
+                                        dataTableBodyCellClassName,
+                                        "py-6 text-center text-muted-foreground",
+                                    )}
                                 >
                                     Загрузка…
                                 </TableCell>
@@ -91,7 +108,10 @@ export function MaterialsWriteoffPresenceTable({
                             <TableRow>
                                 <TableCell
                                     colSpan={6}
-                                    className={cn(dataTableBodyCellClassName, "text-center text-muted-foreground")}
+                                    className={cn(
+                                        dataTableBodyCellClassName,
+                                        "py-6 text-center text-muted-foreground",
+                                    )}
                                 >
                                     Нет рулонов в машине
                                 </TableCell>
@@ -108,7 +128,9 @@ export function MaterialsWriteoffPresenceTable({
                                                 <button
                                                     type="button"
                                                     className="inline-flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent"
-                                                    onClick={() => onExpandedRowIdChange(isExpanded ? null : row.id)}
+                                                    onClick={() =>
+                                                        onExpandedRowIdChange(isExpanded ? null : row.id)
+                                                    }
                                                     aria-label={`Раскрыть ${row.nomenclatureName}`}
                                                 >
                                                     <Icon
@@ -127,8 +149,12 @@ export function MaterialsWriteoffPresenceTable({
                                             >
                                                 {row.nomenclatureName}
                                             </TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.scannedAt}</TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>
+                                                {row.barcode}
+                                            </TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>
+                                                {row.scannedAt}
+                                            </TableCell>
                                             <TableCell className={dataTableBodyCellClassName}>
                                                 <PresenceStatusPill status={row.status} />
                                             </TableCell>
@@ -170,7 +196,12 @@ export function MaterialsWriteoffPresenceTable({
                                                 <TableCell className={dataTableBodyCellClassName} />
                                                 <TableCell colSpan={5} className="p-0">
                                                     <div className="px-4 py-2">
-                                                        <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+                                                        <Table
+                                                            className={cn(
+                                                                dataTableShellClassName,
+                                                                "text-[12px]",
+                                                            )}
+                                                        >
                                                             <TableBody>
                                                                 <TableRow>
                                                                     <TableCell
@@ -181,7 +212,9 @@ export function MaterialsWriteoffPresenceTable({
                                                                     >
                                                                         Единица измерения
                                                                     </TableCell>
-                                                                    <TableCell className={dataTableBodyCellClassName}>
+                                                                    <TableCell
+                                                                        className={dataTableBodyCellClassName}
+                                                                    >
                                                                         {row.quantityUom}
                                                                     </TableCell>
                                                                 </TableRow>
@@ -194,7 +227,9 @@ export function MaterialsWriteoffPresenceTable({
                                                                     >
                                                                         Метраж, м
                                                                     </TableCell>
-                                                                    <TableCell className={dataTableBodyCellClassName}>
+                                                                    <TableCell
+                                                                        className={dataTableBodyCellClassName}
+                                                                    >
                                                                         {row.currentLengthM}
                                                                     </TableCell>
                                                                 </TableRow>
@@ -207,7 +242,9 @@ export function MaterialsWriteoffPresenceTable({
                                                                     >
                                                                         Вес, кг
                                                                     </TableCell>
-                                                                    <TableCell className={dataTableBodyCellClassName}>
+                                                                    <TableCell
+                                                                        className={dataTableBodyCellClassName}
+                                                                    >
                                                                         {row.currentWeightKg}
                                                                     </TableCell>
                                                                 </TableRow>
@@ -223,7 +260,7 @@ export function MaterialsWriteoffPresenceTable({
                         )}
                     </TableBody>
                 </Table>
-            </div>
+            </DataTableViewport>
         </div>
     );
 }

@@ -12,8 +12,8 @@ type UseMaterialsFrontMachineSignalsSummaryChangedSubscriptionOptions = {
 
 /**
  * STOMP подписка на `machineSignalsSummaryChanged` (Aggregate downtimeFrontEvents).
- * Обновляет сводку блока «Регистрация события»
- * (старт — `getOrderExecution.machine_signals_block`).
+ * Тело события: `[{ unprocessed_count, processed_count, total_count, work_area_id, changed_at }]`.
+ * Обновляет плашку и badge блока «Регистрация события» (старт — `getOrderExecution.machine_signals_block`).
  */
 export function useMaterialsFrontMachineSignalsSummaryChangedSubscription({
     enabled,

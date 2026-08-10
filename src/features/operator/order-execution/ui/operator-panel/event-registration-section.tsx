@@ -83,8 +83,12 @@ export function OrderExecutionEventRegistrationSection({
         [onExpandedChange],
     );
 
-    const headerCount = signalsSummary.totalCount > 0 ? signalsSummary.totalCount : unprocessedCount;
+    const headerCount =
+        signalsSummary.unprocessedCount > 0 ? signalsSummary.unprocessedCount : unprocessedCount;
     const headerTone = headerCount > 0 ? "warning" : "success";
+
+    /** Плашка — только если есть необработанные сигналы с машины (как в «Выпуск» / «Материалы») */
+    const hasMachineSignals = unprocessedCount > 0 || signalsSummary.unprocessedCount > 0;
 
     return (
         <OrderExecutionCollapsibleSection
@@ -100,11 +104,13 @@ export function OrderExecutionEventRegistrationSection({
                     <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={loadError} />
                 ) : null}
 
-                <EventRegistrationSignalsSummaryPanel
-                    snapshot={signalsSummary}
-                    isLoading={isSignalsSummaryLoading}
-                    error={signalsSummaryError}
-                />
+                {hasMachineSignals ? (
+                    <EventRegistrationSignalsSummaryPanel
+                        snapshot={signalsSummary}
+                        isLoading={isSignalsSummaryLoading}
+                        error={signalsSummaryError}
+                    />
+                ) : null}
 
                 <EventRegistrationUnprocessedPanel registration={registration} disabled={isWizardDisabled} />
 

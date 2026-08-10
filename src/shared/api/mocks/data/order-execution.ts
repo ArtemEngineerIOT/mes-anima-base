@@ -23,10 +23,12 @@ export type MockOrderExecutionMachineSignalsSummaryRow = {
 
 export type MockOrderExecutionMachineSignalsBlockItem = {
     work_area_id: string;
+    unprocessed_count: number;
+    processed_count: number;
     total_count: number;
-    last_event_at: string;
+    last_event_at?: string;
     changed_at: string;
-    summary: MockOrderExecutionMachineSignalsSummaryRow[];
+    summary?: MockOrderExecutionMachineSignalsSummaryRow[];
 };
 
 export type MockOrderExecutionResultItem = {
@@ -72,46 +74,10 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
         machine_signals_block: [
             {
                 work_area_id: "191",
-                last_event_at: "2026-08-07 12:49:40",
+                unprocessed_count: 2,
+                processed_count: 146,
                 total_count: 148,
                 changed_at: "07.08.2026 12:56:16",
-                summary: [
-                    {
-                        count: "21",
-                        signal_name: "inSplice",
-                        signal_description: "Сращивание на входе",
-                    },
-                    {
-                        count: "21",
-                        signal_name: "outSplice",
-                        signal_description: "Сращивание на выходе",
-                    },
-                    {
-                        count: "20",
-                        signal_name: "lostConn",
-                        signal_description: "Потеря связи с машиной",
-                    },
-                    {
-                        count: "20",
-                        signal_name: "reConn",
-                        signal_description: "Восстановление связи с машиной",
-                    },
-                    {
-                        count: "21",
-                        signal_name: "printStart",
-                        signal_description: "Старт печати",
-                    },
-                    {
-                        count: "24",
-                        signal_name: "printStop",
-                        signal_description: "Стоп печати",
-                    },
-                    {
-                        count: "21",
-                        signal_name: "markedDefect",
-                        signal_description: "Нажата кнопка Брак у машины",
-                    },
-                ],
             },
         ],
         header: [

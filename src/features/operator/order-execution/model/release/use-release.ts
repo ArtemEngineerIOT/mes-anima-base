@@ -37,10 +37,10 @@ type LoadProductionEventOptions = {
     silent?: boolean;
 };
 
-/** Сколько держать информер успешного выпуска до начала fade-out */
-export const REGISTER_SUBMIT_MESSAGE_VISIBLE_MS = 4000;
-/** Длительность плавного исчезновения информера успешного выпуска */
-export const REGISTER_SUBMIT_MESSAGE_FADE_MS = 300;
+/** @deprecated Используйте {@link TRANSIENT_INFORMER_VISIBLE_MS} из `@/shared/ui/kit/auto-dismiss-informer` */
+export { TRANSIENT_INFORMER_VISIBLE_MS as REGISTER_SUBMIT_MESSAGE_VISIBLE_MS } from "@/shared/ui/kit/auto-dismiss-informer";
+/** @deprecated Используйте {@link TRANSIENT_INFORMER_FADE_MS} из `@/shared/ui/kit/auto-dismiss-informer` */
+export { TRANSIENT_INFORMER_FADE_MS as REGISTER_SUBMIT_MESSAGE_FADE_MS } from "@/shared/ui/kit/auto-dismiss-informer";
 
 export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseReleaseOptions) {
     const [form, setForm] = useState<ReleaseFormState>(RELEASE_INITIAL_FORM);
@@ -66,6 +66,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
     const [blockSubmitError, setBlockSubmitError] = useState<string | null>(null);
     const [blockSubmitMessage, setBlockSubmitMessage] = useState<string | null>(null);
+    const [blockSubmitMessageKey, setBlockSubmitMessageKey] = useState(0);
 
     const {
         blockReasons,
@@ -139,6 +140,10 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
 
     const dismissRegisterSubmitMessage = useCallback(() => {
         setRegisterSubmitMessage(null);
+    }, []);
+
+    const dismissBlockSubmitMessage = useCallback(() => {
+        setBlockSubmitMessage(null);
     }, []);
 
     const selectedProductionEventIdRef = useRef(selectedProductionEventId);
@@ -269,10 +274,11 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         void load();
     }, [enabled, load]);
 
-    /** Сворачивание / разворачивание блока — сразу убираем информер успеха */
+    /** Сворачивание / разворачивание блока — сразу убираем всплывающие информеры */
     useEffect(() => {
         setRegisterSubmitMessage(null);
         setRegisterSubmitError(null);
+        setBlockSubmitMessage(null);
     }, [enabled]);
 
     const patchForm = useCallback((patch: Partial<ReleaseFormState>) => {
@@ -378,6 +384,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             const payload = await submitBlockRequestRef.current({ body });
             const result = mapReleaseSubmitBlockPayload(payload);
             setBlockSubmitMessage(result.message);
+            setBlockSubmitMessageKey((key) => key + 1);
             setSelectedBatchRollIds(new Set());
             setBlockComment("");
             setSelectedBlockReasonCode(null);
@@ -554,6 +561,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         isSubmittingBlock,
         blockSubmitError,
         blockSubmitMessage,
+        blockSubmitMessageKey,
+        dismissBlockSubmitMessage,
         submitBatchBlock,
         productionEvent,
         isProductionEventLoading,
