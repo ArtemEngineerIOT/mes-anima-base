@@ -56,6 +56,8 @@ export function Informer({
     const toneKey: InformerTone = tone ?? "normal";
     const tokens = informerToneTokens[toneKey];
     const isFilled = variant === "filled";
+    const isBordered = variant === "bordered";
+    const isOutline = variant === "outline";
 
     const shellClass =
         variant === "filled"
@@ -65,14 +67,20 @@ export function Informer({
               : tokens.bordered;
 
     /** Bordered не задаёт цвет текста на корне — без этого возможно наследование светлого цвета от родителя. */
-    const borderedReadableText = variant === "bordered" && !isFilled ? "text-card-foreground" : null;
+    const borderedReadableText = isBordered ? "text-card-foreground" : null;
 
     return (
         <div
-            className={cn(informerVariants({ tone, variant, size }), shellClass, borderedReadableText, className)}
+            className={cn(
+                informerVariants({ tone, variant, size }),
+                shellClass,
+                isBordered && tokens.borderedEdge,
+                borderedReadableText,
+                className,
+            )}
             {...props}
         >
-            {!isFilled && <div className={cn("w-1 self-stretch rounded-sm", tokens.bar)} />}
+            {isOutline ? <div className={cn("w-1 self-stretch rounded-sm", tokens.bar)} /> : null}
             <Icon
                 name={iconName ?? tokens.icon}
                 size="md"

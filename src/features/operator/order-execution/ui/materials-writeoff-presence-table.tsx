@@ -64,7 +64,7 @@ export function MaterialsWriteoffPresenceTable({
                 {isLoading ? (
                     <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
                 ) : presenceAsOf ? (
-                    <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {presenceAsOf}</span>
+                    <span className="shrink-0 text-[11px] text-muted-foreground">Обновлено: {presenceAsOf}</span>
                 ) : null}
             </div>
 

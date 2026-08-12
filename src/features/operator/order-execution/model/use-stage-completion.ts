@@ -160,6 +160,10 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
         }
     }, [canSubmitPrerequisites, comment, session, workAreaId]);
 
+    const dismissSubmitError = useCallback(() => {
+        setSubmitError(null);
+    }, []);
+
     return {
         snapshot,
         comment,
@@ -175,6 +179,7 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
         initError,
         isSubmitting,
         submitError,
+        dismissSubmitError,
         reloadInit: loadInit,
     };
 }

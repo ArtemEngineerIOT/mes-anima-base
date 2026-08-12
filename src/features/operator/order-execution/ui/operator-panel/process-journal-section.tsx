@@ -7,8 +7,8 @@ import { Icon } from "@/shared/ui/kit/icon";
 import { Informer } from "@/shared/ui/kit/informer";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
     dataTableInsetShellClassName,
+    dataTableStickyHeadCellClassName,
     dataTableViewportFooterClassName,
     dataTableViewportShellClassName,
     type DataTablePageSize,
@@ -19,6 +19,7 @@ import { useEventRegistrationContext } from "../../model/event-registration/even
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 
 const expandColumnClassName = "w-10";
+const headCellClassName = dataTableStickyHeadCellClassName;
 
 function formatNumber(value: number): string {
     return new Intl.NumberFormat("ru-RU").format(value);
@@ -86,18 +87,16 @@ export function OrderExecutionProcessJournalSection({
                                 "min-w-[640px] border-separate border-spacing-0 text-[12px]",
                             )}
                         >
-                            <TableHeader>
+                            <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:!bg-transparent">
                                     <TableHead
-                                        className={cn(dataTableHeadCellClassName, "bg-muted/40", expandColumnClassName)}
+                                        className={cn(headCellClassName, expandColumnClassName)}
                                         aria-label="Детали события"
                                     />
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Код события</TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Конец</TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                        Метраж
-                                    </TableHead>
+                                    <TableHead className={headCellClassName}>Код события</TableHead>
+                                    <TableHead className={headCellClassName}>Начало</TableHead>
+                                    <TableHead className={headCellClassName}>Конец</TableHead>
+                                    <TableHead className={cn(headCellClassName, "text-right")}>Метраж</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -146,22 +145,12 @@ export function OrderExecutionProcessJournalSection({
                                                                     "border-separate border-spacing-0 text-[12px]",
                                                                 )}
                                                             >
-                                                                <TableHeader>
+                                                                <TableHeader className="bg-muted/40">
                                                                     <TableRow className="hover:!bg-transparent">
-                                                                        <TableHead
-                                                                            className={cn(
-                                                                                dataTableHeadCellClassName,
-                                                                                "bg-muted/40",
-                                                                            )}
-                                                                        >
+                                                                        <TableHead className={headCellClassName}>
                                                                             Параметр
                                                                         </TableHead>
-                                                                        <TableHead
-                                                                            className={cn(
-                                                                                dataTableHeadCellClassName,
-                                                                                "bg-muted/40",
-                                                                            )}
-                                                                        >
+                                                                        <TableHead className={headCellClassName}>
                                                                             Значение
                                                                         </TableHead>
                                                                     </TableRow>

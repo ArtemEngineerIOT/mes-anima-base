@@ -1,31 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/lib/css";
-import { Informer, type InformerProps } from "@/shared/ui/kit/informer";
+import {
+    TRANSIENT_INFORMER_FADE_MS,
+    TRANSIENT_INFORMER_VISIBLE_MS,
+} from "@/shared/ui/kit/auto-dismiss-informer";
 
-/** Сколько держать всплывающий информер до начала fade-out (единое для всех таких плашек). */
-export const TRANSIENT_INFORMER_VISIBLE_MS = 7000;
+export type AutoDismissMessageTone = "success" | "alert";
 
-/** Длительность плавного исчезновения всплывающего информера. */
-export const TRANSIENT_INFORMER_FADE_MS = 300;
-
-export type AutoDismissInformerProps = Omit<InformerProps, "children"> & {
+export type AutoDismissMessageProps = {
+    message: string;
+    tone?: AutoDismissMessageTone;
     /** Сброс сообщения в состоянии после fade-out */
     onDismiss: () => void;
+    className?: string;
+};
+
+const toneClassName: Record<AutoDismissMessageTone, string> = {
+    success: "text-foreground",
+    alert: "text-destructive",
 };
 
 /**
- * Всплывающий `Informer`: показывается, затем fade-out и `onDismiss`.
+ * Всплывающая текстовая надпись: показывается, затем fade-out и `onDismiss`.
  * Тайминги — {@link TRANSIENT_INFORMER_VISIBLE_MS} / {@link TRANSIENT_INFORMER_FADE_MS}.
  * Чтобы повторно показать тот же текст, задайте новый `key` у компонента.
  */
-export function AutoDismissInformer({
+export function AutoDismissMessage({
+    message,
+    tone = "alert",
     onDismiss,
     className,
-    title,
-    description,
-    ...informerProps
-}: AutoDismissInformerProps) {
+}: AutoDismissMessageProps) {
     const [opaque, setOpaque] = useState(true);
     const onDismissRef = useRef(onDismiss);
     onDismissRef.current = onDismiss;
@@ -45,22 +51,20 @@ export function AutoDismissInformer({
             window.clearTimeout(fadeTimer);
             window.clearTimeout(dismissTimer);
         };
-    }, [title, description]);
+    }, [message]);
 
     return (
-        <Informer
-            {...informerProps}
-            title={title}
-            description={description}
+        <p
             className={cn(
-                "w-full transition-opacity ease-out",
+                "w-full text-[12px] leading-4 transition-opacity ease-out",
+                toneClassName[tone],
                 opaque ? "opacity-100" : "opacity-0",
                 className,
             )}
-            style={{
-                ...informerProps.style,
-                transitionDuration: `${TRANSIENT_INFORMER_FADE_MS}ms`,
-            }}
-        />
+            style={{ transitionDuration: `${TRANSIENT_INFORMER_FADE_MS}ms` }}
+            aria-live="polite"
+        >
+            {message}
+        </p>
     );
 }

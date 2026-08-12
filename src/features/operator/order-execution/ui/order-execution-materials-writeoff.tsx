@@ -5,7 +5,7 @@ import type { RollWriteOffEventsSummarySnapshot } from "@/features/operator/orde
 import { getReleaseProductionEventCellValue } from "@/features/operator/order-execution/model/release/map-event-release-production-payload";
 import { resolveMachineStompPanelTone } from "@/features/operator/order-execution/model/machine-stomp/resolve-machine-stomp-panel-tone";
 import { useOrderExecutionMachineStompState } from "@/features/operator/order-execution/model/machine-stomp/order-execution-machine-stomp-context";
-import { AutoDismissInformer } from "@/shared/ui/kit/auto-dismiss-informer";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { MaterialsWriteoffFormPanel } from "@/features/operator/order-execution/ui/materials-writeoff-form-panel";
 import { MaterialsWriteoffPresenceTable } from "@/features/operator/order-execution/ui/materials-writeoff-presence-table";
@@ -112,14 +112,12 @@ export function OrderExecutionMaterialsWriteoff({
         isReflectingReturn,
         isWritingOffFully,
         isSubmittingStageLkm,
-        reflectReturnError,
-        writeOffFullyError,
-        submitStageLkmError,
+        formPanelMessage,
+        dismissFormPanelMessage,
         warehouseOptions,
         isWarehousesLoading,
         warehousesError,
         isWriteoffWeightLoading,
-        writeoffWeightError,
         showWriteoffFlow,
         stageRegistry,
     } = useMaterialsWriteoff({
@@ -192,14 +190,14 @@ export function OrderExecutionMaterialsWriteoff({
                                 }
                             }}
                             placeholder="Результат сканирования штрихкода"
-                            className="w-full"
+                            className="h-8 w-full"
                             disabled={isSearching}
                         />
                     </div>
                     <div className="w-full sm:w-44">
                         <div className={comboboxFieldLabelClassName}>Место установки</div>
                         <select
-                            className="mt-1 h-9 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                            className="mt-1 h-8 w-full rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             value={installationPlace}
                             onChange={(e) => setInstallationPlace(e.target.value as typeof installationPlace)}
                             disabled={isSearching}
@@ -225,10 +223,10 @@ export function OrderExecutionMaterialsWriteoff({
             </div>
 
             {searchError ? (
-                <AutoDismissInformer
+                <FloatingAutoDismissInformer
                     key={`search-error:${searchError}`}
                     tone="alert"
-                    variant="filled"
+                    variant="bordered"
                     size="s"
                     title="Ошибка регистрации"
                     description={searchError}
@@ -237,10 +235,11 @@ export function OrderExecutionMaterialsWriteoff({
             ) : null}
 
             {scanBanner?.stageSpecBannerVisible ? (
-                <AutoDismissInformer
+                <FloatingAutoDismissInformer
                     key={`scan-banner:${scanBanner.stageSpecBannerTitle}:${scanBanner.stageSpecBannerDetail}`}
                     tone="warning"
-                    variant="filled"
+                    variant="bordered"
+                    size="s"
                     title={scanBanner.stageSpecBannerTitle || "Внимание"}
                     description={scanBanner.stageSpecBannerDetail || undefined}
                     onDismiss={dismissScanBanner}
@@ -248,10 +247,10 @@ export function OrderExecutionMaterialsWriteoff({
             ) : null}
 
             {presenceError ? (
-                <AutoDismissInformer
+                <FloatingAutoDismissInformer
                     key={`presence-error:${presenceError}`}
                     tone="alert"
-                    variant="filled"
+                    variant="bordered"
                     size="s"
                     title="Рулоны в машине"
                     description={presenceError}
@@ -260,10 +259,10 @@ export function OrderExecutionMaterialsWriteoff({
             ) : null}
 
             {moveToUnwindError ? (
-                <AutoDismissInformer
+                <FloatingAutoDismissInformer
                     key={`move-to-unwind:${moveToUnwindError}`}
                     tone="alert"
-                    variant="filled"
+                    variant="bordered"
                     size="s"
                     title="На размотку"
                     description={moveToUnwindError}
@@ -291,7 +290,6 @@ export function OrderExecutionMaterialsWriteoff({
                     isWarehousesLoading={isWarehousesLoading}
                     warehousesError={warehousesError}
                     isWriteoffWeightLoading={isWriteoffWeightLoading}
-                    writeoffWeightError={writeoffWeightError}
                     canCalculateWeight={canCalculateWeight}
                     isWriteoffActionsEnabled={isWriteoffActionsEnabled}
                     isReflectReturnEnabled={isReflectReturnEnabled}
@@ -299,16 +297,15 @@ export function OrderExecutionMaterialsWriteoff({
                     isReflectingReturn={isReflectingReturn}
                     isWritingOffFully={isWritingOffFully}
                     isSubmittingStageLkm={isSubmittingStageLkm}
-                    reflectReturnError={reflectReturnError}
-                    writeOffFullyError={writeOffFullyError}
-                    submitStageLkmError={submitStageLkmError}
+                    formPanelMessage={formPanelMessage}
+                    onDismissFormPanelMessage={dismissFormPanelMessage}
                     isFormEnabled={showWriteoffFlow}
                     signalList={signalList}
                     signalsEmptyStateMessage={signalsEmptyStateMessage}
                     isSignalsLoading={isSignalsLoading}
                     signalsError={signalsError}
                     selectedSignalId={selectedSignalId}
-                    onToggleSignal={hasMachineSignals ? handleToggleSignal : undefined}
+                    onToggleSignal={handleToggleSignal}
                     onCalculateWriteoffWeight={() => {
                         void calculateWriteoffWeight();
                     }}

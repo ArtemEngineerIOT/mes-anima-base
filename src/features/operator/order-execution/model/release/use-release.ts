@@ -37,6 +37,14 @@ type LoadProductionEventOptions = {
     silent?: boolean;
 };
 
+/** Сообщение snackbar (выпуск / блокировка). */
+export type ReleasePanelFeedback = {
+    key: number;
+    title: string;
+    description?: string;
+    tone: "success" | "alert";
+};
+
 /** @deprecated Используйте {@link TRANSIENT_INFORMER_VISIBLE_MS} из `@/shared/ui/kit/auto-dismiss-informer` */
 export { TRANSIENT_INFORMER_VISIBLE_MS as REGISTER_SUBMIT_MESSAGE_VISIBLE_MS } from "@/shared/ui/kit/auto-dismiss-informer";
 /** @deprecated Используйте {@link TRANSIENT_INFORMER_FADE_MS} из `@/shared/ui/kit/auto-dismiss-informer` */
@@ -49,9 +57,6 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isRegisteringRelease, setIsRegisteringRelease] = useState(false);
-    const [registerSubmitError, setRegisterSubmitError] = useState<string | null>(null);
-    const [registerSubmitMessage, setRegisterSubmitMessage] = useState<string | null>(null);
-    const [registerSubmitMessageKey, setRegisterSubmitMessageKey] = useState(0);
     const [printingReleaseId, setPrintingReleaseId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
     const [productionEvent, setProductionEvent] = useState<ReleaseProductionEventSnapshot>(
@@ -64,9 +69,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const [selectedBlockReasonCode, setSelectedBlockReasonCode] = useState<string | null>(null);
     const [blockComment, setBlockComment] = useState("");
     const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
-    const [blockSubmitError, setBlockSubmitError] = useState<string | null>(null);
-    const [blockSubmitMessage, setBlockSubmitMessage] = useState<string | null>(null);
-    const [blockSubmitMessageKey, setBlockSubmitMessageKey] = useState(0);
+    const [panelFeedback, setPanelFeedback] = useState<ReleasePanelFeedback | null>(null);
+    const panelFeedbackKeyRef = useRef(0);
 
     const {
         blockReasons,
@@ -132,19 +136,25 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         setSelectedBatchRollIds(new Set());
         setSelectedBlockReasonCode(null);
         setBlockComment("");
-        setBlockSubmitError(null);
-        setBlockSubmitMessage(null);
-        setRegisterSubmitError(null);
-        setRegisterSubmitMessage(null);
+        setPanelFeedback(null);
     }, [resetFormState]);
 
-    const dismissRegisterSubmitMessage = useCallback(() => {
-        setRegisterSubmitMessage(null);
+    const dismissPanelFeedback = useCallback(() => {
+        setPanelFeedback(null);
     }, []);
 
-    const dismissBlockSubmitMessage = useCallback(() => {
-        setBlockSubmitMessage(null);
-    }, []);
+    const showPanelFeedback = useCallback(
+        (title: string, tone: ReleasePanelFeedback["tone"], description?: string) => {
+            panelFeedbackKeyRef.current += 1;
+            setPanelFeedback({
+                key: panelFeedbackKeyRef.current,
+                title,
+                description,
+                tone,
+            });
+        },
+        [],
+    );
 
     const selectedProductionEventIdRef = useRef(selectedProductionEventId);
     selectedProductionEventIdRef.current = selectedProductionEventId;
@@ -158,8 +168,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             requiresRewind: false,
             isLastRoll: false,
         }));
-        setRegisterSubmitError(null);
-        setRegisterSubmitMessage(null);
+        setPanelFeedback(null);
     }, []);
 
     const loadProductionEvent = useCallback(async (
@@ -276,9 +285,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
 
     /** Сворачивание / разворачивание блока — сразу убираем всплывающие информеры */
     useEffect(() => {
-        setRegisterSubmitMessage(null);
-        setRegisterSubmitError(null);
-        setBlockSubmitMessage(null);
+        setPanelFeedback(null);
     }, [enabled]);
 
     const patchForm = useCallback((patch: Partial<ReleaseFormState>) => {
@@ -294,8 +301,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         }
 
         setForm((prev) => ({ ...prev, ...normalizedPatch }));
-        setRegisterSubmitError(null);
-        setRegisterSubmitMessage(null);
+        setPanelFeedback(null);
     }, []);
 
     const setNetWeight = useCallback((netWeightKg: string) => {
@@ -305,8 +311,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             netWeightKg: sanitized,
             grossWeightKg: sanitized,
         }));
-        setRegisterSubmitError(null);
-        setRegisterSubmitMessage(null);
+        setPanelFeedback(null);
     }, []);
 
     const toggleProductionEventSignal = useCallback(
@@ -341,14 +346,12 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             }
             return next;
         });
-        setBlockSubmitError(null);
-        setBlockSubmitMessage(null);
+        setPanelFeedback(null);
     }, []);
 
     const selectBlockReason = useCallback((code: string | null) => {
         setSelectedBlockReasonCode(code);
-        setBlockSubmitError(null);
-        setBlockSubmitMessage(null);
+        setPanelFeedback(null);
     }, []);
 
     const selectedBlockSeriesRefs = useMemo(
@@ -361,18 +364,17 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const submitBatchBlock = useCallback(async () => {
         const reasonCode = selectedBlockReasonCode?.trim();
         if (!reasonCode) {
-            setBlockSubmitError("Выберите причину блокировки");
+            showPanelFeedback("Выберите причину блокировки", "alert");
             return;
         }
 
         if (selectedBlockSeriesRefs.length === 0) {
-            setBlockSubmitError("Выберите выпуски партии с непустой серией");
+            showPanelFeedback("Выберите выпуски партии с непустой серией", "alert");
             return;
         }
 
         setIsSubmittingBlock(true);
-        setBlockSubmitError(null);
-        setBlockSubmitMessage(null);
+        setPanelFeedback(null);
 
         try {
             const body = buildReleaseSubmitBlockBody({
@@ -383,8 +385,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             });
             const payload = await submitBlockRequestRef.current({ body });
             const result = mapReleaseSubmitBlockPayload(payload);
-            setBlockSubmitMessage(result.message);
-            setBlockSubmitMessageKey((key) => key + 1);
+            showPanelFeedback(result.message, "success");
             setSelectedBatchRollIds(new Set());
             setBlockComment("");
             setSelectedBlockReasonCode(null);
@@ -394,7 +395,9 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
                 await loadReleaseFormData(trimmedWorkAreaId);
             }
         } catch (submitError) {
-            setBlockSubmitError(
+            showPanelFeedback(
+                "Ошибка",
+                "alert",
                 submitError instanceof Error ? submitError.message : "Не удалось передать блокировку",
             );
         } finally {
@@ -407,6 +410,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         selectedBatchRollIds,
         selectedBlockReasonCode,
         selectedBlockSeriesRefs.length,
+        showPanelFeedback,
         workAreaId,
     ]);
 
@@ -427,27 +431,27 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         const warehouseCode = form.warehouse.trim();
 
         if (!trimmedWorkAreaId) {
-            setRegisterSubmitError("Не удалось определить workAreaId этапа");
+            showPanelFeedback("Не удалось определить workAreaId этапа", "alert");
             return;
         }
 
         if (!seriesKey) {
-            setRegisterSubmitError("Не удалось определить серию выпуска");
+            showPanelFeedback("Не удалось определить серию выпуска", "alert");
             return;
         }
 
         if (!warehouseCode) {
-            setRegisterSubmitError("Выберите склад назначения");
+            showPanelFeedback("Выберите склад назначения", "alert");
             return;
         }
 
         if (!Number.isFinite(parsedLength) || parsedLength <= 0) {
-            setRegisterSubmitError("Укажите метраж больше нуля");
+            showPanelFeedback("Укажите метраж больше нуля", "alert");
             return;
         }
 
         if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
-            setRegisterSubmitError("Укажите вес больше нуля");
+            showPanelFeedback("Укажите вес больше нуля", "alert");
             return;
         }
 
@@ -463,14 +467,12 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         });
 
         setIsRegisteringRelease(true);
-        setRegisterSubmitError(null);
-        setRegisterSubmitMessage(null);
+        setPanelFeedback(null);
 
         try {
             const payload = await registerReleaseRequestRef.current({ body });
             const result = mapReleaseRegisterPayload(payload);
-            setRegisterSubmitMessage(result.message);
-            setRegisterSubmitMessageKey((key) => key + 1);
+            showPanelFeedback(result.message, "success");
             setForm((prev) => ({
                 ...prev,
                 lengthM: "",
@@ -483,8 +485,12 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
             await load();
             onReleaseRegisteredRef.current?.();
         } catch (registerError) {
-            setRegisterSubmitError(
-                registerError instanceof Error ? registerError.message : "Не удалось зарегистрировать выпуск",
+            showPanelFeedback(
+                "Ошибка",
+                "alert",
+                registerError instanceof Error
+                    ? registerError.message
+                    : "Не удалось зарегистрировать выпуск",
             );
         } finally {
             setIsRegisteringRelease(false);
@@ -498,6 +504,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         parsedLength,
         parsedWeight,
         selectedProductionEventId,
+        showPanelFeedback,
         workAreaId,
     ]);
 
@@ -559,10 +566,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         setBlockComment,
         canSubmitBlock,
         isSubmittingBlock,
-        blockSubmitError,
-        blockSubmitMessage,
-        blockSubmitMessageKey,
-        dismissBlockSubmitMessage,
+        panelFeedback,
+        dismissPanelFeedback,
         submitBatchBlock,
         productionEvent,
         isProductionEventLoading,
@@ -575,10 +580,6 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         reload: load,
         canRegisterRelease,
         isRegisteringRelease,
-        registerSubmitError,
-        registerSubmitMessage,
-        registerSubmitMessageKey,
-        dismissRegisterSubmitMessage,
         registerRelease,
         printError,
         printingReleaseId,

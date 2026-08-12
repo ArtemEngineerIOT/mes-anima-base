@@ -5,8 +5,8 @@ import { cn } from "@/shared/lib/css";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
     dataTableInsetShellClassName,
+    dataTableStickyHeadCellClassName,
     dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
@@ -87,13 +87,13 @@ export function OrderExecutionProcessControl({
                             "min-w-[480px] border-separate border-spacing-0 text-[12px]",
                         )}
                     >
-                        <TableHeader>
+                        <TableHeader className="bg-muted/40">
                             <TableRow className="hover:!bg-transparent">
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[70%]")}>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[70%]")}>
                                     Участок
                                 </TableHead>
                                 <TableHead
-                                    className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[30%] text-center")}
+                                    className={cn(dataTableStickyHeadCellClassName, "w-[30%] text-center")}
                                 >
                                     Признак
                                 </TableHead>

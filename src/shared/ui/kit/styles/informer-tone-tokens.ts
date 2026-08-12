@@ -8,6 +8,8 @@ export type InformerToneTokenSet = {
     /** Описание при variant=filled */
     filledDescription: string;
     bordered: string;
+    /** Цветной акцент слева для variant=bordered (border-left ~5–6px). */
+    borderedEdge: string;
     outline: string;
     pill: string;
     bar: string;
@@ -23,6 +25,7 @@ export const informerToneTokens: Record<InformerTone, InformerToneTokenSet> = {
         filledTitleAndIcon: "text-white",
         filledDescription: "text-white/90",
         bordered: "bg-background border shadow-sm",
+        borderedEdge: "border-l-[6px] border-l-emerald-500",
         outline:
             "bg-emerald-50 border-emerald-200 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-50",
         bar: "bg-emerald-500",
@@ -37,6 +40,7 @@ export const informerToneTokens: Record<InformerTone, InformerToneTokenSet> = {
         filledTitleAndIcon: "text-white",
         filledDescription: "text-white/90",
         bordered: "bg-background border shadow-sm",
+        borderedEdge: "border-l-[6px] border-l-amber-500",
         outline:
             "bg-amber-50 border-amber-200 text-amber-950 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-50",
         bar: "bg-amber-500",
@@ -51,6 +55,7 @@ export const informerToneTokens: Record<InformerTone, InformerToneTokenSet> = {
         filledTitleAndIcon: "text-white",
         filledDescription: "text-white/90",
         bordered: "bg-background border shadow-sm",
+        borderedEdge: "border-l-[6px] border-l-red-500",
         outline: "bg-red-50 border-red-200 text-red-950 dark:bg-red-950/30 dark:border-red-800 dark:text-red-50",
         bar: "bg-red-500",
         iconClass: "text-red-600 dark:text-red-300",
@@ -64,6 +69,7 @@ export const informerToneTokens: Record<InformerTone, InformerToneTokenSet> = {
         filledTitleAndIcon: "text-slate-950 dark:text-slate-50",
         filledDescription: "text-slate-800 dark:text-slate-200",
         bordered: "bg-background border shadow-sm",
+        borderedEdge: "border-l-[6px] border-l-slate-400 dark:border-l-slate-500",
         outline:
             "bg-slate-50 border-slate-200 text-slate-950 dark:bg-slate-950/30 dark:border-slate-700 dark:text-slate-50",
         bar: "bg-slate-400 dark:bg-slate-500",
@@ -78,6 +84,7 @@ export const informerToneTokens: Record<InformerTone, InformerToneTokenSet> = {
         filledTitleAndIcon: "text-white",
         filledDescription: "text-white/90",
         bordered: "bg-background border shadow-sm",
+        borderedEdge: "border-l-[6px] border-l-sky-500",
         outline: "bg-sky-50 border-sky-200 text-sky-950 dark:bg-sky-950/30 dark:border-sky-800 dark:text-sky-50",
         bar: "bg-sky-500",
         iconClass: "text-sky-600 dark:text-sky-300",

@@ -6,7 +6,6 @@ import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
 import { Icon } from "@/shared/ui/kit/icon";
-import { Informer } from "@/shared/ui/kit/informer";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -42,7 +41,6 @@ export function EventRegistrationUnprocessedPanel({
         unprocessed,
         selectedUnprocessedId,
         deleteComment,
-        discardError,
         isDiscardSignalsPending,
         toggleUnprocessedSelection,
         deleteSelectedSignals,
@@ -182,15 +180,6 @@ export function EventRegistrationUnprocessedPanel({
                 <Label htmlFor="event-discard-comment" className={comboboxFieldLabelClassName}>
                     Комментарий
                 </Label>
-                {discardError ? (
-                    <Informer
-                        tone="alert"
-                        variant="bordered"
-                        size="s"
-                        title="Ошибка удаления"
-                        description={discardError}
-                    />
-                ) : null}
                 <div className="relative">
                     <textarea
                         id="event-discard-comment"

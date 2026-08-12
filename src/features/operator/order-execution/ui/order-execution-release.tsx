@@ -6,7 +6,7 @@ import { resolveMachineStompPanelTone } from "../model/machine-stomp/resolve-mac
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
 import { useRelease } from "../model/release/use-release";
 import { MachineSignalsCombobox } from "@/features/operator/order-execution/ui/machine-signals-combobox";
-import { AutoDismissInformer } from "@/shared/ui/kit/auto-dismiss-informer";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { Icon } from "@/shared/ui/kit/icon";
@@ -17,8 +17,8 @@ import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
     dataTableInsetShellClassName,
+    dataTableStickyHeadCellClassName,
     dataTableViewportFooterClassName,
     dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
@@ -36,6 +36,7 @@ type OrderExecutionReleaseProps = {
 };
 
 const batchRollSelectionColumnClassName = "w-10";
+const headCellClassName = dataTableStickyHeadCellClassName;
 
 export function OrderExecutionRelease({
     workAreaId,
@@ -64,19 +65,13 @@ export function OrderExecutionRelease({
         setBlockComment,
         canSubmitBlock,
         isSubmittingBlock,
-        blockSubmitError,
-        blockSubmitMessage,
-        blockSubmitMessageKey,
-        dismissBlockSubmitMessage,
+        panelFeedback,
+        dismissPanelFeedback,
         submitBatchBlock,
         isLoading,
         error,
         canRegisterRelease,
         isRegisteringRelease,
-        registerSubmitError,
-        registerSubmitMessage,
-        registerSubmitMessageKey,
-        dismissRegisterSubmitMessage,
         registerRelease,
         printError,
         printingReleaseId,
@@ -168,14 +163,10 @@ export function OrderExecutionRelease({
                                 "min-w-[480px] border-separate border-spacing-0 text-[12px]",
                             )}
                         >
-                            <TableHeader>
+                            <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:!bg-transparent">
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-[45%]")}>
-                                        Характеристика
-                                    </TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
-                                        Значение
-                                    </TableHead>
+                                    <TableHead className={cn(headCellClassName, "w-[45%]")}>Характеристика</TableHead>
+                                    <TableHead className={headCellClassName}>Значение</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -304,32 +295,22 @@ export function OrderExecutionRelease({
                                 "min-w-[720px] border-separate border-spacing-0 text-[12px]",
                             )}
                         >
-                            <TableHeader>
+                            <TableHeader className="bg-muted/40">
                                 <TableRow className="hover:!bg-transparent">
                                     <TableHead
-                                        className={cn(
-                                            dataTableHeadCellClassName,
-                                            "bg-muted/40",
-                                            batchRollSelectionColumnClassName,
-                                        )}
+                                        className={cn(headCellClassName, batchRollSelectionColumnClassName)}
                                         aria-label="Выбор выпуска"
                                     />
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
-                                        Штрихкод
-                                    </TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "min-w-[200px]")}>
+                                    <TableHead className={cn(headCellClassName, "min-w-[200px]")}>
                                         Номенклатура
                                     </TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                        Кол-во 1
-                                    </TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм. 1</TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                        Кол-во 2
-                                    </TableHead>
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм. 2</TableHead>
+                                    <TableHead className={headCellClassName}>Серия</TableHead>
+                                    <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 1</TableHead>
+                                    <TableHead className={headCellClassName}>Ед. изм. 1</TableHead>
+                                    <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 2</TableHead>
+                                    <TableHead className={headCellClassName}>Ед. изм. 2</TableHead>
                                     <TableHead
-                                        className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-12 text-right")}
+                                        className={cn(headCellClassName, "w-12 text-right")}
                                         aria-label="Печать этикетки"
                                     />
                                 </TableRow>
@@ -365,13 +346,13 @@ export function OrderExecutionRelease({
                                                     className="size-4 rounded border-input"
                                                 />
                                             </TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
                                             <TableCell
                                                 className={cn(dataTableBodyCellClassName, "max-w-[280px] truncate")}
                                                 title={row.nomenclature}
                                             >
                                                 {row.nomenclature}
                                             </TableCell>
+                                            <TableCell className={dataTableBodyCellClassName}>{row.barcode}</TableCell>
                                             <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
                                                 {row.qty1}
                                             </TableCell>
@@ -437,16 +418,6 @@ export function OrderExecutionRelease({
 
                 <section className="flex flex-col gap-3 border-t border-border pt-3">
                     <div className={cnSectionBlockTitle()}>Причины блокировки</div>
-                    {blockSubmitMessage ? (
-                        <AutoDismissInformer
-                            key={blockSubmitMessageKey}
-                            tone="success"
-                            variant="filled"
-                            size="s"
-                            title={blockSubmitMessage}
-                            onDismiss={dismissBlockSubmitMessage}
-                        />
-                    ) : null}
                     <div className="grid gap-2">
                         <div className={comboboxFieldLabelClassName}>Выберите причину</div>
                         {blockReasonsError ? (
@@ -487,10 +458,18 @@ export function OrderExecutionRelease({
                             )}
                         />
                     </div>
+                    {panelFeedback ? (
+                        <FloatingAutoDismissInformer
+                            key={panelFeedback.key}
+                            tone={panelFeedback.tone}
+                            variant="bordered"
+                            size="s"
+                            title={panelFeedback.title}
+                            description={panelFeedback.description}
+                            onDismiss={dismissPanelFeedback}
+                        />
+                    ) : null}
                     <div className="flex flex-col items-end gap-2">
-                        {blockSubmitError ? (
-                            <div className="w-full text-[12px] text-destructive">{blockSubmitError}</div>
-                        ) : null}
                         <Button
                             type="button"
                             size="sm"
@@ -508,19 +487,6 @@ export function OrderExecutionRelease({
             </div>
 
             <div className="flex flex-col items-end gap-2">
-                {registerSubmitError ? (
-                    <div className="w-full text-[12px] text-destructive">{registerSubmitError}</div>
-                ) : null}
-                {registerSubmitMessage ? (
-                    <AutoDismissInformer
-                        key={registerSubmitMessageKey}
-                        tone="success"
-                        variant="filled"
-                        size="s"
-                        title={registerSubmitMessage}
-                        onDismiss={dismissRegisterSubmitMessage}
-                    />
-                ) : null}
                 <Button
                     type="button"
                     size="sm"
