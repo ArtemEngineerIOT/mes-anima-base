@@ -42,6 +42,21 @@ type ScanBannerState = {
     stageSpecBannerDetail: string;
 };
 
+export type MaterialsWriteoffFormPanelMessageSource =
+    | "reflectReturn"
+    | "writeOffFully"
+    | "submitStageLkm"
+    | "writeoffWeight"
+    | "warehouses";
+
+export type MaterialsWriteoffFormPanelMessage = {
+    key: string;
+    source: MaterialsWriteoffFormPanelMessageSource;
+    title?: string;
+    description: string;
+    tone: "alert" | "warning";
+};
+
 type UseMaterialsWriteoffOptions = {
     workAreaId?: string;
     enabled?: boolean;
@@ -115,11 +130,12 @@ export function useMaterialsWriteoff({
     const [stageRegistryRefreshKey, setStageRegistryRefreshKey] = useState(0);
     const [writeoffForm, setWriteoffForm] = useState<MaterialsWriteoffFormState>(EMPTY_MATERIALS_WRITEOFF_FORM);
     const [isReflectingReturn, setIsReflectingReturn] = useState(false);
-    const [reflectReturnError, setReflectReturnError] = useState<string | null>(null);
     const [isWritingOffFully, setIsWritingOffFully] = useState(false);
-    const [writeOffFullyError, setWriteOffFullyError] = useState<string | null>(null);
     const [isSubmittingStageLkm, setIsSubmittingStageLkm] = useState(false);
-    const [submitStageLkmError, setSubmitStageLkmError] = useState<string | null>(null);
+    const [formPanelMessage, setFormPanelMessage] = useState<MaterialsWriteoffFormPanelMessage | null>(null);
+    const formPanelMessageSeqRef = useRef(0);
+    const formPanelMessageRef = useRef<MaterialsWriteoffFormPanelMessage | null>(null);
+    formPanelMessageRef.current = formPanelMessage;
     const [movingToUnwindRowId, setMovingToUnwindRowId] = useState<string | null>(null);
     const [moveToUnwindError, setMoveToUnwindError] = useState<string | null>(null);
 
@@ -188,6 +204,7 @@ export function useMaterialsWriteoff({
             setBarcode("");
             setSearchError(null);
             setMoveToUnwindError(null);
+            setFormPanelMessage(null);
             setInstallationPlace(DEFAULT_MATERIALS_INSTALLATION_PLACE);
         }
     }, [enabled, resetWriteoffSelection, workAreaId]);
@@ -292,6 +309,57 @@ export function useMaterialsWriteoff({
         operatorRef,
         enabled,
     });
+
+    const showFormPanelMessage = useCallback(
+        (message: Omit<MaterialsWriteoffFormPanelMessage, "key">) => {
+            formPanelMessageSeqRef.current += 1;
+            setFormPanelMessage({
+                ...message,
+                key: `${message.source}:${formPanelMessageSeqRef.current}`,
+            });
+        },
+        [],
+    );
+
+    const dismissFormPanelMessage = useCallback(() => {
+        const source = formPanelMessageRef.current?.source;
+        setFormPanelMessage(null);
+
+        if (source === "writeoffWeight") {
+            reset();
+        }
+
+        if (source === "warehouses") {
+            returnWarehouses.clearError();
+        }
+    }, [reset, returnWarehouses.clearError]);
+
+    useEffect(() => {
+        if (!writeoffWeightError) {
+            setFormPanelMessage((prev) => (prev?.source === "writeoffWeight" ? null : prev));
+            return;
+        }
+
+        showFormPanelMessage({
+            source: "writeoffWeight",
+            description: writeoffWeightError,
+            tone: "alert",
+        });
+    }, [showFormPanelMessage, writeoffWeightError]);
+
+    useEffect(() => {
+        if (!returnWarehouses.error) {
+            setFormPanelMessage((prev) => (prev?.source === "warehouses" ? null : prev));
+            return;
+        }
+
+        showFormPanelMessage({
+            source: "warehouses",
+            title: "Склады",
+            description: returnWarehouses.error,
+            tone: "alert",
+        });
+    }, [returnWarehouses.error, showFormPanelMessage]);
 
     useEffect(() => {
         if (!enabled) {
@@ -516,34 +584,54 @@ export function useMaterialsWriteoff({
         const activeRoll = selectedWriteoffRoll;
 
         if (!trimmedWorkAreaId) {
-            setReflectReturnError("Не удалось определить workAreaId этапа");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: "Не удалось определить workAreaId этапа",
+                tone: "alert",
+            });
             return;
         }
 
         if (!activeRoll?.barcode.trim()) {
-            setReflectReturnError("Выберите рулон кнопкой «Списать»");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: "Выберите рулон кнопкой «Списать»",
+                tone: "alert",
+            });
             return;
         }
 
         const materialRollId = activeRoll.materialRollId.trim();
         if (!materialRollId) {
-            setReflectReturnError("Не удалось определить рулон для возврата");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: "Не удалось определить рулон для возврата",
+                tone: "alert",
+            });
             return;
         }
 
         const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
         if (!operatorRefValue) {
-            setReflectReturnError("Не удалось определить оператора");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: "Не удалось определить оператора",
+                tone: "alert",
+            });
             return;
         }
 
         if (length === null || weight === null || !warehouse) {
-            setReflectReturnError("Заполните метраж, вес и склад");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: "Заполните метраж, вес и склад",
+                tone: "alert",
+            });
             return;
         }
 
         setIsReflectingReturn(true);
-        setReflectReturnError(null);
+        setFormPanelMessage(null);
 
         try {
             const payload = await submitPartialReturnRef.current({
@@ -563,7 +651,11 @@ export function useMaterialsWriteoff({
             onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
         } catch (error) {
-            setReflectReturnError(error instanceof Error ? error.message : "Не удалось отразить возврат");
+            showFormPanelMessage({
+                source: "reflectReturn",
+                description: error instanceof Error ? error.message : "Не удалось отразить возврат",
+                tone: "alert",
+            });
         } finally {
             setIsReflectingReturn(false);
         }
@@ -572,6 +664,7 @@ export function useMaterialsWriteoff({
         resetWriteoffSelection,
         selectedWriteoffRoll,
         session,
+        showFormPanelMessage,
         workAreaId,
         writeoffForm.meters,
         writeoffForm.weight,
@@ -583,29 +676,45 @@ export function useMaterialsWriteoff({
         const activeRoll = selectedWriteoffRoll;
 
         if (!trimmedWorkAreaId) {
-            setWriteOffFullyError("Не удалось определить workAreaId этапа");
+            showFormPanelMessage({
+                source: "writeOffFully",
+                description: "Не удалось определить workAreaId этапа",
+                tone: "alert",
+            });
             return;
         }
 
         if (!activeRoll?.barcode.trim()) {
-            setWriteOffFullyError("Выберите рулон кнопкой «Списать»");
+            showFormPanelMessage({
+                source: "writeOffFully",
+                description: "Выберите рулон кнопкой «Списать»",
+                tone: "alert",
+            });
             return;
         }
 
         const materialRollId = activeRoll.materialRollId.trim();
         if (!materialRollId) {
-            setWriteOffFullyError("Не удалось определить рулон для списания");
+            showFormPanelMessage({
+                source: "writeOffFully",
+                description: "Не удалось определить рулон для списания",
+                tone: "alert",
+            });
             return;
         }
 
         const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
         if (!operatorRefValue) {
-            setWriteOffFullyError("Не удалось определить оператора");
+            showFormPanelMessage({
+                source: "writeOffFully",
+                description: "Не удалось определить оператора",
+                tone: "alert",
+            });
             return;
         }
 
         setIsWritingOffFully(true);
-        setWriteOffFullyError(null);
+        setFormPanelMessage(null);
 
         try {
             const payload = await submitFullWriteOffRef.current({
@@ -622,27 +731,39 @@ export function useMaterialsWriteoff({
             onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
         } catch (error) {
-            setWriteOffFullyError(error instanceof Error ? error.message : "Не удалось списать материал полностью");
+            showFormPanelMessage({
+                source: "writeOffFully",
+                description: error instanceof Error ? error.message : "Не удалось списать материал полностью",
+                tone: "alert",
+            });
         } finally {
             setIsWritingOffFully(false);
         }
-    }, [refreshWriteoffTables, resetWriteoffSelection, selectedWriteoffRoll, session, workAreaId]);
+    }, [refreshWriteoffTables, resetWriteoffSelection, selectedWriteoffRoll, session, showFormPanelMessage, workAreaId]);
 
     const submitStageLkmWriteoff = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
         if (!trimmedWorkAreaId) {
-            setSubmitStageLkmError("Не удалось определить workAreaId этапа");
+            showFormPanelMessage({
+                source: "submitStageLkm",
+                description: "Не удалось определить workAreaId этапа",
+                tone: "alert",
+            });
             return;
         }
 
         const operatorRefValue = resolveMaterialsWriteoffOperatorRef(session);
         if (!operatorRefValue) {
-            setSubmitStageLkmError("Не удалось определить оператора");
+            showFormPanelMessage({
+                source: "submitStageLkm",
+                description: "Не удалось определить оператора",
+                tone: "alert",
+            });
             return;
         }
 
         setIsSubmittingStageLkm(true);
-        setSubmitStageLkmError(null);
+        setFormPanelMessage(null);
 
         try {
             const payload = await submitStageLkmRef.current({
@@ -653,13 +774,16 @@ export function useMaterialsWriteoff({
             });
             mapSubmitStageLkmPayload(payload);
         } catch (error) {
-            setSubmitStageLkmError(
-                error instanceof Error ? error.message : "Не удалось отразить списание по этапу",
-            );
+            showFormPanelMessage({
+                source: "submitStageLkm",
+                description:
+                    error instanceof Error ? error.message : "Не удалось отразить списание по этапу",
+                tone: "alert",
+            });
         } finally {
             setIsSubmittingStageLkm(false);
         }
-    }, [session, workAreaId]);
+    }, [session, showFormPanelMessage, workAreaId]);
 
     const canCalculateWeight =
         showWriteoffFlow &&
@@ -719,13 +843,11 @@ export function useMaterialsWriteoff({
         isReflectingReturn,
         isWritingOffFully,
         isSubmittingStageLkm,
-        reflectReturnError,
-        writeOffFullyError,
-        submitStageLkmError,
+        formPanelMessage,
+        dismissFormPanelMessage,
         warehouseOptions: returnWarehouses.warehouseOptions,
         isWarehousesLoading: returnWarehouses.isLoading,
         warehousesError: returnWarehouses.error,
-        writeoffWeightError,
         isWriteoffWeightLoading,
         showWriteoffFlow,
         stageRegistry,

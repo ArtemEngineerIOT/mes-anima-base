@@ -77,10 +77,15 @@ export function useMaterialsWriteoffReturnWarehouses({
         void load();
     }, [enabled, load]);
 
+    const clearError = useCallback(() => {
+        setError(null);
+    }, []);
+
     return {
         warehouseOptions,
         isLoading,
         error,
         reload: load,
+        clearError,
     };
 }

@@ -1,7 +1,9 @@
 import type { MaterialsWriteoffFormState } from "@/features/operator/order-execution/model/materials-writeoff/materials-writeoff-form";
+import type { MaterialsWriteoffFormPanelMessage } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff";
 import type { MaterialsReturnWarehouseOption } from "@/features/operator/order-execution/model/materials-writeoff/types";
 import type { ReleaseProductionEventListRow } from "@/features/operator/order-execution/model/release/production-event-types";
 import { MaterialsWriteoffSignalsCombobox } from "@/features/operator/order-execution/ui/materials-writeoff-signals-combobox";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
@@ -13,7 +15,6 @@ type MaterialsWriteoffFormPanelProps = {
     isWarehousesLoading?: boolean;
     warehousesError?: string | null;
     isWriteoffWeightLoading?: boolean;
-    writeoffWeightError?: string | null;
     canCalculateWeight?: boolean;
     isWriteoffActionsEnabled?: boolean;
     isReflectReturnEnabled?: boolean;
@@ -21,9 +22,8 @@ type MaterialsWriteoffFormPanelProps = {
     isReflectingReturn?: boolean;
     isWritingOffFully?: boolean;
     isSubmittingStageLkm?: boolean;
-    reflectReturnError?: string | null;
-    writeOffFullyError?: string | null;
-    submitStageLkmError?: string | null;
+    formPanelMessage?: MaterialsWriteoffFormPanelMessage | null;
+    onDismissFormPanelMessage?: () => void;
     isFormEnabled?: boolean;
     signalList?: ReleaseProductionEventListRow[];
     signalsEmptyStateMessage?: string;
@@ -45,7 +45,6 @@ export function MaterialsWriteoffFormPanel({
     isWarehousesLoading = false,
     warehousesError = null,
     isWriteoffWeightLoading = false,
-    writeoffWeightError = null,
     canCalculateWeight = false,
     isWriteoffActionsEnabled = false,
     isReflectReturnEnabled = false,
@@ -53,9 +52,8 @@ export function MaterialsWriteoffFormPanel({
     isReflectingReturn = false,
     isWritingOffFully = false,
     isSubmittingStageLkm = false,
-    reflectReturnError = null,
-    writeOffFullyError = null,
-    submitStageLkmError = null,
+    formPanelMessage = null,
+    onDismissFormPanelMessage,
     isFormEnabled = false,
     signalList = [],
     signalsEmptyStateMessage,
@@ -77,20 +75,13 @@ export function MaterialsWriteoffFormPanel({
           ? "Склады недоступны"
           : "Выберите склад";
 
-    const showSignalsCombobox =
-        Boolean(onToggleSignal) &&
-        (signalList.length > 0 || isSignalsLoading || Boolean(signalsError));
+    const signalsComboboxDisabled =
+        !isSignalsLoading && !signalsError && signalList.length === 0;
 
     return (
         <div className="space-y-3">
-            <div
-                className={
-                    showSignalsCombobox
-                        ? "grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start"
-                        : "grid grid-cols-1 gap-4"
-                }
-            >
-                {showSignalsCombobox && onToggleSignal ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
+                {onToggleSignal ? (
                     <MaterialsWriteoffSignalsCombobox
                         rows={signalList}
                         emptyStateMessage={signalsEmptyStateMessage}
@@ -98,6 +89,7 @@ export function MaterialsWriteoffFormPanel({
                         error={signalsError}
                         selectedSignalId={selectedSignalId}
                         onToggleSignal={onToggleSignal}
+                        disabled={signalsComboboxDisabled}
                     />
                 ) : null}
 
@@ -121,9 +113,8 @@ export function MaterialsWriteoffFormPanel({
                         inputMode="decimal"
                         disabled={fieldsDisabled}
                         onChange={(e) => onWriteoffFormChange({ meters: e.target.value })}
-                        className="mt-1"
+                        className="mt-1 h-8"
                     />
-                    <div className="mt-1 min-h-4" aria-hidden />
                 </div>
                 <div>
                     <div className={comboboxFieldLabelClassName}>Вес, кг</div>
@@ -132,20 +123,14 @@ export function MaterialsWriteoffFormPanel({
                         readOnly
                         disabled
                         placeholder="Пересчитайте по метражу"
-                        className="mt-1"
+                        className="mt-1 h-8"
                     />
-                    <div
-                        className="mt-1 min-h-4 text-[10px] leading-4 text-destructive"
-                        aria-live="polite"
-                    >
-                        {writeoffWeightError ?? "\u00a0"}
-                    </div>
                 </div>
                 <div>
                     <div className={comboboxFieldLabelClassName}>Отправить на склад</div>
                     <div className="mt-1 flex items-center gap-2">
                         <select
-                            className="h-9 min-w-0 flex-1 rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-8 min-w-0 flex-1 rounded-sm border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
                             value={writeoffForm.warehouse}
                             disabled={warehouseSelectDisabled || warehouseOptions.length === 0}
                             onChange={(e) => onWriteoffFormChange({ warehouse: e.target.value })}
@@ -169,29 +154,24 @@ export function MaterialsWriteoffFormPanel({
                             Пересчитать
                         </Button>
                     </div>
-                    <div
-                        className="mt-1 min-h-4 text-[10px] leading-4 text-destructive"
-                        aria-live="polite"
-                    >
-                        {warehousesError ?? "\u00a0"}
-                    </div>
                 </div>
             </div>
 
-            <div
-                className="min-h-4 text-right text-[12px] leading-4 text-destructive"
-                aria-live="polite"
-            >
-                {submitStageLkmError ?? "\u00a0"}
-            </div>
+            {formPanelMessage && onDismissFormPanelMessage ? (
+                <FloatingAutoDismissInformer
+                    key={formPanelMessage.key}
+                    tone={formPanelMessage.tone}
+                    variant="bordered"
+                    size="s"
+                    title={formPanelMessage.title ?? formPanelMessage.description}
+                    description={
+                        formPanelMessage.title ? formPanelMessage.description : undefined
+                    }
+                    onDismiss={onDismissFormPanelMessage}
+                />
+            ) : null}
 
             <div className="flex flex-wrap items-center justify-end gap-2">
-                {reflectReturnError ? (
-                    <div className="w-full text-right text-[12px] text-destructive">{reflectReturnError}</div>
-                ) : null}
-                {writeOffFullyError ? (
-                    <div className="w-full text-right text-[12px] text-destructive">{writeOffFullyError}</div>
-                ) : null}
                 <Button
                     size="sm"
                     pending={isReflectingReturn}

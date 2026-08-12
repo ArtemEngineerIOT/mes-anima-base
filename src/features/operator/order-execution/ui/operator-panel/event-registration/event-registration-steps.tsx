@@ -361,8 +361,10 @@ function EventRegistrationMeterRow({
     required: boolean;
     onPatch: Registration["patchDraft"];
 }) {
-    const meterFromError = getMeterFieldError(draft.meterFrom, required);
-    const meterToError = getMeterFieldError(draft.meterTo, required);
+    const displayMeterFrom = draft.wholeStage ? "" : draft.meterFrom;
+    const displayMeterTo = draft.wholeStage ? "" : draft.meterTo;
+    const meterFromError = getMeterFieldError(displayMeterFrom, required);
+    const meterToError = getMeterFieldError(displayMeterTo, required);
 
     return (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -373,7 +375,7 @@ function EventRegistrationMeterRow({
                 <input
                     id="meter-from"
                     inputMode="decimal"
-                    value={draft.meterFrom}
+                    value={displayMeterFrom}
                     disabled={disabled}
                     aria-invalid={Boolean(meterFromError)}
                     onChange={(e) => onPatch({ meterFrom: sanitizeMeterInput(e.target.value) })}
@@ -390,7 +392,7 @@ function EventRegistrationMeterRow({
                 <input
                     id="meter-to"
                     inputMode="decimal"
-                    value={draft.meterTo}
+                    value={displayMeterTo}
                     disabled={disabled}
                     aria-invalid={Boolean(meterToError)}
                     onChange={(e) => onPatch({ meterTo: sanitizeMeterInput(e.target.value) })}
@@ -413,6 +415,9 @@ function EventRegistrationTimeRow({
     required: boolean;
     onPatch: Registration["patchDraft"];
 }) {
+    const displayTimeFrom = draft.wholeStage ? "" : normalizeTimeInputValue(draft.timeFrom);
+    const displayTimeTo = draft.wholeStage ? "" : normalizeTimeInputValue(draft.timeTo);
+
     return (
         <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-2">
@@ -422,7 +427,7 @@ function EventRegistrationTimeRow({
                 <input
                     id="time-from"
                     type="time"
-                    value={normalizeTimeInputValue(draft.timeFrom)}
+                    value={displayTimeFrom}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeFrom: e.target.value })}
                     className={inputClass}
@@ -435,7 +440,7 @@ function EventRegistrationTimeRow({
                 <input
                     id="time-to"
                     type="time"
-                    value={normalizeTimeInputValue(draft.timeTo)}
+                    value={displayTimeTo}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeTo: e.target.value })}
                     className={inputClass}
@@ -482,7 +487,7 @@ export function EventRegistrationStep3({
     onRegister: () => void;
     disabled?: boolean;
 }) {
-    const { draft, selectedCode, scrapMode, snapshot, registerError, isRegisterEventPending } = registration;
+    const { draft, selectedCode, scrapMode, snapshot, isRegisterEventPending } = registration;
 
     if (!selectedCode || scrapMode == null) return null;
 
@@ -532,10 +537,6 @@ export function EventRegistrationStep3({
                 title="Внимание"
                 description="Записи о событии будут добавлены в систему. Убедитесь, что введённые данные верны."
             />
-
-            {registerError ? (
-                <Informer tone="alert" variant="bordered" size="s" title="Ошибка регистрации" description={registerError} />
-            ) : null}
 
             <div className="flex justify-between gap-2">
                 <Button type="button" variant="outline" disabled={disabled} onClick={onBack}>

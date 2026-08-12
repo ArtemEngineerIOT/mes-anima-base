@@ -28,6 +28,7 @@ import {
     sanitizeTechnologicalParamNumericInput,
     splitTechnologicalParamManualParts,
 } from "../model/technological-params-manual-value";
+import { isTechnologicalParamOutOfDeviation } from "../model/technological-params-deviation";
 import {
     buildTechnologicalParamsDraft,
     buildSavedPresserState,
@@ -68,10 +69,10 @@ type OrderExecutionTechnologicalParamsPanelProps = {
     onCancel?: () => void;
 };
 
-/** Уставка — зелёный фон (тон success / emerald из kit Informer). */
-const standardCellClassName = "bg-emerald-500/15 text-center tabular-nums";
-/** Текущее значение — оранжевый/янтарный фон (тон warning / amber из kit Informer). */
-const currentValueCellClassName = "bg-amber-500/15 text-center tabular-nums font-medium";
+/** Уставка — выравнивание и tabular-nums без цветовой индикации. */
+const standardCellClassName = "text-center tabular-nums";
+/** Текущее значение — выравнивание и tabular-nums без цветовой индикации. */
+const currentValueCellClassName = "text-center tabular-nums font-medium";
 /** Колонка «Текущее значение» / ручной ввод — фиксированная ширина. */
 const currentValueColumnClassName = "w-[450px] min-w-[450px] max-w-[450px]";
 const manualInputClassName = "h-8 w-full text-center text-[12px] tabular-nums";
@@ -84,16 +85,18 @@ function ManualCompositeValueInput({
     value,
     onChange,
     ariaLabel,
+    className,
 }: {
     partsCount: number;
     value: string;
     onChange: (value: string) => void;
     ariaLabel: string;
+    className?: string;
 }) {
     if (partsCount <= 1) {
         return (
             <Input
-                className={manualInputClassName}
+                className={cn(manualInputClassName, className)}
                 value={value}
                 onChange={(event) => onChange(sanitizeTechnologicalParamNumericInput(event.target.value))}
                 inputMode="decimal"
@@ -114,7 +117,7 @@ function ManualCompositeValueInput({
                         </span>
                     ) : null}
                     <Input
-                        className={manualPartInputClassName}
+                        className={cn(manualPartInputClassName, className)}
                         value={part}
                         onChange={(event) => {
                             const nextParts = [...parts];
@@ -143,6 +146,7 @@ function TechnologicalParamsSectionTitle({ iconName, title }: { iconName: string
 type MeasurableRow = {
     id: string;
     standard: string;
+    deviationPm: string;
     start: string;
     stompFieldKey?: TechnologicalParamTagKey;
     stompStandardFieldKey?: TechnologicalParamTagKey;
@@ -374,19 +378,35 @@ function DynamicValueCells({
     const canManualInput =
         Boolean(row.manualOnly) || (standardValue.trim() !== "" && standardValue !== "—");
 
+    const displayedCurrentValue = manualEntry ? manualValue : currentValue;
+    const isOutOfDeviation = isTechnologicalParamOutOfDeviation({
+        currentValue: displayedCurrentValue,
+        standardValue,
+        deviationPm: row.deviationPm,
+    });
+    const currentValueToneClassName = isOutOfDeviation ? "text-destructive" : undefined;
+
     if (manualEntry) {
         const historyCells = padHistoryEntries(history, 3);
 
         return (
             <>
                 <HistoryValueCells entries={historyCells} />
-                <TableCell className={cn(bodyCellClassName, currentValueCellClassName, currentValueColumnClassName)}>
+                <TableCell
+                    className={cn(
+                        bodyCellClassName,
+                        currentValueCellClassName,
+                        currentValueColumnClassName,
+                        currentValueToneClassName,
+                    )}
+                >
                     {canManualInput ? (
                         <ManualCompositeValueInput
                             partsCount={partsCount}
                             value={manualValue}
                             onChange={onManualValueChange}
                             ariaLabel={`Текущее значение: ${row.id}`}
+                            className={currentValueToneClassName}
                         />
                     ) : (
                         "—"
@@ -403,7 +423,14 @@ function DynamicValueCells({
         <>
             <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>{startValue}</TableCell>
             <HistoryValueCells entries={historyCells} />
-            <TableCell className={cn(bodyCellClassName, currentValueCellClassName, currentValueColumnClassName)}>
+            <TableCell
+                className={cn(
+                    bodyCellClassName,
+                    currentValueCellClassName,
+                    currentValueColumnClassName,
+                    currentValueToneClassName,
+                )}
+            >
                 {currentValue}
             </TableCell>
         </>

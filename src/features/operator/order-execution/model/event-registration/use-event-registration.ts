@@ -324,10 +324,8 @@ export function useEventRegistration({
 
     const onWholeStageChange = useCallback(
         (checked: boolean) => {
-            patchDraft({
-                wholeStage: checked,
-                ...(checked ? { meterFrom: "", meterTo: "", timeFrom: "", timeTo: "" } : {}),
-            });
+            // Не очищаем метраж/время — при снятии чекбокса значения должны сохраниться.
+            patchDraft({ wholeStage: checked });
         },
         [patchDraft],
     );
@@ -418,11 +416,14 @@ export function useEventRegistration({
 
             if (selectedUnprocessedId) {
                 setUnprocessed((prev) => prev.filter((event) => event.id !== selectedUnprocessedId));
-                setSelectedUnprocessedId(null);
-                lastAppliedSignalIdRef.current = null;
             }
 
-            resetWizard();
+            // Один согласованный сброс: без повторного setStep/setDraft из effect по selectedUnprocessedId.
+            lastAppliedSignalIdRef.current = "__on_the_fly__";
+            setSelectedUnprocessedId(null);
+            setStep(1);
+            setDraft(buildDraftForActiveSignal(snapshot, null));
+            setRegisterError(null);
 
             if (mapped.processJournalRefreshHint) {
                 void loadJournal();
@@ -436,7 +437,6 @@ export function useEventRegistration({
         draft,
         isWizardDisabled,
         loadJournal,
-        resetWizard,
         scrapMode,
         selectedCode,
         selectedUnprocessed,
@@ -493,6 +493,14 @@ export function useEventRegistration({
         deleteComment.trim().length > 0 && Boolean(selectedUnprocessedId) && !isDiscardSignalsPending;
     const isDiscardDisabled = isWizardDisabled || isDiscardSignalsPending;
 
+    const dismissRegisterError = useCallback(() => {
+        setRegisterError(null);
+    }, []);
+
+    const dismissDiscardError = useCallback(() => {
+        setDiscardError(null);
+    }, []);
+
     const unprocessedCount = unprocessed.length;
 
     return {
@@ -515,7 +523,9 @@ export function useEventRegistration({
         selectedUnprocessedId,
         deleteComment,
         discardError,
+        dismissDiscardError,
         registerError,
+        dismissRegisterError,
         isDiscardSignalsPending,
         isRegisterEventPending,
         isDiscardDisabled,

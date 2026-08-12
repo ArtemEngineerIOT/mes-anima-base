@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { dataTableHeadCellClassName } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import { Informer } from "@/shared/ui/kit/informer";
@@ -115,15 +116,6 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
 
                     <div className="grid gap-2">
                         <div className={cn(dataTableHeadCellClassName, "px-0")}>Комментарий</div>
-                        {m.submitError ? (
-                            <Informer
-                                tone="alert"
-                                variant="bordered"
-                                size="s"
-                                title="Ошибка завершения этапа"
-                                description={m.submitError}
-                            />
-                        ) : null}
                         <textarea
                             className="min-h-16 w-full rounded-sm border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             placeholder="Заполните при необходимости"
@@ -147,6 +139,18 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
                     </div>
                 </div>
             </OrderExecutionCollapsibleSection>
+
+            {m.submitError ? (
+                <FloatingAutoDismissInformer
+                    key={`stage-completion-submit:${m.submitError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Ошибка"
+                    description={m.submitError}
+                    onDismiss={m.dismissSubmitError}
+                />
+            ) : null}
 
             <OrderExecutionSuspendedStageModal
                 open={suspendedModalOpen}

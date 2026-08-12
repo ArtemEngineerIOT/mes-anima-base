@@ -82,6 +82,8 @@ export type MachineSignalsComboboxProps = {
     placeholder?: string;
     loadingTitle?: string;
     errorTitle?: string;
+    /** Нет доступных сигналов — триггер виден, но недоступен для выбора. */
+    disabled?: boolean;
 };
 
 function buildSignalSummary(row: ReleaseProductionEventListRow): string {
@@ -110,6 +112,7 @@ export function MachineSignalsCombobox({
     placeholder = "Выберите сигнал машины",
     loadingTitle = "Загрузка сигналов…",
     errorTitle = "Сигналы с машины",
+    disabled = false,
 }: MachineSignalsComboboxProps) {
     const triggerId = useId();
     const [open, setOpen] = useState(false);
@@ -133,9 +136,16 @@ export function MachineSignalsCombobox({
         [rows, selectedSignalId],
     );
 
-    const summary = selectedRow ? buildSignalSummary(selectedRow) : placeholder;
+    const summary = selectedRow
+        ? buildSignalSummary(selectedRow)
+        : disabled
+          ? (emptyStateMessage ?? "Нет необработанных сигналов")
+          : placeholder;
 
     const handleToggle = (rowId: string) => {
+        if (disabled) {
+            return;
+        }
         const willSelect = selectedSignalId !== rowId;
         onToggleSignal(rowId);
         if (willSelect) {
@@ -144,6 +154,9 @@ export function MachineSignalsCombobox({
     };
 
     const handleClear = () => {
+        if (disabled) {
+            return;
+        }
         if (selectedSignalId) {
             onToggleSignal(selectedSignalId);
         }
@@ -166,7 +179,14 @@ export function MachineSignalsCombobox({
     }
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+            open={disabled ? false : open}
+            onOpenChange={(nextOpen) => {
+                if (!disabled) {
+                    setOpen(nextOpen);
+                }
+            }}
+        >
             <div className={cn("flex min-w-0 flex-col", className)}>
                 <Label
                     htmlFor={triggerId}
@@ -185,11 +205,13 @@ export function MachineSignalsCombobox({
                             type="button"
                             variant="outline"
                             aria-required
+                            disabled={disabled}
                             className={cn(
                                 "h-9 min-w-0 flex-1 justify-between gap-2 border-emerald-500 bg-emerald-50 px-3 font-normal text-emerald-950",
                                 "hover:bg-emerald-100 hover:text-emerald-950",
                                 "dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-50 dark:hover:bg-emerald-950/60",
                                 "focus-visible:border-emerald-600 focus-visible:ring-emerald-500/40",
+                                disabled && "opacity-50",
                             )}
                         >
                             <span
@@ -203,11 +225,11 @@ export function MachineSignalsCombobox({
                             <ChevronDown className="size-4 shrink-0 text-emerald-700 opacity-70 dark:text-emerald-300" aria-hidden />
                         </Button>
                     </PopoverTrigger>
-                    {selectedSignalId ? (
+                    {selectedSignalId && !disabled ? (
                         <Button
                             type="button"
                             variant="outline"
-                            size="icon-sm"
+                            size="icon"
                             className={cn(
                                 "shrink-0 border-emerald-500 bg-emerald-50 text-emerald-950",
                                 "hover:bg-emerald-100 hover:text-emerald-950",

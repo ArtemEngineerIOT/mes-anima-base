@@ -60,7 +60,7 @@ export function MultiSelectCombobox<T extends string>({
                         <Button
                             type="button"
                             variant="outline"
-                            size="icon-sm"
+                            size="icon"
                             className="shrink-0"
                             aria-label={clearAriaLabel}
                             onClick={(e) => {

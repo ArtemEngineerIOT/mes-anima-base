@@ -8,7 +8,6 @@ import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination
 import { Icon } from "@/shared/ui/kit/icon";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
     dataTableInsetShellClassName,
     dataTableShellClassName,
     dataTableStickyHeadCellClassName,
@@ -30,7 +29,7 @@ type MaterialsWriteoffStageRegistryProps = {
     onPrintReturnLabel: (materialRollId: string) => void;
 };
 
-const headCellClassName = cn(dataTableHeadCellClassName, "bg-muted/40 whitespace-nowrap");
+const headCellClassName = cn(dataTableStickyHeadCellClassName, "whitespace-nowrap");
 const bodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
 
 export function MaterialsWriteoffStageRegistry({
@@ -59,7 +58,7 @@ export function MaterialsWriteoffStageRegistry({
                     <span className="shrink-0 text-[11px] text-muted-foreground">Загрузка…</span>
                 ) : stageRegistryAsOf ? (
                     <span className="shrink-0 text-[11px] text-muted-foreground">
-                        Актуально на {stageRegistryAsOf}
+                        Обновлено: {stageRegistryAsOf}
                     </span>
                 ) : null}
             </div>
@@ -76,19 +75,16 @@ export function MaterialsWriteoffStageRegistry({
                             "w-full border-separate border-spacing-0 text-[12px]",
                         )}
                     >
-                        <TableHeader>
+                        <TableHeader className="bg-muted/40">
                             <TableRow className="hover:!bg-transparent">
                                 <TableHead className={cn(headCellClassName, "w-9")} />
-                                <TableHead className={headCellClassName}>Штрихкод</TableHead>
                                 <TableHead className={headCellClassName}>Номенклатура</TableHead>
+                                <TableHead className={headCellClassName}>Серия</TableHead>
                                 <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 1</TableHead>
                                 <TableHead className={headCellClassName}>Ед. изм. 1</TableHead>
                                 <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 2</TableHead>
                                 <TableHead className={headCellClassName}>Ед. изм. 2</TableHead>
-                                <TableHead
-                                    className={cn(headCellClassName, "w-12 text-right")}
-                                    aria-label="Печать этикетки"
-                                />
+                                <TableHead className={cn(headCellClassName, "text-right")}>Действие</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -141,10 +137,10 @@ export function MaterialsWriteoffStageRegistry({
                                                         </button>
                                                     ) : null}
                                                 </TableCell>
-                                                <TableCell className={bodyCellClassName}>{op.barcode}</TableCell>
                                                 <TableCell className={bodyCellClassName} title={op.nomenclature}>
                                                     {op.nomenclature}
                                                 </TableCell>
+                                                <TableCell className={bodyCellClassName}>{op.barcode}</TableCell>
                                                 <TableCell className={cn(bodyCellClassName, "text-right")}>
                                                     {op.qty1}
                                                 </TableCell>
@@ -185,7 +181,9 @@ export function MaterialsWriteoffStageRegistry({
                                                                                 dataTableStickyHeadCellClassName,
                                                                                 "w-[45%]",
                                                                             )}
-                                                                        />
+                                                                        >
+                                                                            Параметр
+                                                                        </TableHead>
                                                                         <TableHead
                                                                             className={cn(
                                                                                 dataTableStickyHeadCellClassName,
