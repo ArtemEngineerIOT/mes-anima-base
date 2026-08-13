@@ -53,9 +53,21 @@ export function useJbCylinderReportPrint({
     workAreaStart,
     order,
 }: UseJbCylinderReportPrintOptions = {}) {
-    const { clientEnvironment } = useSession();
+    const { ensureClientEnvironment } = useSession();
     const [printingRowId, setPrintingRowId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
+
+    const ensureClientEnvironmentRef = useRef(ensureClientEnvironment);
+    ensureClientEnvironmentRef.current = ensureClientEnvironment;
+
+    const resolvePathFolder = useCallback(async () => {
+        const environment = await ensureClientEnvironmentRef.current();
+        const pathFolder = environment.tempFilesFolder.trim();
+        if (!pathFolder) {
+            throw new Error("Не удалось определить pathFolder окружения клиента");
+        }
+        return pathFolder;
+    }, []);
 
     const { mutateAsync: fetchPrintSheet2Report } = rqClient.useMutation(
         "post",
@@ -124,14 +136,10 @@ export function useJbCylinderReportPrint({
                 const trimmedWorkAreaId = workAreaId?.trim() ?? "";
                 const trimmedWorkAreaStart = workAreaStart?.trim() ?? "";
                 const trimmedOrder = order?.trim() ?? "";
-                const pathFolder = clientEnvironment?.tempFilesFolder?.trim() ?? "";
 
                 if (rowId === JB_CYLINDER_LIST_ROW_ID) {
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
-                    }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
                     }
 
                     const previewTab = openPreviewTab();
@@ -139,6 +147,7 @@ export function useJbCylinderReportPrint({
                         const payload = await fetchPrintSheet2ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet2Payload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -155,9 +164,6 @@ export function useJbCylinderReportPrint({
                     if (!trimmedWorkAreaStart) {
                         throw new Error("Не удалось определить workAreaStart этапа");
                     }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
-                    }
 
                     const previewTab = openPreviewTab();
                     try {
@@ -169,6 +175,7 @@ export function useJbCylinderReportPrint({
                                 },
                             ],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet1Payload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -185,9 +192,6 @@ export function useJbCylinderReportPrint({
                     if (!trimmedWorkAreaStart) {
                         throw new Error("Не удалось определить workAreaStart этапа");
                     }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
-                    }
 
                     const previewTab = openPreviewTab();
                     try {
@@ -199,6 +203,7 @@ export function useJbCylinderReportPrint({
                                 },
                             ],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet3Payload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -212,15 +217,13 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
-                    }
 
                     const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchMapColorControlReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbMapColorControlPayload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -234,15 +237,13 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
-                    }
 
                     const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet4ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet4Payload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -256,15 +257,13 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-                    if (!pathFolder) {
-                        throw new Error("Не удалось определить pathFolder окружения клиента");
-                    }
 
                     const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet6ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
+                        const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet6Payload(payload, pathFolder);
                         navigatePreviewTab(previewTab, previewFilePath);
                     } catch (error) {
@@ -305,7 +304,7 @@ export function useJbCylinderReportPrint({
                 setPrintingRowId(null);
             }
         },
-        [clientEnvironment?.tempFilesFolder, order, workAreaId, workAreaStart],
+        [order, resolvePathFolder, workAreaId, workAreaStart],
     );
 
     const printCylinderList = useCallback(() => {
@@ -316,11 +315,14 @@ export function useJbCylinderReportPrint({
         void printJbDocument(JB_STAGE_INFO_ROW_ID);
     }, [printJbDocument]);
 
+    const dismissPrintError = useCallback(() => setPrintError(null), []);
+
     return {
         printJbDocument,
         printCylinderList,
         printStageInfo,
         printingRowId,
         printError,
+        dismissPrintError,
     };
 }

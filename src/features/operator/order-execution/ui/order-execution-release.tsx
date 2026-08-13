@@ -74,6 +74,7 @@ export function OrderExecutionRelease({
         isRegisteringRelease,
         registerRelease,
         printError,
+        dismissPrintError,
         printingReleaseId,
         printReleaseLabel,
         productionEvent,
@@ -286,7 +287,6 @@ export function OrderExecutionRelease({
                         <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {batchAsOf}</span>
                     ) : null}
                 </div>
-                {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
                 <div className={dataTableViewportShellClassName}>
                     <div className="overflow-x-auto min-w-0">
                         <Table
@@ -505,6 +505,18 @@ export function OrderExecutionRelease({
                     Зарегистрировать выпуск
                 </Button>
             </div>
+
+            {printError ? (
+                <FloatingAutoDismissInformer
+                    key={`release-print-error:${printError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Ошибка"
+                    description={printError}
+                    onDismiss={dismissPrintError}
+                />
+            ) : null}
         </div>
     );
 }

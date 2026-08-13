@@ -21,6 +21,13 @@ import {
 } from "./sanitize-process-control-numeric-input";
 import type { ProcessControlFormState } from "./types";
 
+type ProcessControlSaveFeedback = {
+    key: number;
+    tone: "success" | "alert";
+    title: string;
+    description?: string;
+};
+
 type UseProcessControlOptions = {
     workAreaId?: string;
     enabled?: boolean;
@@ -33,7 +40,8 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [saveError, setSaveError] = useState<string | null>(null);
+    const [saveFeedback, setSaveFeedback] = useState<ProcessControlSaveFeedback | null>(null);
+    const saveFeedbackKeyRef = useRef(0);
 
     const { mutateAsync: fetchProcessControl } = rqClient.useMutation(
         "post",
@@ -57,8 +65,25 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
         setForm(createEmptyProcessControlForm());
         setUpdatedAt("");
         setError(null);
-        setSaveError(null);
+        setSaveFeedback(null);
     }, []);
+
+    const dismissSaveFeedback = useCallback(() => {
+        setSaveFeedback(null);
+    }, []);
+
+    const showSaveFeedback = useCallback(
+        (title: string, tone: ProcessControlSaveFeedback["tone"], description?: string) => {
+            saveFeedbackKeyRef.current += 1;
+            setSaveFeedback({
+                key: saveFeedbackKeyRef.current,
+                title,
+                description,
+                tone,
+            });
+        },
+        [],
+    );
 
     const load = useCallback(async () => {
         const trimmedWorkAreaId = workAreaId?.trim();
@@ -131,17 +156,17 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
         const operatorRef = resolveReleaseOperatorRef(session);
 
         if (!trimmedWorkAreaId) {
-            setSaveError("Не удалось определить рабочую область этапа");
+            showSaveFeedback("Не удалось определить рабочую область этапа", "alert");
             return;
         }
 
         if (!operatorRef) {
-            setSaveError("Не удалось определить оператора для сохранения");
+            showSaveFeedback("Не удалось определить оператора для сохранения", "alert");
             return;
         }
 
         setIsSaving(true);
-        setSaveError(null);
+        setSaveFeedback(null);
 
         try {
             const payload = await saveProcessControlRef.current({
@@ -160,8 +185,12 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
             } else {
                 await load();
             }
+
+            showSaveFeedback("Контроль процесса сохранён", "success");
         } catch (saveRequestError) {
-            setSaveError(
+            showSaveFeedback(
+                "Ошибка",
+                "alert",
                 saveRequestError instanceof Error
                     ? saveRequestError.message
                     : "Не удалось сохранить контроль процесса",
@@ -169,7 +198,7 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
         } finally {
             setIsSaving(false);
         }
-    }, [load, session, workAreaId]);
+    }, [load, session, showSaveFeedback, workAreaId]);
 
     return {
         form,
@@ -183,7 +212,8 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
         isLoading,
         isSaving,
         error,
-        saveError,
+        saveFeedback,
+        dismissSaveFeedback,
         save,
         reload: load,
     };

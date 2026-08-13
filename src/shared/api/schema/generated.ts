@@ -1722,8 +1722,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Три последних среза ТП (JB Process control)
-         * @description BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`. Колонки-справка на экране «Технологические параметры машины». Тело: `[{ workAreaId }]`.
+         * Срезы и стартовые параметры ТП (JB Process control)
+         * @description BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`. Экран «Технологические параметры машины» — заполнение таблиц при открытии (`slices`, `machine_params`, `print_slots`). Тело: `[{ workAreaId }]`.
          */
         post: {
             parameters: {
@@ -3994,26 +3994,56 @@ export interface components {
             /** @description Подписи полей для плашки сводки */
             result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
-        /** @description Строка result getLastProcessParamsSlices (JB Process control) */
-        OrderExecutionLastProcessParamsSliceRow: {
+        /** @description Колонка-срез в ответе getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSlicesColumnRow: {
             slice_no?: number | null;
+            slice_kind?: string | null;
+            column_label?: string | null;
             external_series_key?: string | null;
-            param_code?: string | null;
-            value?: string | null;
             material_roll_id?: string | null;
-            /** @description Время последнего изменения среза (`yyyy-MM-dd HH:mm:ss`) */
             updated_at?: string | null;
             captured_at?: string | null;
-            recorded_at?: string | null;
-            checked_at?: string | null;
-            origin?: string | null;
             source?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Строка machine_params getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSlicesMachineParamRow: {
+            param_code?: string | null;
+            standard_value?: string | null;
+            tolerance?: string | null;
+            start_value?: string | null;
+            slice1_value?: string | null;
+            slice2_value?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Строка print_slots getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSlicesPrintSlotRow: {
+            slot_no?: number | null;
+            slot_role?: string | null;
+            color?: string | null;
+            presser_no?: string | null;
+            setpoint?: string | null;
+            tolerance?: string | null;
+            is_empty?: string | null;
+            start_value?: string | null;
+            slice1_value?: string | null;
+            slice2_value?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Элемент result getLastProcessParamsSlices (JB Process control) */
+        OrderExecutionLastProcessParamsSlicesResultItem: {
+            slices?: components["schemas"]["OrderExecutionLastProcessParamsSlicesColumnRow"][];
+            machine_params?: components["schemas"]["OrderExecutionLastProcessParamsSlicesMachineParamRow"][];
+            print_slots?: components["schemas"]["OrderExecutionLastProcessParamsSlicesPrintSlotRow"][];
         } & {
             [key: string]: unknown;
         };
         /** @description Ответ getLastProcessParamsSlices (JB Process control) */
         OrderExecutionLastProcessParamsSlicesResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {
-            result?: components["schemas"]["OrderExecutionLastProcessParamsSliceRow"][];
+            result?: components["schemas"]["OrderExecutionLastProcessParamsSlicesResultItem"][];
         })[];
         /** @description Элемент result getProcessControl (JB Process control) */
         OrderExecutionProcessControlResultItem: {

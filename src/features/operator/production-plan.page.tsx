@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
+import { OrderExecutionSuspendedStageModal } from "@/features/operator/order-execution/ui/modal/order-execution-suspended-stage-modal";
 import { Button } from "@/shared/ui/kit/button";
 import { Informer } from "@/shared/ui/kit/informer";
 
@@ -15,12 +17,21 @@ import { ProductionPlanConfirmDialog } from "@/features/operator/production-plan
 import { ProductionPlanFilters } from "@/features/operator/production-plan/ui/production-plan-filters";
 import { ProductionPlanTable } from "@/features/operator/production-plan/ui/production-plan-table";
 
+type ProductionPlanNavigationState = {
+    suspendedStageLabel?: string;
+};
+
 function ProductionPlanPage() {
+    const location = useLocation();
+    const navigate = useNavigate();
     const {
         filters,
         setFilters,
         searchQuery,
         setSearchQuery,
+        selectedStatuses,
+        toggleSelectedStatus,
+        clearSelectedStatuses,
         machineOptions,
         isMachineOptionsLoading,
         stages,
@@ -38,6 +49,20 @@ function ProductionPlanPage() {
 
     const [confirm, setConfirm] = useState<{ id: string; action: ProductionPlanAction } | null>(null);
     const [pauseComment, setPauseComment] = useState("");
+    const [suspendedModalOpen, setSuspendedModalOpen] = useState(false);
+    const [suspendedStageLabel, setSuspendedStageLabel] = useState<string | undefined>();
+
+    useEffect(() => {
+        const state = location.state as ProductionPlanNavigationState | null;
+        const label = state?.suspendedStageLabel?.trim();
+        if (!label) {
+            return;
+        }
+
+        setSuspendedStageLabel(label);
+        setSuspendedModalOpen(true);
+        navigate(location.pathname, { replace: true, state: null });
+    }, [location.pathname, location.state, navigate]);
 
     const openConfirm = (stageId: string, action: ProductionPlanAction) => {
         if (action !== "pause") {
@@ -98,6 +123,9 @@ function ProductionPlanPage() {
                         stages={filteredStages}
                         searchQuery={searchQuery}
                         selectedId={selectedId}
+                        selectedStatuses={selectedStatuses}
+                        onToggleStatus={toggleSelectedStatus}
+                        onClearStatuses={clearSelectedStatuses}
                         onSelect={setSelectedId}
                     />
                 )}
@@ -161,6 +189,12 @@ function ProductionPlanPage() {
                     setConfirm(null);
                     setPauseComment("");
                 }}
+            />
+
+            <OrderExecutionSuspendedStageModal
+                open={suspendedModalOpen}
+                onOpenChange={setSuspendedModalOpen}
+                stageLabel={suspendedStageLabel}
             />
         </div>
     );

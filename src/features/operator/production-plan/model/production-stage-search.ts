@@ -1,4 +1,4 @@
-import { statusLabel } from "./stage-status";
+import { productionStageStatusLabel } from "./stage-status";
 import type { ProductionStage } from "./types";
 
 function collectSearchValues(stage: ProductionStage): string[] {
@@ -20,8 +20,7 @@ function collectSearchValues(stage: ProductionStage): string[] {
         stage.orderDate,
         stage.startAt,
         stage.endAt,
-        stage.statusDisplayLabel,
-        statusLabel(stage.status),
+        productionStageStatusLabel(stage),
     ];
 
     if (stage.quantity !== undefined) {

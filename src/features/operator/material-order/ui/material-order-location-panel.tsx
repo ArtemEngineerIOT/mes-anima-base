@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 
 import { Button, ButtonPendingLabel } from "@/shared/ui/kit/button";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Label } from "@/shared/ui/kit/label";
-import { Informer } from "@/shared/ui/kit/informer";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import { MultiSelectCombobox } from "@/shared/ui/kit/multi-select-combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
@@ -39,6 +39,20 @@ function submitOrderResultStatusLabel(row: MaterialOrderSubmitOrderResultRow) {
     return "—";
 }
 
+const LOCAL_ACTION_ERROR_TITLES = new Set([
+    "Выберите хотя бы одну машину",
+    "Не указана серия для печати",
+    "Выберите причину блокировки",
+    "Выберите строки локации с непустой серией",
+]);
+
+function actionErrorSnackbar(message: string) {
+    if (LOCAL_ACTION_ERROR_TITLES.has(message)) {
+        return { title: message, description: undefined };
+    }
+    return { title: "Ошибка", description: message };
+}
+
 type MaterialOrderLocationPanelProps = {
     workspace: MaterialOrderWorkspaceModel;
 };
@@ -51,7 +65,9 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
         locationFilterKinds,
         locationLoading,
         locationError,
+        dismissLocationError,
         locationPrintError,
+        dismissLocationPrintError,
         printingLocationSeriesRef,
         refreshLocation,
         printLocationRollLabel,
@@ -76,9 +92,13 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
         selectedBlockSeriesRefs,
         isSubmittingBlock,
         blockSubmitError,
+        dismissBlockSubmitError,
         blockSubmitMessage,
+        dismissBlockSubmitMessage,
         submitBlock,
         submitStatus,
+        submitStatusFeedbackDismissed,
+        dismissSubmitStatusFeedback,
     } = workspace;
 
     const blockedNomenclatureLine = useMemo(() => {
@@ -97,54 +117,44 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
     } = useDataTablePagination(locationRowsFiltered, { initialPageSize: 5 });
 
     return (
+        <>
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-            {submitStatus?.visible ? (
-                <>
-                    <Informer
-                        tone="success"
-                        variant="filled"
-                        size="s"
-                        title={submitStatus.title}
-                        description={submitStatus.detail || undefined}
-                    />
-                    {submitStatus.orderResults.length > 0 ? (
-                        <div className="data-table-scroll-viewport app-scroll min-w-0 max-w-full overflow-auto">
-                            <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-                                <TableHeader className="bg-muted/40">
-                                    <TableRow>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Статус</TableHead>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Сообщение</TableHead>
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-20")}>Строк</TableHead>
-                                        <TableHead className={dataTableStickyHeadCellClassName}>Документ 1S</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {submitStatus.orderResults.map((row, idx) => (
-                                        <TableRow key={`${row.external1sDocumentRef}-${idx}`}>
-                                            <TableCell className={dataTableBodyCellClassName}>
-                                                <InformerPill
-                                                    tone={submitOrderResultTone(row.requestStatus)}
-                                                    variant="outline"
-                                                >
-                                                    {submitOrderResultStatusLabel(row)}
-                                                </InformerPill>
-                                            </TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>
-                                                {row.operatorMessage || row.errorMessage || "—"}
-                                            </TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>
-                                                {row.lineCount ?? "—"}
-                                            </TableCell>
-                                            <TableCell className={cn(dataTableBodyCellClassName, "font-mono text-xs")}>
-                                                {row.external1sDocumentRef || "—"}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : null}
-                </>
+            {submitStatus?.visible && submitStatus.orderResults.length > 0 ? (
+                <div className="data-table-scroll-viewport app-scroll min-w-0 max-w-full overflow-auto">
+                    <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+                        <TableHeader className="bg-muted/40">
+                            <TableRow>
+                                <TableHead className={dataTableStickyHeadCellClassName}>Статус</TableHead>
+                                <TableHead className={dataTableStickyHeadCellClassName}>Сообщение</TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-20")}>Строк</TableHead>
+                                <TableHead className={dataTableStickyHeadCellClassName}>Документ 1S</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {submitStatus.orderResults.map((row, idx) => (
+                                <TableRow key={`${row.external1sDocumentRef}-${idx}`}>
+                                    <TableCell className={dataTableBodyCellClassName}>
+                                        <InformerPill
+                                            tone={submitOrderResultTone(row.requestStatus)}
+                                            variant="outline"
+                                        >
+                                            {submitOrderResultStatusLabel(row)}
+                                        </InformerPill>
+                                    </TableCell>
+                                    <TableCell className={dataTableBodyCellClassName}>
+                                        {row.operatorMessage || row.errorMessage || "—"}
+                                    </TableCell>
+                                    <TableCell className={dataTableBodyCellClassName}>
+                                        {row.lineCount ?? "—"}
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "font-mono text-xs")}>
+                                        {row.external1sDocumentRef || "—"}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             ) : null}
 
             <section className="flex flex-col gap-3">
@@ -197,12 +207,6 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                             </ButtonPendingLabel>
                         </Button>
                     </div>
-                    {locationError ? (
-                        <div className="text-[12px] text-destructive">{locationError}</div>
-                    ) : null}
-                    {locationPrintError ? (
-                        <div className="text-[12px] text-destructive">{locationPrintError}</div>
-                    ) : null}
                 </div>
                 <div className="relative min-w-0">
                     <Icon
@@ -346,9 +350,6 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
 
             <section className="border-border flex flex-col gap-3 border-t pt-2">
                 <div className={cnSectionBlockTitle()}>Причины блокировки</div>
-                {blockSubmitMessage ? (
-                    <Informer tone="success" variant="filled" size="s" title={blockSubmitMessage} />
-                ) : null}
                 <div className="grid gap-2">
                     <div className={comboboxFieldLabelClassName}>Блокируемая номенклатура</div>
                     {/* <Label htmlFor="material-order-blocked-nom">Блокируемая номенклатура</Label> */}
@@ -399,9 +400,6 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                     />
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                    {blockSubmitError ? (
-                        <div className="w-full text-[12px] text-destructive">{blockSubmitError}</div>
-                    ) : null}
                     <Button
                         type="button"
                         size="sm"
@@ -417,5 +415,61 @@ export function MaterialOrderLocationPanel({ workspace }: MaterialOrderLocationP
                 </div>
             </section>
         </div>
+
+            {submitStatus?.visible && !submitStatusFeedbackDismissed ? (
+                <FloatingAutoDismissInformer
+                    key={`submit-status:${submitStatus.title}:${submitStatus.detail ?? ""}`}
+                    tone="success"
+                    variant="bordered"
+                    size="s"
+                    title={submitStatus.title}
+                    description={submitStatus.detail || undefined}
+                    onDismiss={dismissSubmitStatusFeedback}
+                />
+            ) : null}
+            {locationError ? (
+                <FloatingAutoDismissInformer
+                    key={`location-error:${locationError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={actionErrorSnackbar(locationError).title}
+                    description={actionErrorSnackbar(locationError).description}
+                    onDismiss={dismissLocationError}
+                />
+            ) : null}
+            {locationPrintError ? (
+                <FloatingAutoDismissInformer
+                    key={`location-print-error:${locationPrintError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={actionErrorSnackbar(locationPrintError).title}
+                    description={actionErrorSnackbar(locationPrintError).description}
+                    onDismiss={dismissLocationPrintError}
+                />
+            ) : null}
+            {blockSubmitMessage ? (
+                <FloatingAutoDismissInformer
+                    key={`block-submit-success:${blockSubmitMessage}`}
+                    tone="success"
+                    variant="bordered"
+                    size="s"
+                    title={blockSubmitMessage}
+                    onDismiss={dismissBlockSubmitMessage}
+                />
+            ) : null}
+            {blockSubmitError ? (
+                <FloatingAutoDismissInformer
+                    key={`block-submit-error:${blockSubmitError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={actionErrorSnackbar(blockSubmitError).title}
+                    description={actionErrorSnackbar(blockSubmitError).description}
+                    onDismiss={dismissBlockSubmitError}
+                />
+            ) : null}
+        </>
     );
 }

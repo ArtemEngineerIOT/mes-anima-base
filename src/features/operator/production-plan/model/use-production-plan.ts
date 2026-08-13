@@ -7,6 +7,7 @@ import { useSession } from "@/shared/model/session";
 import { mapProductionPlanMachinesPayload } from "./map-production-plan-machines-payload";
 import { mapProductionPlanPayload } from "./map-production-plan-payload";
 import { matchesProductionStageSearch } from "./production-stage-search";
+import { STAGE_STATUS_VALUES } from "./stage-status";
 import { assertProductionPlanStageActionSuccess } from "./map-production-plan-stage-action-response";
 import {
     applyStageAction,
@@ -14,7 +15,7 @@ import {
     type ApplyProductionPlanActionOptions,
     type ProductionPlanAction,
 } from "./production-plan-stage-actions";
-import type { ProductionPlanFilters, ProductionPlanMachine, ProductionStage } from "./types";
+import type { ProductionPlanFilters, ProductionPlanMachine, ProductionStage, StageStatus } from "./types";
 
 export type ProductionPlanDataStatus = "idle" | "ready" | "empty" | "error";
 
@@ -32,10 +33,25 @@ function defaultFilters(): ProductionPlanFilters {
     };
 }
 
+function sortSelectedStatuses(statuses: readonly StageStatus[]): StageStatus[] {
+    const order = new Map(STAGE_STATUS_VALUES.map((status, index) => [status, index]));
+
+    return [...statuses].sort((left, right) => (order.get(left) ?? 0) - (order.get(right) ?? 0));
+}
+
+function matchesProductionStageStatusFilter(stage: ProductionStage, selectedStatuses: readonly StageStatus[]): boolean {
+    if (selectedStatuses.length === 0) {
+        return true;
+    }
+
+    return selectedStatuses.includes(stage.status);
+}
+
 export function useProductionPlan() {
     const { session } = useSession();
     const [filters, setFilters] = useState<ProductionPlanFilters>(defaultFilters);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedStatuses, setSelectedStatuses] = useState<StageStatus[]>([]);
     const [machineOptions, setMachineOptions] = useState<ProductionPlanMachine[]>([]);
     const [isMachineOptionsLoading, setIsMachineOptionsLoading] = useState(false);
     const [stages, setStages] = useState<ProductionStage[]>([]);
@@ -169,12 +185,32 @@ export function useProductionPlan() {
     }, [refresh]);
 
     const filteredStages = useMemo(() => {
+        const byStatus = stages.filter((stage) => matchesProductionStageStatusFilter(stage, selectedStatuses));
+
         if (!searchQuery.trim()) {
-            return stages;
+            return byStatus;
         }
 
-        return stages.filter((stage) => matchesProductionStageSearch(stage, searchQuery));
-    }, [searchQuery, stages]);
+        return byStatus.filter((stage) => matchesProductionStageSearch(stage, searchQuery));
+    }, [searchQuery, selectedStatuses, stages]);
+
+    useEffect(() => {
+        if (selectedId && !filteredStages.some((stage) => stage.stageId === selectedId)) {
+            setSelectedId(null);
+        }
+    }, [filteredStages, selectedId]);
+
+    const toggleSelectedStatus = useCallback((status: StageStatus) => {
+        setSelectedStatuses((prev) =>
+            prev.includes(status)
+                ? prev.filter((item) => item !== status)
+                : sortSelectedStatuses([...prev, status]),
+        );
+    }, []);
+
+    const clearSelectedStatuses = useCallback(() => {
+        setSelectedStatuses([]);
+    }, []);
 
     const applyAction = useCallback(
         async (stageId: string, action: ProductionPlanAction, options?: ApplyProductionPlanActionOptions) => {
@@ -259,6 +295,9 @@ export function useProductionPlan() {
         setFilters,
         searchQuery,
         setSearchQuery,
+        selectedStatuses,
+        toggleSelectedStatus,
+        clearSelectedStatuses,
         machineOptions,
         isMachineOptionsLoading,
         stages,

@@ -19,6 +19,8 @@ export type TechnologicalPrintingSectionRow = {
     stompStandardFieldKey?: TechnologicalParamTagKey;
     fallbackCurrent: string;
     alert?: boolean;
+    /** Пустая печатная секция (`is_empty` с бэка) — строка без данных. */
+    isEmpty?: boolean;
 };
 
 export type TechnologicalProcessParamRow = {

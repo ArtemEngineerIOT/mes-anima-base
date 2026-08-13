@@ -96,21 +96,25 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
         });
     }, []);
 
-    const tryFinalizeStage = useCallback(async (): Promise<{ showSuspendedModal: boolean }> => {
+    const tryFinalizeStage = useCallback(async (): Promise<{
+        completed: boolean;
+        showSuspendedModal: boolean;
+        suspendedStageLabel?: string;
+    }> => {
         if (!canSubmitPrerequisites) {
-            return { showSuspendedModal: false };
+            return { completed: false, showSuspendedModal: false };
         }
 
         const trimmedWorkAreaId = workAreaId?.trim();
         if (!trimmedWorkAreaId) {
             setSubmitError("Не удалось определить workAreaId этапа");
-            return { showSuspendedModal: false };
+            return { completed: false, showSuspendedModal: false };
         }
 
         const completedBy = resolveReleaseOperatorRef(session);
         if (!completedBy) {
             setSubmitError("Не удалось определить оператора (mesUserProfile)");
-            return { showSuspendedModal: false };
+            return { completed: false, showSuspendedModal: false };
         }
 
         setIsSubmitting(true);
@@ -138,23 +142,29 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
                             : [{ code: mapped.errorCode, message: mapped.errorMessage }],
                 }));
                 setSubmitError(mapped.errorMessage);
-                return { showSuspendedModal: false };
+                return { completed: false, showSuspendedModal: false };
             }
 
             setStageCompleted(true);
             if (mapped.pausedSiblingModal) {
+                const suspendedStageLabel =
+                    mapped.pausedSiblingModal.message || mapped.pausedSiblingModal.title;
                 setSnapshot((prev) => ({
                     ...prev,
                     hasSuspendedStageOnMachine: true,
-                    suspendedStageLabel: mapped.pausedSiblingModal?.message || mapped.pausedSiblingModal?.title,
+                    suspendedStageLabel,
                 }));
-                return { showSuspendedModal: true };
+                return {
+                    completed: true,
+                    showSuspendedModal: true,
+                    suspendedStageLabel,
+                };
             }
 
-            return { showSuspendedModal: false };
+            return { completed: true, showSuspendedModal: false };
         } catch (error) {
             setSubmitError(error instanceof Error ? error.message : "Не удалось завершить этап");
-            return { showSuspendedModal: false };
+            return { completed: false, showSuspendedModal: false };
         } finally {
             setIsSubmitting(false);
         }

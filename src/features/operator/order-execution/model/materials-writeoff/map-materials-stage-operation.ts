@@ -1,5 +1,16 @@
 import type { MaterialsStageOperation, MaterialsStageOperationDetail } from "./types";
 
+export const MATERIALS_STAGE_OPERATION_KIND_RETURN = "RETURN";
+
+export function isMaterialsStageReturnOperation(detail: MaterialsStageOperationDetail): boolean {
+    const operationKind = detail.operationKind?.trim().toUpperCase();
+    if (operationKind === MATERIALS_STAGE_OPERATION_KIND_RETURN) {
+        return true;
+    }
+
+    return detail.label.trim().toLowerCase() === "возврат";
+}
+
 function pickString(value: unknown): string | undefined {
     if (typeof value === "string" && value.trim()) {
         return value.trim();

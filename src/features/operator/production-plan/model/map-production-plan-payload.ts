@@ -1,7 +1,8 @@
 import type { ServerDataPayload } from "@/shared/lib/server-data-payload";
 import { walkServerDataRowsDepthFirst } from "@/shared/lib/server-data-payload";
 
-import type { ProductionPlanAction, ProductionStage, StageStatus } from "./types";
+import type { ProductionPlanAction, ProductionStage } from "./types";
+import { parseStageStatusFromBackend } from "./stage-status";
 
 function pickString(row: Record<string, unknown>, key: string): string | undefined {
     const value = row[key];
@@ -33,31 +34,6 @@ function pickNumber(row: Record<string, unknown>, key: string): number | undefin
         return Number(value);
     }
     return undefined;
-}
-
-function parseStageStatus(statusCode: unknown): StageStatus {
-    const normalized = String(statusCode ?? "PLANNED")
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g, "_");
-
-    switch (normalized) {
-        case "PLANNED":
-            return "planned";
-        case "IN_PROGRESS":
-        case "INPROGRESS":
-            return "in_progress";
-        case "PAUSED":
-            return "paused";
-        case "DONE":
-        case "COMPLETED":
-            return "done";
-        case "CANCELLED":
-        case "CANCELED":
-            return "cancelled";
-        default:
-            return "planned";
-    }
 }
 
 function parseAllowedActions(raw: unknown): ProductionPlanAction[] | undefined {
@@ -92,7 +68,7 @@ function mapRow(row: Record<string, unknown>): ProductionStage | null {
         return null;
     }
 
-    const status = parseStageStatus(row.status_code);
+    const status = parseStageStatusFromBackend(row.status_code);
 
     return {
         stageId,

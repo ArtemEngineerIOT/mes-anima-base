@@ -430,7 +430,11 @@ function EventRegistrationTimeRow({
                     value={displayTimeFrom}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeFrom: e.target.value })}
-                    className={inputClass}
+                    onFocus={(e) => {
+                        const el = e.currentTarget as unknown as { showPicker?: () => void };
+                        el.showPicker?.();
+                    }}
+                    className={cn(inputClass, "pr-2")}
                 />
             </div>
             <div className="grid gap-2">
@@ -443,7 +447,11 @@ function EventRegistrationTimeRow({
                     value={displayTimeTo}
                     disabled={disabled}
                     onChange={(e) => onPatch({ timeTo: e.target.value })}
-                    className={inputClass}
+                    onFocus={(e) => {
+                        const el = e.currentTarget as unknown as { showPicker?: () => void };
+                        el.showPicker?.();
+                    }}
+                    className={cn(inputClass, "pr-2")}
                 />
             </div>
         </div>
@@ -531,7 +539,7 @@ export function EventRegistrationStep3({
             </dl>
 
             <Informer
-                tone="warning"
+                tone="system"
                 variant="bordered"
                 size="s"
                 title="Внимание"

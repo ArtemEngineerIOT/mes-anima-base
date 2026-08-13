@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { createGStore } from "create-gstore";
 
@@ -182,6 +182,27 @@ export const useSession = createGStore(() => {
         setIsBootstrapLoading(false);
     };
 
+    const ensureClientEnvironment = useCallback(async (): Promise<ClientEnvironment> => {
+        if (clientEnvironment?.tempFilesFolder?.trim()) {
+            return clientEnvironment;
+        }
+
+        if (!mesBootstrap || !token) {
+            throw new Error("Не удалось определить pathFolder окружения клиента");
+        }
+
+        let loginName: string | undefined;
+        try {
+            loginName = jwtDecode<JwtPayload>(token).sub;
+        } catch {
+            throw new Error("Не удалось определить pathFolder окружения клиента");
+        }
+
+        const environment = await resolveClientEnvironmentFromBackend(mesBootstrap, loginName);
+        setClientEnvironment(environment);
+        return environment;
+    }, [clientEnvironment, mesBootstrap, token]);
+
     let session: Session | null = null;
     if (token && !isAuthTokenExpired(token)) {
         try {
@@ -208,5 +229,6 @@ export const useSession = createGStore(() => {
         logout,
         refreshBootstrap,
         syncWithStorage,
+        ensureClientEnvironment,
     };
 });

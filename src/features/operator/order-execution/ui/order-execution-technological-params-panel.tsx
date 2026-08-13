@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/shared/ui/kit/button";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Informer } from "@/shared/ui/kit/informer";
 import { Input } from "@/shared/ui/kit/input";
@@ -17,7 +18,6 @@ import { cn } from "@/shared/lib/css";
 
 import { useOrderExecutionMachineStompState } from "../model/machine-stomp/order-execution-machine-stomp-context";
 import {
-    resolveTechnologicalParamStompStandard,
     resolveTechnologicalParamStompValue,
     type TechnologicalParamTagKey,
 } from "../model/resolve-technological-param-stomp-value";
@@ -499,6 +499,32 @@ function PrintingSectionsTable({
                 </TableHeader>
                 <TableBody>
                     {rows.map((row) => {
+                        if (row.isEmpty) {
+                            return (
+                                <TableRow key={row.id}>
+                                    <TableCell className={cn(bodyCellClassName, "tabular-nums")}>
+                                        {row.sectionNumber}
+                                    </TableCell>
+                                    <TableCell className={cn(bodyCellClassName, "text-muted-foreground")}>—</TableCell>
+                                    <TableCell className={bodyCellClassName}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, standardCellClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, "tabular-nums")}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            bodyCellClassName,
+                                            currentValueCellClassName,
+                                            currentValueColumnClassName,
+                                        )}
+                                    >
+                                        —
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        }
+
                         const currentValue = resolveCurrentValue(row);
                         const standardValue = resolveStandardValue(row);
                         const partsCount = resolveTechnologicalParamPartsCount({
@@ -734,24 +760,29 @@ export function OrderExecutionTechnologicalParamsPanel({
     title,
     onCancel,
 }: OrderExecutionTechnologicalParamsPanelProps) {
-    const data = getTechnologicalParamsMock(machineId);
+    const baseMock = useMemo(() => getTechnologicalParamsMock(machineId), [machineId]);
+    const hasWorkAreaId = Boolean(workAreaId?.trim());
+
+    const {
+        sections: loadedSections,
+        historyByRowId: slicesHistoryByRowId,
+        isLoading: isSlicesLoading,
+        error: slicesError,
+        dismissError: dismissSlicesError,
+        reload: reloadSlices,
+    } = useLastProcessParamsSlices({
+        machineId,
+        workAreaId,
+        enabled: hasWorkAreaId,
+    });
+
+    const data = loadedSections ?? baseMock;
     const rowIds = useMemo(() => collectTechnologicalParamRowIds(data), [data]);
     const stompState = useOrderExecutionMachineStompState();
     const stompSyncInformer = useMemo(
         () => resolveTechnologicalParamsStompSyncInformer(stompState),
         [stompState],
     );
-
-    const {
-        historyByRowId: slicesHistoryByRowId,
-        isLoading: isSlicesLoading,
-        error: slicesError,
-        reload: reloadSlices,
-    } = useLastProcessParamsSlices({
-        workAreaId,
-        sections: data,
-        enabled: Boolean(workAreaId?.trim()),
-    });
 
     const {
         save: saveManualProcessParams,
@@ -786,17 +817,18 @@ export function OrderExecutionTechnologicalParamsPanel({
             return;
         }
 
-        if (!workAreaId?.trim()) {
+        if (!hasWorkAreaId) {
             setHistoryByRowId(buildInitialTechnologicalParamHistory(data));
             return;
         }
 
-        const next = buildInitialTechnologicalParamHistory(data);
+        const next: Record<string, TechnologicalParamHistoryEntry[]> = {};
         for (const [rowId, entries] of Object.entries(slicesHistoryByRowId)) {
             next[rowId] = entries.map((entry) => ({ ...entry }));
         }
+
         setHistoryByRowId(next);
-    }, [data, isSlicesLoading, slicesHistoryByRowId, workAreaId]);
+    }, [data, hasWorkAreaId, isSlicesLoading, slicesHistoryByRowId]);
 
     const resolveCurrentValue = useCallback(
         (row: MeasurableRow) =>
@@ -804,11 +836,7 @@ export function OrderExecutionTechnologicalParamsPanel({
         [stompState],
     );
 
-    const resolveStandardValue = useCallback(
-        (row: MeasurableRow) =>
-            resolveTechnologicalParamStompStandard(stompState, row.stompStandardFieldKey, row.standard),
-        [stompState],
-    );
+    const resolveStandardValue = useCallback((row: MeasurableRow) => row.standard || "—", []);
 
     const currentRollNumber = useMemo(() => {
         if (!stompState.isStompConnected || !stompState.hasReceivedTagsData) {
@@ -921,12 +949,14 @@ export function OrderExecutionTechnologicalParamsPanel({
             />
 
             {slicesError ? (
-                <Informer
+                <FloatingAutoDismissInformer
+                    key={slicesError}
+                    title="Ошибка"
+                    description={slicesError}
                     tone="alert"
                     variant="bordered"
                     size="s"
-                    title="Срезы технологических параметров"
-                    description={slicesError}
+                    onDismiss={dismissSlicesError}
                 />
             ) : null}
 
@@ -945,7 +975,7 @@ export function OrderExecutionTechnologicalParamsPanel({
                     tone="system"
                     variant="bordered"
                     size="s"
-                    title="Загрузка срезов технологических параметров…"
+                    title="Загрузка технологических параметров…"
                 />
             ) : null}
 

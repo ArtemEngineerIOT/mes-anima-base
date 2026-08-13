@@ -1,4 +1,5 @@
 import { Button } from "@/shared/ui/kit/button";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Informer } from "@/shared/ui/kit/informer";
 import { Input } from "@/shared/ui/kit/input";
 import { cn } from "@/shared/lib/css";
@@ -9,6 +10,19 @@ import type { DefectWeighingModel } from "../model/use-defect-weighing";
 
 const selectClass =
     "mt-1 h-9 w-full rounded-sm border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
+const LOCAL_REGISTER_ERROR_TITLES = new Set([
+    "Выберите этап для регистрации брака",
+    "Укажите вес брака больше нуля",
+    "Выберите тип брака",
+]);
+
+function registerErrorSnackbar(message: string) {
+    if (LOCAL_REGISTER_ERROR_TITLES.has(message)) {
+        return { title: message, description: undefined };
+    }
+    return { title: "Ошибка", description: message };
+}
 
 type DefectWeighingFormPanelProps = {
     model: DefectWeighingModel;
@@ -24,17 +38,15 @@ export function DefectWeighingFormPanel({ model }: DefectWeighingFormPanelProps)
         allEventCodes,
         registerDefect,
         registerError,
+        dismissRegisterError,
         canRegister,
         isRegistering,
         selectedStage,
     } = model;
 
     return (
+        <>
         <div className="flex flex-col gap-4">
-            {registerError ? (
-                <Informer tone="alert" variant="bordered" size="s" title="Ошибка" description={registerError} />
-            ) : null}
-
             {!selectedStage ? (
                 <Informer
                     tone="warning"
@@ -129,5 +141,18 @@ export function DefectWeighingFormPanel({ model }: DefectWeighingFormPanelProps)
                 </Button>
             </div>
         </div>
+
+            {registerError ? (
+                <FloatingAutoDismissInformer
+                    key={`register-error:${registerError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={registerErrorSnackbar(registerError).title}
+                    description={registerErrorSnackbar(registerError).description}
+                    onDismiss={dismissRegisterError}
+                />
+            ) : null}
+        </>
     );
 }

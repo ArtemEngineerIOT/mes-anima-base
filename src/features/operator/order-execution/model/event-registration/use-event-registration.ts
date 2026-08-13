@@ -84,6 +84,7 @@ export function useEventRegistration({
     const [deleteComment, setDeleteComment] = useState("");
     const [discardError, setDiscardError] = useState<string | null>(null);
     const [registerError, setRegisterError] = useState<string | null>(null);
+    const [registerSuccessMessage, setRegisterSuccessMessage] = useState<string | null>(null);
 
     const lastAppliedSignalIdRef = useRef<string | null>(null);
     const initWizardRef = useRef(initWizard);
@@ -382,13 +383,11 @@ export function useEventRegistration({
         setStep((s) => (s > 1 ? ((s - 1) as EventRegistrationStep) : s));
     }, [isWizardDisabled]);
 
-    const resetWizard = useCallback(() => {
-        setStep(1);
-        setDraft(buildDraftForActiveSignal(snapshot, selectedUnprocessed));
-    }, [selectedUnprocessed, snapshot]);
-
     const registerEvent = useCallback(async () => {
         if (!selectedCode || scrapMode == null || isWizardDisabled) return;
+
+        setRegisterError(null);
+        setRegisterSuccessMessage(null);
 
         const trimmedWorkAreaId = workAreaId?.trim();
         const trimmedWizardSessionId = wizardSessionId?.trim();
@@ -400,8 +399,6 @@ export function useEventRegistration({
             setRegisterError("Не удалось определить сессию мастера регистрации события");
             return;
         }
-
-        setRegisterError(null);
 
         try {
             const payload = await registerProductionEventRef.current({
@@ -424,6 +421,9 @@ export function useEventRegistration({
             setStep(1);
             setDraft(buildDraftForActiveSignal(snapshot, null));
             setRegisterError(null);
+            setRegisterSuccessMessage(
+                mapped.registrationStatusLabel?.trim() || "Событие зарегистрировано",
+            );
 
             if (mapped.processJournalRefreshHint) {
                 void loadJournal();
@@ -497,6 +497,10 @@ export function useEventRegistration({
         setRegisterError(null);
     }, []);
 
+    const dismissRegisterSuccess = useCallback(() => {
+        setRegisterSuccessMessage(null);
+    }, []);
+
     const dismissDiscardError = useCallback(() => {
         setDiscardError(null);
     }, []);
@@ -526,6 +530,8 @@ export function useEventRegistration({
         dismissDiscardError,
         registerError,
         dismissRegisterError,
+        registerSuccessMessage,
+        dismissRegisterSuccess,
         isDiscardSignalsPending,
         isRegisterEventPending,
         isDiscardDisabled,

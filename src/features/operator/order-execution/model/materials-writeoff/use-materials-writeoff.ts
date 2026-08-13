@@ -53,8 +53,8 @@ export type MaterialsWriteoffFormPanelMessage = {
     key: string;
     source: MaterialsWriteoffFormPanelMessageSource;
     title?: string;
-    description: string;
-    tone: "alert" | "warning";
+    description?: string;
+    tone: "success" | "alert" | "warning";
 };
 
 type UseMaterialsWriteoffOptions = {
@@ -650,9 +650,15 @@ export function useMaterialsWriteoff({
             await refreshWriteoffTables();
             onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
+            showFormPanelMessage({
+                source: "reflectReturn",
+                title: "Возврат отражён",
+                tone: "success",
+            });
         } catch (error) {
             showFormPanelMessage({
                 source: "reflectReturn",
+                title: "Ошибка",
                 description: error instanceof Error ? error.message : "Не удалось отразить возврат",
                 tone: "alert",
             });
@@ -730,9 +736,15 @@ export function useMaterialsWriteoff({
             await refreshWriteoffTables();
             onMonitoringSummaryReloadRef.current?.();
             resetWriteoffSelection();
+            showFormPanelMessage({
+                source: "writeOffFully",
+                title: "Материал списан полностью",
+                tone: "success",
+            });
         } catch (error) {
             showFormPanelMessage({
                 source: "writeOffFully",
+                title: "Ошибка",
                 description: error instanceof Error ? error.message : "Не удалось списать материал полностью",
                 tone: "alert",
             });
@@ -773,9 +785,15 @@ export function useMaterialsWriteoff({
                 }),
             });
             mapSubmitStageLkmPayload(payload);
+            showFormPanelMessage({
+                source: "submitStageLkm",
+                title: "Списание по этапу отражено",
+                tone: "success",
+            });
         } catch (error) {
             showFormPanelMessage({
                 source: "submitStageLkm",
+                title: "Ошибка",
                 description:
                     error instanceof Error ? error.message : "Не удалось отразить списание по этапу",
                 tone: "alert",

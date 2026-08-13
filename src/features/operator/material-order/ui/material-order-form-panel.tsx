@@ -1,4 +1,5 @@
 import { Button } from "@/shared/ui/kit/button";
+import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Label } from "@/shared/ui/kit/label";
@@ -26,6 +27,22 @@ type MaterialOrderFormPanelProps = {
     workspace: MaterialOrderWorkspaceModel;
 };
 
+const planStagesCheckboxColClass = "w-10 max-w-10 px-2";
+const planStagesStageColClass = "w-20 max-w-20 whitespace-nowrap px-2";
+const planStagesQuantityColClass = "w-16 max-w-16 whitespace-nowrap px-2";
+
+const LOCAL_ACTION_ERROR_TITLES = new Set([
+    "Выберите хотя бы один этап",
+    "Сначала сформируйте заказ",
+]);
+
+function actionErrorSnackbar(message: string) {
+    if (LOCAL_ACTION_ERROR_TITLES.has(message)) {
+        return { title: message, description: undefined };
+    }
+    return { title: "Ошибка", description: message };
+}
+
 export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProps) {
     const {
         orderMachineId,
@@ -42,6 +59,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
         togglePlanRow,
         isOrderFormVisible,
         composeError,
+        dismissComposeError,
         isComposing,
         composeOrder,
         materialQuery,
@@ -58,6 +76,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
         handleSpecificRollsChange,
         rollsLoading,
         rollsError,
+        dismissRollsError,
         selectedRollIds,
         toggleRoll,
         byTime,
@@ -70,6 +89,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
         addToOrder,
         isSubmitting,
         submitError,
+        dismissSubmitError,
         submitOrder,
     } = workspace;
 
@@ -82,33 +102,22 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
         pageSize: planPageSize,
         setPageSize: setPlanPageSize,
         setPage: setPlanPage,
-    } = useDataTablePagination(planRowsFiltered, { initialPageSize: 10 });
+    } = useDataTablePagination(planRowsFiltered, { initialPageSize: 5 });
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="grid w-fit max-w-full gap-1.5">
-                <Label htmlFor="material-order-machine" className={comboboxFieldLabelClassName}>
-                    Машина
-                </Label>
-                <select
-                    id="material-order-machine"
-                    value={orderMachineId}
-                    disabled={isMachineOptionsLoading || machineOptions.length === 0 || isOrderFormVisible}
-                    onChange={(event) => setOrderMachine(event.target.value)}
-                    className="h-9 w-fit min-w-[8.5rem] max-w-full rounded-sm border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {isMachineOptionsLoading ? <option value="">Загрузка…</option> : null}
-                    {machineOptions.length === 0 ? <option value="">Нет машин</option> : null}
-                    <option value="">Не выбрано</option>
-                    {machineOptions.map((item) => (
-                        <option key={item.resourceCode} value={item.resourceCode}>
-                            {item.machine}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <section className="flex flex-col gap-2">
+        <>
+        <div
+            className={cn(
+                "flex flex-col gap-4",
+                isOrderFormVisible ? "min-h-0" : "min-h-0 flex-1",
+            )}
+        >
+            <section
+                className={cn(
+                    "flex flex-col gap-2",
+                    isOrderFormVisible ? "shrink-0" : "min-h-0 flex-1",
+                )}
+            >
                 {planStagesError ? (
                     <Informer
                         tone="alert"
@@ -118,33 +127,58 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                         description={planStagesError}
                     />
                 ) : null}
-                <div className="flex items-center gap-2">
-                    <div className="relative min-w-0 flex-1">
-                        <Icon
-                            name="search"
-                            className="text-muted-foreground pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-lg"
-                        />
-                        <Input
-                            className="pl-9"
-                            placeholder="Поиск по этапу, заказу, клиенту, продукту…"
-                            value={planQuery}
-                            onChange={(e) => setPlanQuery(e.target.value)}
-                            aria-label="Поиск в таблице этапов"
-                        />
+                <div className="flex items-end gap-2">
+                    <div className="grid shrink-0 gap-1.5">
+                        <Label htmlFor="material-order-machine" className={comboboxFieldLabelClassName}>
+                            Машина
+                        </Label>
+                        <select
+                            id="material-order-machine"
+                            value={orderMachineId}
+                            disabled={isMachineOptionsLoading || machineOptions.length === 0 || isOrderFormVisible}
+                            onChange={(event) => setOrderMachine(event.target.value)}
+                            className="h-9 w-[8.5rem] rounded-sm border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isMachineOptionsLoading ? <option value="">Загрузка…</option> : null}
+                            {machineOptions.length === 0 ? <option value="">Нет машин</option> : null}
+                            <option value="">Не выбрано</option>
+                            {machineOptions.map((item) => (
+                                <option key={item.resourceCode} value={item.resourceCode}>
+                                    {item.machine}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon-sm"
-                        className="shrink-0"
-                        onClick={() => setPlanQuery("")}
-                        aria-label="Очистить поиск в таблице этапов"
-                    >
-                        <Icon name="delete_sweep" className="text-base" />
-                    </Button>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <div className="relative min-w-0 flex-1">
+                            <Icon
+                                name="search"
+                                className="text-muted-foreground pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-lg"
+                            />
+                            <Input
+                                className="pl-9"
+                                placeholder="Поиск по этапу, заказу, клиенту, продукту…"
+                                value={planQuery}
+                                onChange={(e) => setPlanQuery(e.target.value)}
+                                aria-label="Поиск в таблице этапов"
+                            />
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="shrink-0"
+                            onClick={() => setPlanQuery("")}
+                            aria-label="Очистить поиск в таблице этапов"
+                        >
+                            <Icon name="delete_sweep" className="text-base" />
+                        </Button>
+                    </div>
                 </div>
                 <DataTableViewport
-                    layout="fill"
+                    layout={isOrderFormVisible ? "fixed" : "fill"}
+                    visibleBodyRows={5}
+                    className={isOrderFormVisible ? "w-full" : "min-h-0 w-full flex-1"}
                     footer={
                         <DataTablePaginationFooter
                             totalCount={planPagination.totalCount}
@@ -161,7 +195,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                     <Table
                         className={cn(
                             dataTableInsetShellClassName,
-                            "min-w-[760px] border-separate border-spacing-0 text-[12px]",
+                            "w-full border-separate border-spacing-0 text-[12px]",
                         )}
                     >
                         <TableHeader className="bg-muted/40">
@@ -169,31 +203,42 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                                 <TableHead
                                     className={cn(
                                         dataTableStickyHeadCellClassName,
-                                        "w-[40px] max-w-[40px] whitespace-nowrap",
+                                        planStagesCheckboxColClass,
                                     )}
+                                    aria-label="Выбор"
                                 />
-                                <TableHead className={dataTableStickyHeadCellClassName}>Этап</TableHead>
                                 <TableHead
                                     className={cn(
                                         dataTableStickyHeadCellClassName,
-                                        "w-[80px] max-w-[80px] whitespace-nowrap",
+                                        planStagesStageColClass,
+                                        "whitespace-nowrap",
                                     )}
                                 >
-                                    id этапа
+                                    Этап
                                 </TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Дата заказа</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Клиент</TableHead>
-                                <TableHead
-                                    className={cn(
-                                        dataTableStickyHeadCellClassName,
-                                        "min-w-[180px] max-w-[240px] truncate",
-                                    )}
-                                >
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "whitespace-nowrap")}>
+                                    Дата заказа
+                                </TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-0")}>
+                                    Клиент
+                                </TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-0 truncate")}>
                                     Продукт
                                 </TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Количество</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Старт</TableHead>
-                                <TableHead className={dataTableStickyHeadCellClassName}>Завершение</TableHead>
+                                <TableHead
+                                    className={cn(
+                                        dataTableStickyHeadCellClassName,
+                                        planStagesQuantityColClass,
+                                    )}
+                                >
+                                    Кол-во
+                                </TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "whitespace-nowrap")}>
+                                    Старт
+                                </TableHead>
+                                <TableHead className={cn(dataTableStickyHeadCellClassName, "whitespace-nowrap")}>
+                                    Завершение
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className={dataTableSplitScrollBodyClassName}>
@@ -201,7 +246,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                                 <TableRow>
                                     <TableCell
                                         className={cn(dataTableBodyCellClassName, "py-8 text-center text-muted-foreground")}
-                                        colSpan={9}
+                                        colSpan={8}
                                     >
                                         Загрузка этапов…
                                     </TableCell>
@@ -210,7 +255,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                                 <TableRow>
                                     <TableCell
                                         className={cn(dataTableBodyCellClassName, "py-8 text-center text-muted-foreground")}
-                                        colSpan={9}
+                                        colSpan={8}
                                     >
                                         {!orderMachineId ? "Сначала выберите машину" : `Нет этапов плана для машины ${orderMachineId}`}
                                     </TableCell>
@@ -218,42 +263,60 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                             ) : (
                                 planPageItems.map((row) => (
                                     <TableRow key={row.id}>
-                                        <TableCell
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "w-[40px] max-w-[40px] whitespace-nowrap",
-                                            )}
-                                        >
+                                        <TableCell className={cn(dataTableBodyCellClassName, planStagesCheckboxColClass)}>
                                             <input
                                                 type="checkbox"
                                                 className="border-input size-4 rounded border"
                                                 checked={planSelectedIds.has(row.id)}
                                                 disabled={isOrderFormVisible}
                                                 onChange={() => togglePlanRow(row.id)}
-                                                aria-label={`Выбрать этап ${row.stage}`}
+                                                aria-label={`Выбрать этап ${row.operationId}`}
                                             />
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.stage}</TableCell>
+                                        <TableCell className={cn(dataTableBodyCellClassName, planStagesStageColClass)}>
+                                            {row.operationId}
+                                        </TableCell>
                                         <TableCell
                                             className={cn(
                                                 dataTableBodyCellClassName,
-                                                "w-[80px] max-w-[80px] truncate",
+                                                "whitespace-nowrap text-[11px]",
                                             )}
-                                            title={row.operationId}
                                         >
-                                            {row.operationId}
+                                            {row.orderDate}
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.orderDate}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.client}</TableCell>
                                         <TableCell
-                                            className={cn(dataTableBodyCellClassName, "max-w-[240px] truncate")}
+                                            className={cn(dataTableBodyCellClassName, "min-w-0 truncate text-[11px]")}
+                                            title={row.client}
+                                        >
+                                            {row.client}
+                                        </TableCell>
+                                        <TableCell
+                                            className={cn(dataTableBodyCellClassName, "min-w-0 truncate")}
                                             title={row.product}
                                         >
                                             {row.product}
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.quantity}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.startAt}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.endAt}</TableCell>
+                                        <TableCell
+                                            className={cn(dataTableBodyCellClassName, planStagesQuantityColClass)}
+                                        >
+                                            {row.quantity}
+                                        </TableCell>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "whitespace-nowrap text-[11px]",
+                                            )}
+                                        >
+                                            {row.startAt}
+                                        </TableCell>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "whitespace-nowrap text-[11px]",
+                                            )}
+                                        >
+                                            {row.endAt}
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
@@ -261,9 +324,6 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                     </Table>
                 </DataTableViewport>
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                    {composeError ? (
-                        <div className="mr-auto text-[12px] text-destructive">{composeError}</div>
-                    ) : null}
                     {planStagesError ? (
                         <Button type="button" size="sm" variant="outline" onClick={() => void reloadPlanStages()}>
                             Повторить загрузку
@@ -291,7 +351,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
 
             {isOrderFormVisible ? (
                 <>
-            <section className="border-border flex flex-col gap-2 border-t pt-2">
+                    <section className="border-border flex shrink-0 flex-col gap-2 border-t pt-2">
                 <div className={cnSectionBlockTitle()}>Заказ материалов</div>
                 <div className="flex items-center gap-2">
                     <div className="relative min-w-0 flex-1">
@@ -392,15 +452,6 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
 
                 {showRollPickBlock ? (
                     <div className="flex flex-col gap-2">
-                        {rollsError ? (
-                            <Informer
-                                variant="bordered"
-                                tone="alert"
-                                size="s"
-                                title="Не удалось загрузить рулоны"
-                                description={rollsError}
-                            />
-                        ) : null}
                         <div className="flex items-center gap-2">
                             <div className="relative min-w-0 flex-1">
                                 <Icon
@@ -507,7 +558,7 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                 ) : null}
             </section>
 
-            <section className="border-border flex flex-col gap-3 border-t pt-3">
+                    <section className="border-border flex shrink-0 flex-col gap-3 border-t pt-3">
                 <div className="grid gap-2">
                     <Label htmlFor="material-order-by-time">Ко времени</Label>
                     <Input
@@ -532,9 +583,6 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                         )}
                     />
                 </div>
-                {submitError ? (
-                    <p className="text-right text-[12px] text-destructive">{submitError}</p>
-                ) : null}
                 <div className="flex flex-wrap justify-end gap-2">
                     <Button type="button" variant="outline" onClick={resetOrderDraft}>
                         Очистить заявку
@@ -555,5 +603,40 @@ export function MaterialOrderFormPanel({ workspace }: MaterialOrderFormPanelProp
                 </>
             ) : null}
         </div>
+
+            {composeError ? (
+                <FloatingAutoDismissInformer
+                    key={`compose-error:${composeError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={actionErrorSnackbar(composeError).title}
+                    description={actionErrorSnackbar(composeError).description}
+                    onDismiss={dismissComposeError}
+                />
+            ) : null}
+            {rollsError ? (
+                <FloatingAutoDismissInformer
+                    key={`rolls-error:${rollsError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Ошибка"
+                    description={rollsError}
+                    onDismiss={dismissRollsError}
+                />
+            ) : null}
+            {submitError ? (
+                <FloatingAutoDismissInformer
+                    key={`submit-error:${submitError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title={actionErrorSnackbar(submitError).title}
+                    description={actionErrorSnackbar(submitError).description}
+                    onDismiss={dismissSubmitError}
+                />
+            ) : null}
+        </>
     );
 }

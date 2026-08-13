@@ -5,19 +5,21 @@ import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
 import type { TechnologicalParamHistoryEntry } from "../../technological-params-history";
 import type { TechnologicalParamsSections } from "../../technological-params-mock";
+import type { MachineId } from "../../types";
 import { mapLastProcessParamsSlicesPayload } from "./map-last-process-params-slices-payload";
 
 type UseLastProcessParamsSlicesOptions = {
+    machineId: MachineId;
     workAreaId?: string;
-    sections: TechnologicalParamsSections;
     enabled?: boolean;
 };
 
 export function useLastProcessParamsSlices({
+    machineId,
     workAreaId,
-    sections,
     enabled = true,
 }: UseLastProcessParamsSlicesOptions) {
+    const [sections, setSections] = useState<TechnologicalParamsSections | null>(null);
     const [historyByRowId, setHistoryByRowId] = useState<Record<string, TechnologicalParamHistoryEntry[]>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,10 +32,9 @@ export function useLastProcessParamsSlices({
 
     const fetchSlicesRef = useRef(fetchSlices);
     fetchSlicesRef.current = fetchSlices;
-    const sectionsRef = useRef(sections);
-    sectionsRef.current = sections;
 
     const resetState = useCallback(() => {
+        setSections(null);
         setHistoryByRowId({});
         setError(null);
     }, []);
@@ -53,19 +54,22 @@ export function useLastProcessParamsSlices({
             const payload = await fetchSlicesRef.current({
                 body: [{ workAreaId: trimmedWorkAreaId }],
             });
-            const mapped = mapLastProcessParamsSlicesPayload(payload, sectionsRef.current);
+            const mapped = mapLastProcessParamsSlicesPayload(payload, machineId);
+            setSections(mapped.sections);
             setHistoryByRowId(mapped.historyByRowId);
         } catch (loadError) {
             resetState();
             setError(
                 loadError instanceof Error
                     ? loadError.message
-                    : "Не удалось загрузить срезы технологических параметров",
+                    : "Не удалось загрузить технологические параметры",
             );
         } finally {
             setIsLoading(false);
         }
-    }, [resetState, workAreaId]);
+    }, [machineId, resetState, workAreaId]);
+
+    const dismissError = useCallback(() => setError(null), []);
 
     useEffect(() => {
         if (!enabled) {
@@ -78,9 +82,11 @@ export function useLastProcessParamsSlices({
     }, [enabled, load, resetState]);
 
     return {
+        sections,
         historyByRowId,
         isLoading,
         error,
+        dismissError,
         reload: load,
     };
 }

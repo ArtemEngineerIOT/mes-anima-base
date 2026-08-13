@@ -110,14 +110,12 @@ function JbDocumentGroupTable({ group, printingRowId, onPrint }: JbDocumentGroup
 type OrderExecutionJbDocumentsTableProps = {
     groups: JobBagDocumentGroup[];
     printingRowId: string | null;
-    printError?: string | null;
     onPrint: (rowId: string) => void;
 };
 
 export function OrderExecutionJbDocumentsTable({
     groups,
     printingRowId,
-    printError = null,
     onPrint,
 }: OrderExecutionJbDocumentsTableProps) {
     if (groups.length === 0) {
@@ -126,7 +124,6 @@ export function OrderExecutionJbDocumentsTable({
 
     return (
         <div className="grid gap-4">
-            {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
             {groups.map((group) => (
                 <JbDocumentGroupTable
                     key={group.id}
