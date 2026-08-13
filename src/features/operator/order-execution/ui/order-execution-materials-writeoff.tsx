@@ -157,6 +157,21 @@ export function OrderExecutionMaterialsWriteoff({
     /** Плашка и комбобокс сигналов — только если есть необработанные сигналы с машины */
     const hasMachineSignals =
         signalList.length > 0 || (eventsSummary?.unprocessedCount ?? 0) > 0;
+    const showSignalsCombobox = hasMachineSignals || isSignalsLoading || Boolean(signalsError);
+
+    useEffect(() => {
+        if (showSignalsCombobox || !selectedSignalId) {
+            return;
+        }
+
+        clearSignalLengthPrefill();
+        toggleSignalSelection(selectedSignalId);
+    }, [
+        clearSignalLengthPrefill,
+        selectedSignalId,
+        showSignalsCombobox,
+        toggleSignalSelection,
+    ]);
 
     const handleSearch = () => {
         void search();
@@ -297,15 +312,14 @@ export function OrderExecutionMaterialsWriteoff({
                     isReflectingReturn={isReflectingReturn}
                     isWritingOffFully={isWritingOffFully}
                     isSubmittingStageLkm={isSubmittingStageLkm}
-                    formPanelMessage={formPanelMessage}
-                    onDismissFormPanelMessage={dismissFormPanelMessage}
                     isFormEnabled={showWriteoffFlow}
+                    showSignalsCombobox={showSignalsCombobox}
                     signalList={signalList}
                     signalsEmptyStateMessage={signalsEmptyStateMessage}
                     isSignalsLoading={isSignalsLoading}
                     signalsError={signalsError}
                     selectedSignalId={selectedSignalId}
-                    onToggleSignal={handleToggleSignal}
+                    onToggleSignal={showSignalsCombobox ? handleToggleSignal : undefined}
                     onCalculateWriteoffWeight={() => {
                         void calculateWriteoffWeight();
                     }}
@@ -327,7 +341,6 @@ export function OrderExecutionMaterialsWriteoff({
                 isStageRegistryLoading={stageRegistry.isLoading}
                 stageRegistryError={stageRegistry.error}
                 stageRegistryAsOf={stageRegistry.asOf}
-                printError={stageRegistry.printError}
                 printingMaterialRollId={stageRegistry.printingMaterialRollId}
                 expandedOpIds={expandedOpIds}
                 onToggleExpandedOpId={toggleExpandedOpId}
@@ -335,6 +348,32 @@ export function OrderExecutionMaterialsWriteoff({
                     void stageRegistry.printReturnLabel(materialRollId);
                 }}
             />
+
+            {stageRegistry.printError ? (
+                <FloatingAutoDismissInformer
+                    key={`stage-registry-print-error:${stageRegistry.printError}`}
+                    tone="alert"
+                    variant="bordered"
+                    size="s"
+                    title="Ошибка"
+                    description={stageRegistry.printError}
+                    onDismiss={stageRegistry.dismissPrintError}
+                />
+            ) : null}
+
+            {formPanelMessage ? (
+                <FloatingAutoDismissInformer
+                    key={formPanelMessage.key}
+                    tone={formPanelMessage.tone}
+                    variant="bordered"
+                    size="s"
+                    title={formPanelMessage.title ?? formPanelMessage.description ?? "Сообщение"}
+                    description={
+                        formPanelMessage.title ? formPanelMessage.description : undefined
+                    }
+                    onDismiss={dismissFormPanelMessage}
+                />
+            ) : null}
         </div>
     );
 }

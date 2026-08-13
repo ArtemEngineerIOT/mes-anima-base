@@ -1,4 +1,6 @@
-export type StageStatus = "planned" | "in_progress" | "paused" | "done" | "cancelled";
+import type { StageStatus } from "./stage-status";
+
+export type { ProductionPlanStageStatusCode, StageStatus } from "./stage-status";
 
 export type ProductionStage = {
     /** Номер операции (`operation_number`); отображается в колонке «ID этапа». */

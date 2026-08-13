@@ -96,7 +96,7 @@ export function mergeOrderExecutionMachineData(
         ...mockFallback,
         machineId: apiData.machineId,
         workAreaId: apiData.workAreaId,
-        workAreaStart: apiData.workAreaStart,
+        workAreaStart: apiData.workAreaStart ?? mockFallback.workAreaStart,
         unprocessedEventsCount: apiData.unprocessedEventsCount,
         releaseBlockSummary: apiData.releaseBlockSummary,
         writeOffBlockSummary: apiData.writeOffBlockSummary,

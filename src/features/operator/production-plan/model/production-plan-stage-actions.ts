@@ -1,3 +1,4 @@
+import { statusLabel } from "./stage-status";
 import type { ProductionPlanAction, ProductionStage } from "./types";
 
 export type { ProductionPlanAction } from "./types";
@@ -68,11 +69,19 @@ export function applyStageAction(
         }
 
         if (action === "start" || action === "continue") {
-            return { ...stage, status: "in_progress" };
+            return {
+                ...stage,
+                status: "in_progress",
+                statusDisplayLabel: statusLabel("in_progress"),
+            };
         }
 
         if (action === "pause") {
-            return { ...stage, status: "paused" };
+            return {
+                ...stage,
+                status: "paused",
+                statusDisplayLabel: statusLabel("paused"),
+            };
         }
 
         return stage;

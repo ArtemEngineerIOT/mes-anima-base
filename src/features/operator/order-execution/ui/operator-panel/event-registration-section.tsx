@@ -46,6 +46,8 @@ export function OrderExecutionEventRegistrationSection({
         reloadUnprocessedSilent,
         registerError,
         dismissRegisterError,
+        registerSuccessMessage,
+        dismissRegisterSuccess,
         discardError,
         dismissDiscardError,
     } = registration;
@@ -164,6 +166,17 @@ export function OrderExecutionEventRegistrationSection({
                     </div>
                 </div>
             </OrderExecutionCollapsibleSection>
+
+            {registerSuccessMessage ? (
+                <FloatingAutoDismissInformer
+                    key={`register-success:${registerSuccessMessage}`}
+                    tone="success"
+                    variant="bordered"
+                    size="s"
+                    title={registerSuccessMessage}
+                    onDismiss={dismissRegisterSuccess}
+                />
+            ) : null}
 
             {registerError ? (
                 <FloatingAutoDismissInformer

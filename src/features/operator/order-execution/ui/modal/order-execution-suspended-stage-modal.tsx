@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import { ROUTES } from "@/shared/model/routes";
 import { Button } from "@/shared/ui/kit/button";
@@ -23,10 +23,13 @@ export function OrderExecutionSuspendedStageModal({
     stageLabel,
 }: OrderExecutionSuspendedStageModalProps) {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleGoToPlan = () => {
         onOpenChange(false);
-        navigate(ROUTES.OPERATOR.PRODUCTION_PLAN);
+        if (location.pathname !== ROUTES.OPERATOR.PRODUCTION_PLAN) {
+            navigate(ROUTES.OPERATOR.PRODUCTION_PLAN);
+        }
     };
 
     const a11yDescription = stageLabel ? `${suspendedStageBody} ${stageLabel}` : suspendedStageBody;

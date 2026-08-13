@@ -25,7 +25,6 @@ type OrderExecutionProcessControlProps = {
     isLoading: boolean;
     isSaving: boolean;
     error: string | null;
-    saveError: string | null;
     save: () => Promise<void>;
 };
 
@@ -41,7 +40,6 @@ export function OrderExecutionProcessControl({
     isLoading,
     isSaving,
     error,
-    saveError,
     save,
 }: OrderExecutionProcessControlProps) {
     const fieldsDisabled = isLoading || isSaving || !workAreaId?.trim();
@@ -49,11 +47,7 @@ export function OrderExecutionProcessControl({
     return (
         <div className="flex flex-col gap-4">
             {error ? (
-                <Informer tone="alert" variant="filled" title="Ошибка загрузки" description={error} />
-            ) : null}
-
-            {saveError ? (
-                <Informer tone="alert" variant="filled" title="Ошибка сохранения" description={saveError} />
+                <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={error} />
             ) : null}
 
             <div className="grid grid-cols-1 gap-4 md:max-w-[320px]">
@@ -137,9 +131,9 @@ export function OrderExecutionProcessControl({
             {infoBlocks.map((block) => (
                 <Informer
                     key={block.id}
-                    tone="normal"
-                    variant="filled"
-                    iconName="info"
+                    tone="system"
+                    variant="bordered"
+                    size="s"
                     title={block.title}
                     description={block.description}
                 />

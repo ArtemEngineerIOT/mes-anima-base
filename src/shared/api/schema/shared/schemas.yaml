@@ -2013,20 +2013,20 @@ components:
                               items:
                                   $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
-        OrderExecutionLastProcessParamsSliceRow:
+        OrderExecutionLastProcessParamsSlicesColumnRow:
             type: object
-            description: Строка result getLastProcessParamsSlices (JB Process control)
+            description: Колонка-срез в ответе getLastProcessParamsSlices (JB Process control)
             properties:
                 slice_no:
                     type: integer
                     nullable: true
+                slice_kind:
+                    type: string
+                    nullable: true
+                column_label:
+                    type: string
+                    nullable: true
                 external_series_key:
-                    type: string
-                    nullable: true
-                param_code:
-                    type: string
-                    nullable: true
-                value:
                     type: string
                     nullable: true
                 material_roll_id:
@@ -2035,22 +2035,90 @@ components:
                 updated_at:
                     type: string
                     nullable: true
-                    description: Время последнего изменения среза (`yyyy-MM-dd HH:mm:ss`)
                 captured_at:
-                    type: string
-                    nullable: true
-                recorded_at:
-                    type: string
-                    nullable: true
-                checked_at:
-                    type: string
-                    nullable: true
-                origin:
                     type: string
                     nullable: true
                 source:
                     type: string
                     nullable: true
+            additionalProperties: true
+
+        OrderExecutionLastProcessParamsSlicesMachineParamRow:
+            type: object
+            description: Строка machine_params getLastProcessParamsSlices (JB Process control)
+            properties:
+                param_code:
+                    type: string
+                    nullable: true
+                standard_value:
+                    type: string
+                    nullable: true
+                tolerance:
+                    type: string
+                    nullable: true
+                start_value:
+                    type: string
+                    nullable: true
+                slice1_value:
+                    type: string
+                    nullable: true
+                slice2_value:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionLastProcessParamsSlicesPrintSlotRow:
+            type: object
+            description: Строка print_slots getLastProcessParamsSlices (JB Process control)
+            properties:
+                slot_no:
+                    type: integer
+                    nullable: true
+                slot_role:
+                    type: string
+                    nullable: true
+                color:
+                    type: string
+                    nullable: true
+                presser_no:
+                    type: string
+                    nullable: true
+                setpoint:
+                    type: string
+                    nullable: true
+                tolerance:
+                    type: string
+                    nullable: true
+                is_empty:
+                    type: string
+                    nullable: true
+                start_value:
+                    type: string
+                    nullable: true
+                slice1_value:
+                    type: string
+                    nullable: true
+                slice2_value:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionLastProcessParamsSlicesResultItem:
+            type: object
+            description: Элемент result getLastProcessParamsSlices (JB Process control)
+            properties:
+                slices:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesColumnRow"
+                machine_params:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesMachineParamRow"
+                print_slots:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesPrintSlotRow"
             additionalProperties: true
 
         OrderExecutionLastProcessParamsSlicesResponse:
@@ -2065,7 +2133,7 @@ components:
                           result:
                               type: array
                               items:
-                                  $ref: "#/components/schemas/OrderExecutionLastProcessParamsSliceRow"
+                                  $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesResultItem"
 
         OrderExecutionProcessControlResultItem:
             type: object

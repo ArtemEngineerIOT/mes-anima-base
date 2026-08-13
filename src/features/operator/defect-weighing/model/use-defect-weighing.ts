@@ -277,6 +277,8 @@ export function useDefectWeighing() {
         Boolean(form.eventCode) &&
         !isRegistering;
 
+    const dismissRegisterError = useCallback(() => setRegisterError(null), []);
+
     return {
         machineOptions,
         machinesLoading,
@@ -305,6 +307,7 @@ export function useDefectWeighing() {
         journal,
         registerDefect,
         registerError,
+        dismissRegisterError,
         isRegistering,
         canRegister,
     };

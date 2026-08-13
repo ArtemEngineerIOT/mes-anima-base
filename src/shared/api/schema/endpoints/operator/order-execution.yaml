@@ -470,10 +470,11 @@ postGetListMaterialSignal:
             $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
 
 postGetLastProcessParamsSlices:
-    summary: Три последних среза ТП (JB Process control)
+    summary: Срезы и стартовые параметры ТП (JB Process control)
     description: >
         BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`.
-        Колонки-справка на экране «Технологические параметры машины».
+        Экран «Технологические параметры машины» — заполнение таблиц при открытии
+        (`slices`, `machine_params`, `print_slots`).
         Тело: `[{ workAreaId }]`.
     security:
         - bearerAuth: []

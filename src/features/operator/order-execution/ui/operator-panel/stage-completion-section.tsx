@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 import { cn } from "@/shared/lib/css";
+import { ROUTES } from "@/shared/model/routes";
 import { Button } from "@/shared/ui/kit/button";
 import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { dataTableHeadCellClassName } from "@/shared/ui/kit/styles/data-table-stack";
@@ -9,7 +11,6 @@ import { Informer } from "@/shared/ui/kit/informer";
 
 import { useStageCompletion } from "../../model/use-stage-completion";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
-import { OrderExecutionSuspendedStageModal } from "../modal/order-execution-suspended-stage-modal";
 import { StageCompletionEventJournalTable } from "./stage-completion-event-journal-table";
 import { StageCompletionIncomingRollsTable } from "./stage-completion-incoming-rolls-table";
 import { StageCompletionPendingEventsTable } from "./stage-completion-pending-events-table";
@@ -20,9 +21,9 @@ type OrderExecutionStageCompletionSectionProps = {
 };
 
 export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecutionStageCompletionSectionProps) {
+    const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
     const m = useStageCompletion({ workAreaId, enabled: expanded });
-    const [suspendedModalOpen, setSuspendedModalOpen] = useState(false);
     const { snapshot } = m;
 
     const headerTone =
@@ -37,9 +38,15 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
     const handleCompleteStageClick = () => {
         if (!m.canSubmitPrerequisites || m.stageCompleted) return;
         void m.tryFinalizeStage().then((result) => {
-            if (result.showSuspendedModal) {
-                setSuspendedModalOpen(true);
+            if (!result.completed) {
+                return;
             }
+
+            navigate(ROUTES.OPERATOR.PRODUCTION_PLAN, {
+                state: result.showSuspendedModal
+                    ? { suspendedStageLabel: result.suspendedStageLabel }
+                    : undefined,
+            });
         });
     };
 
@@ -151,12 +158,6 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
                     onDismiss={m.dismissSubmitError}
                 />
             ) : null}
-
-            <OrderExecutionSuspendedStageModal
-                open={suspendedModalOpen}
-                onOpenChange={setSuspendedModalOpen}
-                stageLabel={snapshot.suspendedStageLabel}
-            />
         </>
     );
 }

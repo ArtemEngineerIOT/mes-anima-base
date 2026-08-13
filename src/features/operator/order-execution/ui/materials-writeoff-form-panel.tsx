@@ -1,11 +1,10 @@
 import type { MaterialsWriteoffFormState } from "@/features/operator/order-execution/model/materials-writeoff/materials-writeoff-form";
-import type { MaterialsWriteoffFormPanelMessage } from "@/features/operator/order-execution/model/materials-writeoff/use-materials-writeoff";
 import type { MaterialsReturnWarehouseOption } from "@/features/operator/order-execution/model/materials-writeoff/types";
 import type { ReleaseProductionEventListRow } from "@/features/operator/order-execution/model/release/production-event-types";
 import { MaterialsWriteoffSignalsCombobox } from "@/features/operator/order-execution/ui/materials-writeoff-signals-combobox";
-import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
+import { cn } from "@/shared/lib/css";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 
 type MaterialsWriteoffFormPanelProps = {
@@ -22,9 +21,8 @@ type MaterialsWriteoffFormPanelProps = {
     isReflectingReturn?: boolean;
     isWritingOffFully?: boolean;
     isSubmittingStageLkm?: boolean;
-    formPanelMessage?: MaterialsWriteoffFormPanelMessage | null;
-    onDismissFormPanelMessage?: () => void;
     isFormEnabled?: boolean;
+    showSignalsCombobox?: boolean;
     signalList?: ReleaseProductionEventListRow[];
     signalsEmptyStateMessage?: string;
     isSignalsLoading?: boolean;
@@ -52,9 +50,8 @@ export function MaterialsWriteoffFormPanel({
     isReflectingReturn = false,
     isWritingOffFully = false,
     isSubmittingStageLkm = false,
-    formPanelMessage = null,
-    onDismissFormPanelMessage,
     isFormEnabled = false,
+    showSignalsCombobox = false,
     signalList = [],
     signalsEmptyStateMessage,
     isSignalsLoading = false,
@@ -75,13 +72,15 @@ export function MaterialsWriteoffFormPanel({
           ? "Склады недоступны"
           : "Выберите склад";
 
-    const signalsComboboxDisabled =
-        !isSignalsLoading && !signalsError && signalList.length === 0;
-
     return (
         <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
-                {onToggleSignal ? (
+            <div
+                className={cn(
+                    "grid grid-cols-1 gap-4 sm:items-start",
+                    showSignalsCombobox && onToggleSignal && "sm:grid-cols-2",
+                )}
+            >
+                {showSignalsCombobox && onToggleSignal ? (
                     <MaterialsWriteoffSignalsCombobox
                         rows={signalList}
                         emptyStateMessage={signalsEmptyStateMessage}
@@ -89,7 +88,6 @@ export function MaterialsWriteoffFormPanel({
                         error={signalsError}
                         selectedSignalId={selectedSignalId}
                         onToggleSignal={onToggleSignal}
-                        disabled={signalsComboboxDisabled}
                     />
                 ) : null}
 
@@ -156,20 +154,6 @@ export function MaterialsWriteoffFormPanel({
                     </div>
                 </div>
             </div>
-
-            {formPanelMessage && onDismissFormPanelMessage ? (
-                <FloatingAutoDismissInformer
-                    key={formPanelMessage.key}
-                    tone={formPanelMessage.tone}
-                    variant="bordered"
-                    size="s"
-                    title={formPanelMessage.title ?? formPanelMessage.description}
-                    description={
-                        formPanelMessage.title ? formPanelMessage.description : undefined
-                    }
-                    onDismiss={onDismissFormPanelMessage}
-                />
-            ) : null}
 
             <div className="flex flex-wrap items-center justify-end gap-2">
                 <Button

@@ -1,10 +1,13 @@
 /** Строка ответа `getProductionPlan` (формат бэка). */
+import type { ProductionPlanStageStatusCode } from "@/shared/lib/production-plan-stage-status-code";
+import { productionPlanStageStatusLabelByCode } from "@/shared/lib/production-plan-stage-status-code";
+
 export type MockProductionPlanStageRow = {
     area_name: string;
     client_number: string;
     client_order_date: string;
     work_area_id: string;
-    status_code: "PLANNED" | "IN_PROGRESS" | "PAUSED" | "DONE" | "CANCELLED";
+    status_code: ProductionPlanStageStatusCode;
     planned_start: string;
     row_group_key: string;
     produkt: string;
@@ -172,29 +175,23 @@ export function hasMockProductionPlanStageInProgress(exceptOperationId?: string)
 
 export function setMockProductionPlanStageStatus(
     row: MockProductionPlanStageRow,
-    statusCode: MockProductionPlanStageRow["status_code"],
+    statusCode: ProductionPlanStageStatusCode,
 ): void {
     row.status_code = statusCode;
+    row.status = productionPlanStageStatusLabelByCode(statusCode);
 
     switch (statusCode) {
         case "PLANNED":
-            row.status = "Запланирован";
             row.allowed_actions = ALLOWED_ACTIONS.start;
             break;
         case "IN_PROGRESS":
-            row.status = "В работе";
             row.allowed_actions = ALLOWED_ACTIONS.pause;
             break;
         case "PAUSED":
-            row.status = "Приостановлен";
             row.allowed_actions = ALLOWED_ACTIONS.continue;
             break;
         case "DONE":
-            row.status = "Завершён";
-            row.allowed_actions = '{"records":[],"recordCount":0}';
-            break;
         case "CANCELLED":
-            row.status = "Отменён";
             row.allowed_actions = '{"records":[],"recordCount":0}';
             break;
     }

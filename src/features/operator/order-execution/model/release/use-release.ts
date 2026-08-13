@@ -546,6 +546,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         [workAreaId],
     );
 
+    const dismissPrintError = useCallback(() => setPrintError(null), []);
+
     return {
         form,
         patchForm,
@@ -582,6 +584,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         isRegisteringRelease,
         registerRelease,
         printError,
+        dismissPrintError,
         printingReleaseId,
         printReleaseLabel,
     };

@@ -2,6 +2,31 @@ import type { TechnologicalParamHistoryEntry } from "../../technological-params-
 import type { TechnologicalParamsSections } from "../../technological-params-mock";
 import type { TechnologicalParamTagKey } from "../../resolve-technological-param-stomp-value";
 
+export type LastProcessParamsSliceMeta = {
+    sliceNo: number;
+    sliceKind: string;
+    externalSeriesKey: string;
+    updatedAt: string;
+};
+
+export type LastProcessParamsSlicesSnapshot = {
+    sections: TechnologicalParamsSections;
+    historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>;
+};
+
+/** Соответствие `param_code` machine_params → id строки UI. */
+export const LAST_PROCESS_PARAMS_MACHINE_PARAM_ROW_BY_CODE: Record<string, string> = {
+    print_speed: "print-speed",
+    unwinding1_reelstrain: "unwinding-roll-tension",
+    unwinding1_group: "unwinding-drawing-group",
+    unwinding1_coronator: "unwinding-coronator",
+    winding_reelstrain: "winding-roll-tension",
+    winding_group: "winding-drawing-group",
+    winding_difference: "winding-tension-drop",
+    winding_group_pressure: "winding-group-pressure",
+    winding_reelshaft_pressure: "winding-roll-shaft-press",
+};
+
 export type ProcessParamsSliceParamBinding = {
     rowId: string;
     /** Порядок частей составного значения (несколько hood-тегов). */
@@ -60,9 +85,4 @@ export type ProcessParamsSliceRow = {
     value: string;
     /** Время последнего изменения — `updated_at` с бэка. */
     updatedAt: string;
-};
-
-export type LastProcessParamsSlicesSnapshot = {
-    /** История по id строки таблицы (Старт / Срез 1 / Срез 2). */
-    historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>;
 };

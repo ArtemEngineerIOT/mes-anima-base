@@ -175,6 +175,7 @@ export function useMaterialOrderWorkspace() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitStatus, setSubmitStatus] = useState<MaterialOrderSubmitStatus | null>(null);
+    const [submitStatusFeedbackDismissed, setSubmitStatusFeedbackDismissed] = useState(false);
 
     const [locationFilterMachines, setLocationFilterMachines] = useState<string[]>([]);
     const [locationFilterKinds, setLocationFilterKinds] = useState<NomenclatureKindId[]>(defaultLocationKinds);
@@ -330,6 +331,7 @@ export function useMaterialOrderWorkspace() {
         setMaterialChangeEnabled(false);
         setSubmitError(null);
         setSubmitStatus(null);
+        setSubmitStatusFeedbackDismissed(false);
         setIsOrderFormVisible(false);
         setComposeError(null);
         setPlanSelectedIds(new Set());
@@ -374,6 +376,7 @@ export function useMaterialOrderWorkspace() {
         setComposeError(null);
         setSubmitError(null);
         setSubmitStatus(null);
+        setSubmitStatusFeedbackDismissed(false);
 
         try {
             const payload = await composeMaterialOrderLinesRef.current({
@@ -491,6 +494,7 @@ export function useMaterialOrderWorkspace() {
             const status = mapMaterialOrderSubmitPayload(payload);
             if (status.visible) {
                 setSubmitStatus(status);
+                setSubmitStatusFeedbackDismissed(false);
             }
         } catch (submitLoadError) {
             setSubmitError(
@@ -595,6 +599,15 @@ export function useMaterialOrderWorkspace() {
         selectedBlockSeriesRefs.length,
     ]);
 
+    const dismissComposeError = useCallback(() => setComposeError(null), []);
+    const dismissRollsError = useCallback(() => setRollsError(null), []);
+    const dismissSubmitError = useCallback(() => setSubmitError(null), []);
+    const dismissSubmitStatusFeedback = useCallback(() => setSubmitStatusFeedbackDismissed(true), []);
+    const dismissLocationError = useCallback(() => setLocationError(null), []);
+    const dismissLocationPrintError = useCallback(() => setLocationPrintError(null), []);
+    const dismissBlockSubmitError = useCallback(() => setBlockSubmitError(null), []);
+    const dismissBlockSubmitMessage = useCallback(() => setBlockSubmitMessage(null), []);
+
     return {
         orderMachineId: orderMachineResourceCode ?? "",
         planStagesLoading: planStages.isLoading,
@@ -613,6 +626,7 @@ export function useMaterialOrderWorkspace() {
         togglePlanRow,
         isOrderFormVisible,
         composeError,
+        dismissComposeError,
         isComposing,
         composeOrder,
         materialQuery,
@@ -632,6 +646,7 @@ export function useMaterialOrderWorkspace() {
         handleSpecificRollsChange,
         rollsLoading,
         rollsError,
+        dismissRollsError,
         selectedRollIds,
         toggleRoll,
         byTime,
@@ -642,7 +657,10 @@ export function useMaterialOrderWorkspace() {
         addToOrder,
         isSubmitting,
         submitError,
+        dismissSubmitError,
         submitStatus,
+        submitStatusFeedbackDismissed,
+        dismissSubmitStatusFeedback,
         submitOrder,
         locationFilterMachines,
         locationFilterKinds,
@@ -650,7 +668,9 @@ export function useMaterialOrderWorkspace() {
         locationAsOf,
         locationLoading,
         locationError,
+        dismissLocationError,
         locationPrintError,
+        dismissLocationPrintError,
         printingLocationSeriesRef,
         refreshLocation,
         printLocationRollLabel,
@@ -669,7 +689,9 @@ export function useMaterialOrderWorkspace() {
         selectedBlockSeriesRefs,
         isSubmittingBlock,
         blockSubmitError,
+        dismissBlockSubmitError,
         blockSubmitMessage,
+        dismissBlockSubmitMessage,
         submitBlock,
         blockReasons: blockReasonsState.blockReasons,
         blockReasonsLoading: blockReasonsState.isLoading,

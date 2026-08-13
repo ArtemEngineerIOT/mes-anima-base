@@ -104,6 +104,8 @@ export function useMaterialsWriteoffStageRegistry({
         [workAreaId],
     );
 
+    const dismissPrintError = useCallback(() => setPrintError(null), []);
+
     useEffect(() => {
         if (!enabled) {
             setSnapshot(MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT);
@@ -122,6 +124,7 @@ export function useMaterialsWriteoffStageRegistry({
         isLoading,
         error,
         printError,
+        dismissPrintError,
         printingMaterialRollId,
         printReturnLabel,
         reload: load,

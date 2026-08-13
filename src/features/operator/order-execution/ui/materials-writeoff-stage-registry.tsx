@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
 import type { MaterialsStageOperation } from "@/features/operator/order-execution/model/materials-writeoff/types";
+import { isMaterialsStageReturnOperation } from "@/features/operator/order-execution/model/materials-writeoff/map-materials-stage-operation";
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
@@ -22,7 +23,6 @@ type MaterialsWriteoffStageRegistryProps = {
     isStageRegistryLoading?: boolean;
     stageRegistryError?: string | null;
     stageRegistryAsOf?: string | null;
-    printError?: string | null;
     printingMaterialRollId?: string | null;
     expandedOpIds: ReadonlySet<string>;
     onToggleExpandedOpId: (id: string) => void;
@@ -37,7 +37,6 @@ export function MaterialsWriteoffStageRegistry({
     isStageRegistryLoading = false,
     stageRegistryError = null,
     stageRegistryAsOf = null,
-    printError = null,
     printingMaterialRollId = null,
     expandedOpIds,
     onToggleExpandedOpId,
@@ -65,7 +64,6 @@ export function MaterialsWriteoffStageRegistry({
             {stageRegistryError ? (
                 <div className="text-[12px] text-destructive">{stageRegistryError}</div>
             ) : null}
-            {printError ? <div className="text-[12px] text-destructive">{printError}</div> : null}
 
             <div className={dataTableViewportShellClassName}>
                 <div className="min-w-0 overflow-x-auto">
@@ -84,14 +82,13 @@ export function MaterialsWriteoffStageRegistry({
                                 <TableHead className={headCellClassName}>Ед. изм. 1</TableHead>
                                 <TableHead className={cn(headCellClassName, "text-right")}>Кол-во 2</TableHead>
                                 <TableHead className={headCellClassName}>Ед. изм. 2</TableHead>
-                                <TableHead className={cn(headCellClassName, "text-right")}>Действие</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isStageRegistryLoading ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={8}
+                                        colSpan={7}
                                         className={cn(
                                             dataTableBodyCellClassName,
                                             "py-6 text-center text-muted-foreground",
@@ -103,7 +100,7 @@ export function MaterialsWriteoffStageRegistry({
                             ) : pageItems.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={8}
+                                        colSpan={7}
                                         className={cn(
                                             dataTableBodyCellClassName,
                                             "py-6 text-center text-muted-foreground",
@@ -149,27 +146,12 @@ export function MaterialsWriteoffStageRegistry({
                                                     {op.qty2}
                                                 </TableCell>
                                                 <TableCell className={bodyCellClassName}>{op.unit2}</TableCell>
-                                                <TableCell className={cn(bodyCellClassName, "w-12 text-right")}>
-                                                    <div className="flex justify-end">
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon-sm"
-                                                            className="size-7 shrink-0"
-                                                            disabled={printingMaterialRollId === op.materialRollId}
-                                                            aria-label={`Печать этикетки: ${op.barcode}`}
-                                                            onClick={() => onPrintReturnLabel(op.materialRollId)}
-                                                        >
-                                                            <Icon name="print" size="sm" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
                                             </TableRow>
 
                                             {op.details && isExpanded ? (
                                                 <TableRow className="bg-muted/20">
                                                     <TableCell className={dataTableBodyCellClassName} />
-                                                    <TableCell colSpan={7} className="p-0">
+                                                    <TableCell colSpan={6} className="p-0">
                                                         <div className="px-4 py-2">
                                                             <Table
                                                                 className={cn(dataTableShellClassName, "text-[12px]")}
@@ -216,11 +198,23 @@ export function MaterialsWriteoffStageRegistry({
                                                                         >
                                                                             Ед. изм. 2
                                                                         </TableHead>
+                                                                        <TableHead
+                                                                            className={cn(
+                                                                                dataTableStickyHeadCellClassName,
+                                                                                "w-12 text-right whitespace-nowrap",
+                                                                            )}
+                                                                        >
+                                                                            Действие
+                                                                        </TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {op.details.map((detail) => (
-                                                                        <TableRow key={detail.label}>
+                                                                    {op.details.map((detail, detailIndex) => {
+                                                                        const isReturnOperation =
+                                                                            isMaterialsStageReturnOperation(detail);
+
+                                                                        return (
+                                                                        <TableRow key={`${detail.label}-${detailIndex}`}>
                                                                             <TableCell
                                                                                 className={cn(
                                                                                     dataTableBodyCellClassName,
@@ -261,8 +255,38 @@ export function MaterialsWriteoffStageRegistry({
                                                                             >
                                                                                 {detail.unit2}
                                                                             </TableCell>
+                                                                            <TableCell
+                                                                                className={cn(
+                                                                                    dataTableBodyCellClassName,
+                                                                                    "w-12 text-right",
+                                                                                )}
+                                                                            >
+                                                                                {isReturnOperation ? (
+                                                                                    <div className="flex justify-end">
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="outline"
+                                                                                            size="icon-sm"
+                                                                                            className="size-7 shrink-0"
+                                                                                            disabled={
+                                                                                                printingMaterialRollId ===
+                                                                                                op.materialRollId
+                                                                                            }
+                                                                                            aria-label={`Печать этикетки возврата: ${op.barcode}`}
+                                                                                            onClick={() =>
+                                                                                                onPrintReturnLabel(
+                                                                                                    op.materialRollId,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Icon name="print" size="sm" />
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                ) : null}
+                                                                            </TableCell>
                                                                         </TableRow>
-                                                                    ))}
+                                                                        );
+                                                                    })}
                                                                 </TableBody>
                                                             </Table>
                                                         </div>
