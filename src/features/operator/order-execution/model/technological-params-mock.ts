@@ -52,7 +52,6 @@ export type TechnologicalSpeedRow = {
 };
 
 export type TechnologicalParamsSections = {
-    presserWidth: string;
     printingTitle: string;
     printingSections: TechnologicalPrintingSectionRow[];
     unwindingTitle: string;
@@ -97,7 +96,6 @@ function buildPrintingSection(sectionNumber: number, color = "", presserNo = "")
 }
 
 const MOCK_LM230: TechnologicalParamsSections = {
-    presserWidth: "",
     printingTitle: "Настройки печатных секций",
     printingSections: Array.from({ length: 10 }, (_, index) => buildPrintingSection(index + 1)),
     unwindingTitle: "Настройки размотки 1",

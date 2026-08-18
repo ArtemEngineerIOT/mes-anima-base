@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import { mapReleaseBlockReasonsPayload } from "./map-release-block-reasons-payload";
 import type { ReleaseBlockReason } from "./types";
 
@@ -12,7 +13,8 @@ type UseReleaseBlockReasonsOptions = {
 
 export function useReleaseBlockReasons({ enabled = true }: UseReleaseBlockReasonsOptions = {}) {
     const [blockReasons, setBlockReasons] = useState<ReleaseBlockReason[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
 
     const { mutateAsync: listBlockReasons } = rqClient.useMutation(

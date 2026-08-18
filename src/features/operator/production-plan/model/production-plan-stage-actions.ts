@@ -8,8 +8,20 @@ export type ApplyProductionPlanActionOptions = {
     comment?: string;
 };
 
-export function hasStageInProgress(stages: ProductionStage[]): boolean {
-    return stages.some((stage) => stage.status === "in_progress");
+function normalizeMachineKey(machine: string | undefined): string {
+    return (machine ?? "").trim().toUpperCase();
+}
+
+/** На одной машине одновременно может быть только один этап «в работе». */
+export function hasStageInProgressOnMachine(
+    stages: ProductionStage[],
+    machine: string | undefined,
+): boolean {
+    const machineKey = normalizeMachineKey(machine);
+
+    return stages.some(
+        (item) => item.status === "in_progress" && normalizeMachineKey(item.machine) === machineKey,
+    );
 }
 
 function hasAllowedAction(stage: ProductionStage, action: ProductionPlanAction): boolean {
@@ -24,11 +36,13 @@ export function canStartStage(
         return false;
     }
 
+    const machineBusy = hasStageInProgressOnMachine(stages, stage.machine);
+
     if (stage.allowedActions) {
-        return hasAllowedAction(stage, "start") && !hasStageInProgress(stages);
+        return hasAllowedAction(stage, "start") && !machineBusy;
     }
 
-    return stage.status === "planned" && !hasStageInProgress(stages);
+    return stage.status === "planned" && !machineBusy;
 }
 
 export function canPauseStage(stage: ProductionStage | null | undefined): boolean {
@@ -51,11 +65,13 @@ export function canContinueStage(
         return false;
     }
 
+    const machineBusy = hasStageInProgressOnMachine(stages, stage.machine);
+
     if (stage.allowedActions) {
-        return hasAllowedAction(stage, "continue") && !hasStageInProgress(stages);
+        return hasAllowedAction(stage, "continue") && !machineBusy;
     }
 
-    return stage.status === "paused" && !hasStageInProgress(stages);
+    return stage.status === "paused" && !machineBusy;
 }
 
 export function applyStageAction(

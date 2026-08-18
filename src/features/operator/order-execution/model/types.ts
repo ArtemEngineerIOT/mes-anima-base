@@ -1,6 +1,7 @@
 import type { ReleaseProductionEventsSummarySnapshot } from "./release/production-events-summary/types";
 import type { RollWriteOffEventsSummarySnapshot } from "./materials-writeoff/raw-events-summary/types";
 import type { UnprocessedSignalsSummarySnapshot } from "./event-registration/unprocessed-signals-summary/types";
+import type { StageCompletionReadinessSnapshot } from "./stage-completion-readiness/types";
 
 export type MachineId = string;
 
@@ -175,6 +176,8 @@ export type MachineData = {
     writeOffBlockSummary?: RollWriteOffEventsSummarySnapshot | null;
     /** Стартовая сводка блока «Регистрация события» (`machine_signals_block` из getOrderExecution) */
     machineSignalsBlockSummary?: UnprocessedSignalsSummarySnapshot | null;
+    /** Стартовая сводка блока «Завершить этап» (`stage_completion_block` из getOrderExecution) */
+    stageCompletionBlockSummary?: StageCompletionReadinessSnapshot | null;
     /** На машине есть назначенный этап / исполняется заказ — показываем мониторинг и панель оператора */
     hasAssignedStage: boolean;
     order: OrderInfo;

@@ -1,5 +1,6 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
+import { mapStageBlockingIssues } from "./map-stage-blocking-issue";
 import { pickString } from "./release/map-release-rpc-utils";
 import type { StageBlockingIssue } from "./stage-completion-types";
 
@@ -33,18 +34,6 @@ function readObjectArray(value: unknown): Record<string, unknown>[] {
     return value.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
 }
 
-function mapBlockingIssue(row: Record<string, unknown>): StageBlockingIssue | null {
-    const message = pickString(row.message);
-    if (!message) {
-        return null;
-    }
-
-    return {
-        code: pickString(row.code) ?? "",
-        message,
-    };
-}
-
 function mapPausedSiblingModal(row: Record<string, unknown>): StageCompletionPausedSiblingModal | null {
     const title = pickString(row.title);
     const message = pickString(row.message);
@@ -70,9 +59,7 @@ export function mapStageCompletionSubmitPayload(
 
     const errorCode = (wrapper.error_code ?? "").trim().toUpperCase();
     const resultItem = (wrapper.result?.[0] ?? {}) as Record<string, unknown>;
-    const blockingIssues = readObjectArray(resultItem.blocking_issues ?? resultItem.blockingIssues)
-        .map(mapBlockingIssue)
-        .filter((row): row is StageBlockingIssue => row !== null);
+    const blockingIssues = mapStageBlockingIssues(resultItem.blocking_issues ?? resultItem.blockingIssues);
 
     if (errorCode === OK_ERROR_CODE) {
         const pausedRaw = readObjectArray(resultItem.paused_sibling_modal ?? resultItem.pausedSiblingModal);

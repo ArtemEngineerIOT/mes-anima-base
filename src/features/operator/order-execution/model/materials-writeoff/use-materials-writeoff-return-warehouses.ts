@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import { buildListReturnWarehousesBody } from "./build-list-return-warehouses-body";
 import { mapListReturnWarehousesPayload } from "./map-list-return-warehouses-payload";
 import type { MaterialsReturnWarehouseOption } from "./types";
@@ -19,7 +20,8 @@ export function useMaterialsWriteoffReturnWarehouses({
     enabled,
 }: UseMaterialsWriteoffReturnWarehousesOptions) {
     const [warehouseOptions, setWarehouseOptions] = useState<MaterialsReturnWarehouseOption[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
 
     const { mutateAsync: fetchReturnWarehouses } = rqClient.useMutation(
@@ -38,12 +40,14 @@ export function useMaterialsWriteoffReturnWarehouses({
         if (!trimmedWorkAreaId) {
             setWarehouseOptions([]);
             setError("Не удалось определить workAreaId этапа");
+            setIsLoading(false);
             return;
         }
 
         if (!trimmedOperatorRef) {
             setWarehouseOptions([]);
             setError("Не удалось определить оператора");
+            setIsLoading(false);
             return;
         }
 

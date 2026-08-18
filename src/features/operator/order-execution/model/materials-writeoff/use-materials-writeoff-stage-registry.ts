@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import {
     mapStageRollRegistryPayload,
     MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT,
@@ -22,7 +23,8 @@ export function useMaterialsWriteoffStageRegistry({
     refreshKey = 0,
 }: UseMaterialsWriteoffStageRegistryOptions) {
     const [snapshot, setSnapshot] = useState<MaterialsStageRegistrySnapshot>(MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
     const [printingMaterialRollId, setPrintingMaterialRollId] = useState<string | null>(null);
     const [printError, setPrintError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function useMaterialsWriteoffStageRegistry({
         if (!trimmedWorkAreaId) {
             setSnapshot(MATERIALS_STAGE_REGISTRY_EMPTY_SNAPSHOT);
             setError("Не удалось определить workAreaId этапа");
+            setIsLoading(false);
             return;
         }
 

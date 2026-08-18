@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/kit/card";
 import { Icon } from "@/shared/ui/kit/icon";
 import { cn } from "@/shared/lib/css";
@@ -13,6 +13,7 @@ export function OrderExecutionCollapsibleSection({
     updatedAt,
     updatedAtLabel = "Обновлено",
     keepMounted = false,
+    isContentReady = true,
     onExpandedChange,
     children,
 }: {
@@ -27,6 +28,10 @@ export function OrderExecutionCollapsibleSection({
     updatedAtLabel?: string;
     /** Не размонтировать содержимое при сворачивании — сохраняет ввод и состояние формы */
     keepMounted?: boolean;
+    /**
+     * Пока `false`, содержимое не рисуется — чтобы при раскрытии не мелькали пустые таблицы и нули.
+     */
+    isContentReady?: boolean;
     onExpandedChange?: (expanded: boolean) => void;
     children: ReactNode;
 }) {
@@ -36,61 +41,73 @@ export function OrderExecutionCollapsibleSection({
     const [height, setHeight] = useState<number | "auto">(defaultOpen ? "auto" : 0);
     const [animating, setAnimating] = useState(false);
 
-    // Keep height in sync when content changes while open.
-    useEffect(() => {
-        const el = bodyRef.current;
-        if (!el) return;
-        if (!expanded) return;
+    useLayoutEffect(() => {
+        if (!expanded || !mounted) {
+            return;
+        }
 
-        const ro = new ResizeObserver(() => {
-            if (height === "auto") return;
-            setHeight(el.scrollHeight);
-        });
-        ro.observe(el);
-        return () => ro.disconnect();
-    }, [expanded, height]);
-
-    const toggle = () => {
         const el = bodyRef.current;
         if (!el) {
-            setExpanded((value) => {
-                const next = !value;
-                onExpandedChange?.(next);
-                return next;
+            return;
+        }
+
+        if (height === "auto") {
+            return;
+        }
+
+        const nextHeight = el.scrollHeight;
+        if (nextHeight !== height) {
+            setHeight(nextHeight);
+        }
+    }, [expanded, mounted, height, isContentReady]);
+
+    useEffect(() => {
+        const el = bodyRef.current;
+        if (!el || !expanded) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => {
+            setHeight((current) => {
+                if (current === "auto") {
+                    return current;
+                }
+                const nextHeight = el.scrollHeight;
+                return nextHeight === current ? current : nextHeight;
             });
-            setMounted((value) => !value);
+        });
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [expanded, mounted]);
+
+    const toggle = () => {
+        if (expanded) {
+            const el = bodyRef.current;
+            setAnimating(true);
+            if (el) {
+                setHeight(el.scrollHeight);
+            }
+            setExpanded(false);
+            onExpandedChange?.(false);
+            requestAnimationFrame(() => {
+                setHeight(0);
+            });
             return;
         }
 
         setAnimating(true);
-
-        if (expanded) {
-            // Collapse: from current height -> 0
-            const current = el.scrollHeight;
-            setHeight(current);
-            requestAnimationFrame(() => {
-                setHeight(0);
-            });
-            setExpanded(false);
-            onExpandedChange?.(false);
-        } else {
-            // Expand: from 0 -> content height, then set auto.
-            setMounted(true);
-            setExpanded(true);
-            onExpandedChange?.(true);
-            setHeight(0);
-            requestAnimationFrame(() => {
-                setHeight(el.scrollHeight);
-            });
-        }
+        setMounted(true);
+        setExpanded(true);
+        onExpandedChange?.(true);
+        setHeight(0);
     };
 
     const toneTokens = tone ? getInformerToneTokens(tone) : null;
 
     return (
         <Card className="py-0 gap-0">
-            <CardHeader className="px-4 pt-2 pb-2 gap-0 border-b pb-2 shadow-[0_8px_12px_-12px_rgba(0,0,0,0.45)]">
-                <div className="flex items-center gap-2">
+            <CardHeader className="items-center px-4 py-2 gap-0 border-b shadow-[0_8px_12px_-12px_rgba(0,0,0,0.45)]">
+                <div className="flex w-full items-center gap-2">
                     <button
                         type="button"
                         className="flex min-w-0 flex-1 items-center gap-2 text-left"
@@ -101,44 +118,49 @@ export function OrderExecutionCollapsibleSection({
                             name="expand_more"
                             size="md"
                             className={cn(
-                                "shrink-0 text-muted-foreground transition-transform",
+                                "shrink-0 leading-none text-muted-foreground transition-transform",
                                 expanded ? "rotate-180" : "rotate-0",
                             )}
                         />
                     </button>
-                    {toneTokens ? (
+                    {updatedAt?.trim() || toneTokens || (typeof count === "number" && count > 0) ? (
                         <div className="flex shrink-0 items-center gap-1.5">
-                            <Icon
-                                name={toneTokens.icon}
-                                size="sm"
-                                className={cn(toneTokens.iconClass, "mt-[1px]")}
-                            />
-                            {typeof count === "number" && count > 0 ? (
-                                <span
-                                    className={cn(
-                                        "text-[12px] font-semibold tabular-nums leading-none",
-                                        toneTokens.titleClass,
-                                    )}
-                                >
+                            {updatedAt?.trim() ? (
+                                <span className="text-[12px] leading-[1.4] text-muted-foreground">
+                                    {updatedAtLabel}: {updatedAt.trim()}
+                                </span>
+                            ) : null}
+                            {toneTokens ? (
+                                <>
+                                    <Icon
+                                        name={toneTokens.icon}
+                                        size="sm"
+                                        className={cn(toneTokens.iconClass, "leading-none")}
+                                    />
+                                    {typeof count === "number" && count > 0 ? (
+                                        <span
+                                            className={cn(
+                                                "text-[12px] font-semibold tabular-nums leading-[1.4]",
+                                                toneTokens.titleClass,
+                                            )}
+                                        >
+                                            {count}
+                                        </span>
+                                    ) : null}
+                                </>
+                            ) : typeof count === "number" && count > 0 ? (
+                                <span className="shrink-0 text-[12px] font-semibold tabular-nums leading-[1.4] text-muted-foreground">
                                     {count}
                                 </span>
                             ) : null}
                         </div>
-                    ) : typeof count === "number" && count > 0 ? (
-                        <span className="shrink-0 text-[12px] font-semibold tabular-nums leading-none text-muted-foreground">
-                            {count}
-                        </span>
-                    ) : updatedAt?.trim() ? (
-                        <span className="shrink-0 text-[12px] leading-none text-muted-foreground">
-                            {updatedAtLabel}: {updatedAt.trim()}
-                        </span>
                     ) : null}
                 </div>
             </CardHeader>
             {mounted && (
                 <div
                     className={cn(
-                        "overflow-hidden transition-[height,opacity] duration-200 ease-out",
+                        "overflow-hidden transition-[height] duration-200 ease-out [overflow-anchor:none]",
                         expanded ? "opacity-100" : "opacity-0",
                     )}
                     style={{ height: height === "auto" ? "auto" : `${height}px` }}
@@ -155,7 +177,7 @@ export function OrderExecutionCollapsibleSection({
                 >
                     <div ref={bodyRef}>
                         <CardContent className={cn("pb-4", animating && "pointer-events-none")}>
-                            {children}
+                            {isContentReady ? children : null}
                         </CardContent>
                     </div>
                 </div>

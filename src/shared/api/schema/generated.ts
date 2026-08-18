@@ -1723,7 +1723,7 @@ export interface paths {
         put?: never;
         /**
          * Срезы и стартовые параметры ТП (JB Process control)
-         * @description BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`. Экран «Технологические параметры машины» — заполнение таблиц при открытии (`slices`, `machine_params`, `print_slots`). Тело: `[{ workAreaId }]`.
+         * @description BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`. Экран «Технологические параметры машины» — заполнение таблиц при открытии. В `result[]`: каталог `machine_params` / `print_slots` (норматив) и `slices[]` с фактическими `machine_params[].value` / `print_slots[].value`. Тело: `[{ workAreaId }]`.
          */
         post: {
             parameters: {
@@ -1858,7 +1858,7 @@ export interface paths {
         put?: never;
         /**
          * Сохранение ручного среза ТП
-         * @description BFF `users.admin.models.processControlJbBff.saveManualProcessParams`. Экран «Технологические параметры машины» — кнопка «Сохранить» в ручном режиме. Тело: `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]`.
+         * @description BFF `users.admin.models.processControlJbBff.saveManualProcessParams`. Экран «Технологические параметры машины» — кнопка «Сохранить» в ручном режиме. Тело: `[{ workAreaId, externalSeriesKey, payloadJson, operatorRef }]`. Оператор вводит серию рулона; `materialRollId` не передаём.
          */
         post: {
             parameters: {
@@ -3417,6 +3417,23 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** @description Элемент `blocking_issues` в `stage_completion_block` / STOMP `stageCompletionReadinessChanged` */
+        OrderExecutionStageBlockingIssue: {
+            code?: string | null;
+            message?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Элемент `stage_completion_block` в ответе getOrderExecution (стартовая сводка блока «Завершить этап»); дальше — STOMP `stageCompletionReadinessChanged` (тело: JSON-массив `[{ … }]`, один элемент). */
+        OrderExecutionStageCompletionBlockItem: {
+            work_area_id?: string | null;
+            blocking_issues?: components["schemas"]["OrderExecutionStageBlockingIssue"][];
+            changed_at?: string | null;
+            can_complete?: boolean | null;
+            blocker_count?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
         /** @description Элемент `result` в ответе getOrderExecution */
         OrderExecutionResultItem: {
             /** @description Пусто/null — на машине нет назначенного этапа */
@@ -3432,6 +3449,8 @@ export interface components {
             write_off_block?: components["schemas"]["OrderExecutionWriteOffBlockItem"][];
             /** @description Стартовая сводка блока «Регистрация события» (badge + плашка до STOMP machineSignalsSummaryChanged) */
             machine_signals_block?: components["schemas"]["OrderExecutionMachineSignalsBlockItem"][];
+            /** @description Стартовая сводка блока «Завершить этап» (счётчик в шапке, баннер blocking_issues, can_complete) до STOMP stageCompletionReadinessChanged */
+            stage_completion_block?: components["schemas"]["OrderExecutionStageCompletionBlockItem"][];
         } & {
             [key: string]: unknown;
         };
@@ -3994,31 +4013,48 @@ export interface components {
             /** @description Подписи полей для плашки сводки */
             result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
-        /** @description Колонка-срез в ответе getLastProcessParamsSlices (JB Process control) */
+        /** @description Значение параметра машины внутри среза getLastProcessParamsSlices */
+        OrderExecutionLastProcessParamsSlicesSliceMachineParamValueRow: {
+            param_code?: string | null;
+            value?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Значение печатной секции внутри среза getLastProcessParamsSlices */
+        OrderExecutionLastProcessParamsSlicesSlicePrintSlotValueRow: {
+            slot_no?: number | null;
+            value?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Срез в ответе getLastProcessParamsSlices (JB Process control) */
         OrderExecutionLastProcessParamsSlicesColumnRow: {
             slice_no?: number | null;
+            /** @description Колонка среза. START — «Старт»; прочие kind — колонки «Срез 1/2» */
             slice_kind?: string | null;
             column_label?: string | null;
             external_series_key?: string | null;
             material_roll_id?: string | null;
             updated_at?: string | null;
+            /** @description Время обновления среза (шапка колонки) */
             captured_at?: string | null;
             source?: string | null;
+            /** @description Фактические значения параметров в этом срезе */
+            machine_params?: components["schemas"]["OrderExecutionLastProcessParamsSlicesSliceMachineParamValueRow"][];
+            /** @description Фактические значения печатных секций в этом срезе */
+            print_slots?: components["schemas"]["OrderExecutionLastProcessParamsSlicesSlicePrintSlotValueRow"][];
         } & {
             [key: string]: unknown;
         };
-        /** @description Строка machine_params getLastProcessParamsSlices (JB Process control) */
+        /** @description Дефолты технолога machine_params (норматив и допуск), не значения срезов */
         OrderExecutionLastProcessParamsSlicesMachineParamRow: {
             param_code?: string | null;
             standard_value?: string | null;
             tolerance?: string | null;
-            start_value?: string | null;
-            slice1_value?: string | null;
-            slice2_value?: string | null;
         } & {
             [key: string]: unknown;
         };
-        /** @description Строка print_slots getLastProcessParamsSlices (JB Process control) */
+        /** @description Дефолты технолога print_slots (роль, цвет, уставка), не значения срезов */
         OrderExecutionLastProcessParamsSlicesPrintSlotRow: {
             slot_no?: number | null;
             slot_role?: string | null;
@@ -4027,9 +4063,6 @@ export interface components {
             setpoint?: string | null;
             tolerance?: string | null;
             is_empty?: string | null;
-            start_value?: string | null;
-            slice1_value?: string | null;
-            slice2_value?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -4077,16 +4110,14 @@ export interface components {
         OrderExecutionSaveManualProcessParamsRequestItem: {
             /** @description Идентификатор рабочей области этапа (`work_area_id`) */
             workAreaId: string;
-            /** @description Идентификатор рулона (`material_roll_id`) */
-            materialRollId: string;
-            /** @description Внешний ключ серии / номер рулона (`external_series_key`) */
+            /** @description Серия рулона, введённая оператором (`external_series_key`). Id рулона не передаём. */
             externalSeriesKey: string;
-            /** @description JSON-строка: `tables.parameters[]` (`param_code`, `value`, `origin`: `OPERATOR`) и `fields` (`work_area_id`, `material_roll_id`, `external_series_key`) */
+            /** @description JSON-строка: `tables.parameters[]` (`param_code`, `value`, `origin`: `OPERATOR`) и `fields` (`work_area_id`, `external_series_key`) */
             payloadJson: string;
             /** @description Ссылка на оператора в MES (`operator_ref`, из сессии) */
             operatorRef?: string;
         };
-        /** @description Тело `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]` */
+        /** @description Тело `[{ workAreaId, externalSeriesKey, payloadJson, operatorRef }]` */
         OrderExecutionSaveManualProcessParamsRequest: components["schemas"]["OrderExecutionSaveManualProcessParamsRequestItem"][];
         /** @description Ответ saveManualProcessParams (JB Process control) */
         OrderExecutionSaveManualProcessParamsResponse: (components["schemas"]["OrderExecutionReleaseRpcResultRow"] & {

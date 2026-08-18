@@ -3,13 +3,13 @@ import { Fragment, useState } from "react";
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
     dataTableInsetShellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
     type DataTablePageSize,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -18,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { StageEventJournalRow } from "../../model/stage-completion-types";
 
 const expandColumnClassName = "w-10";
+const journalHeadCellClassName = cn(dataTablePanelHeadCellClassName, "whitespace-nowrap");
+const journalBodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
 
 function formatNumber(value: number): string {
     return value.toLocaleString("ru-RU");
@@ -51,26 +53,31 @@ export function StageCompletionEventJournalTable({
     return (
         <div className="grid gap-2">
             <div className={cnSectionBlockTitle()}>Журнал событий</div>
-            <div className={dataTableViewportShellClassName}>
-                <div className="min-w-0 overflow-x-auto">
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "min-w-[640px] border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
+            <DataTablePanel
+                footer={
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
+                }
+            >
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[640px]")}>
                         <TableHeader>
                             <TableRow className="hover:!bg-transparent">
                                 <TableHead
-                                    className={cn(dataTableHeadCellClassName, "bg-muted/40", expandColumnClassName)}
+                                    className={cn(journalHeadCellClassName, expandColumnClassName)}
                                     aria-label="Детали события"
                                 />
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Код события</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Начало</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Конец</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                    Метраж
-                                </TableHead>
+                                <TableHead className={journalHeadCellClassName}>Код события</TableHead>
+                                <TableHead className={journalHeadCellClassName}>Начало</TableHead>
+                                <TableHead className={journalHeadCellClassName}>Конец</TableHead>
+                                <TableHead className={cn(journalHeadCellClassName, "text-right")}>Метраж</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -83,7 +90,7 @@ export function StageCompletionEventJournalTable({
                                     return (
                                         <Fragment key={row.id}>
                                             <TableRow className={cn(isExpanded && "bg-muted/50")}>
-                                                <TableCell className={cn(dataTableBodyCellClassName, expandColumnClassName)}>
+                                                <TableCell className={cn(journalBodyCellClassName, expandColumnClassName)}>
                                                     {hasDetails ? (
                                                         <button
                                                             type="button"
@@ -102,34 +109,32 @@ export function StageCompletionEventJournalTable({
                                                         </button>
                                                     ) : null}
                                                 </TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{row.eventCode}</TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{row.start}</TableCell>
-                                                <TableCell className={dataTableBodyCellClassName}>{row.end}</TableCell>
-                                                <TableCell className={cn(dataTableBodyCellClassName, "text-right tabular-nums")}>
+                                                <TableCell className={journalBodyCellClassName} title={row.eventCode}>
+                                                    {row.eventCode}
+                                                </TableCell>
+                                                <TableCell className={journalBodyCellClassName}>{row.start}</TableCell>
+                                                <TableCell className={journalBodyCellClassName}>{row.end}</TableCell>
+                                                <TableCell className={cn(journalBodyCellClassName, "text-right tabular-nums")}>
                                                     {formatNumber(row.meterage)}
                                                 </TableCell>
                                             </TableRow>
                                             {hasDetails && isExpanded ? (
                                                 <TableRow className="bg-muted/20 hover:!bg-muted/20">
-                                                    <TableCell className={dataTableBodyCellClassName} />
+                                                    <TableCell className={journalBodyCellClassName} />
                                                     <TableCell colSpan={4} className="p-0">
                                                         <div className="px-4 py-2">
                                                             <Table
                                                                 className={cn(
                                                                     dataTableInsetShellClassName,
-                                                                    "border-separate border-spacing-0 text-[12px]",
+                                                                    "border-collapse text-[12px]",
                                                                 )}
                                                             >
                                                                 <TableHeader>
                                                                     <TableRow className="hover:!bg-transparent">
-                                                                        <TableHead
-                                                                            className={cn(dataTableHeadCellClassName, "bg-muted/40")}
-                                                                        >
+                                                                        <TableHead className={journalHeadCellClassName}>
                                                                             Параметр
                                                                         </TableHead>
-                                                                        <TableHead
-                                                                            className={cn(dataTableHeadCellClassName, "bg-muted/40")}
-                                                                        >
+                                                                        <TableHead className={journalHeadCellClassName}>
                                                                             Значение
                                                                         </TableHead>
                                                                     </TableRow>
@@ -139,13 +144,17 @@ export function StageCompletionEventJournalTable({
                                                                         <TableRow key={detail.parameter}>
                                                                             <TableCell
                                                                                 className={cn(
-                                                                                    dataTableBodyCellClassName,
+                                                                                    journalBodyCellClassName,
                                                                                     "text-muted-foreground",
                                                                                 )}
+                                                                                title={detail.parameter}
                                                                             >
                                                                                 {detail.parameter}
                                                                             </TableCell>
-                                                                            <TableCell className={dataTableBodyCellClassName}>
+                                                                            <TableCell
+                                                                                className={journalBodyCellClassName}
+                                                                                title={detail.value}
+                                                                            >
                                                                                 {detail.value}
                                                                             </TableCell>
                                                                         </TableRow>
@@ -170,21 +179,8 @@ export function StageCompletionEventJournalTable({
                                 </TableRow>
                             )}
                         </TableBody>
-                    </Table>
-                </div>
-                <div className={dataTableViewportFooterClassName}>
-                    <DataTablePaginationFooter
-                        totalCount={pagination.totalCount}
-                        rangeStart={pagination.rangeStart}
-                        rangeEnd={pagination.rangeEnd}
-                        page={pagination.page}
-                        totalPages={pagination.totalPages}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                </div>
-            </div>
+                </Table>
+            </DataTablePanel>
             <div className="text-right text-[12px] font-bold uppercase text-foreground">
                 Метраж. Итого: {formatNumber(totalEventMeterage)}
             </div>

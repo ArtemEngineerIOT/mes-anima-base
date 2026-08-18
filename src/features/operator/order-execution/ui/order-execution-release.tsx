@@ -9,6 +9,7 @@ import { MachineSignalsCombobox } from "@/features/operator/order-execution/ui/m
 import { FloatingAutoDismissInformer } from "@/shared/ui/kit/floating-auto-dismiss-informer";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Input } from "@/shared/ui/kit/input";
 import { Informer } from "@/shared/ui/kit/informer";
@@ -17,10 +18,8 @@ import { MachineDataPanel } from "@/shared/ui/kit/machine-data-panel";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
-    dataTableInsetShellClassName,
-    dataTableStickyHeadCellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -36,7 +35,7 @@ type OrderExecutionReleaseProps = {
 };
 
 const batchRollSelectionColumnClassName = "w-10";
-const headCellClassName = dataTableStickyHeadCellClassName;
+const headCellClassName = dataTablePanelHeadCellClassName;
 
 export function OrderExecutionRelease({
     workAreaId,
@@ -132,6 +131,10 @@ export function OrderExecutionRelease({
         return null;
     }
 
+    if (isLoading) {
+        return null;
+    }
+
     return (
         <div className="flex flex-col gap-4">
             {hasMachineSignals ? (
@@ -150,21 +153,11 @@ export function OrderExecutionRelease({
                 <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={error} />
             ) : null}
 
-            {isLoading ? (
-                <Informer tone="system" variant="bordered" size="s" title="Загрузка данных выпуска…" />
-            ) : null}
-
             <div className="grid gap-3">
                 <div className={cnSectionBlockTitle()}>Данные по серии</div>
-                <div className={dataTableViewportShellClassName}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "min-w-[480px] border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
+                <DataTablePanel>
+                    <Table className={cn(dataTablePanelTableClassName, "min-w-[480px]")}>
+                            <TableHeader>
                                 <TableRow className="hover:!bg-transparent">
                                     <TableHead className={cn(headCellClassName, "w-[45%]")}>Характеристика</TableHead>
                                     <TableHead className={headCellClassName}>Значение</TableHead>
@@ -178,9 +171,8 @@ export function OrderExecutionRelease({
                                     <TableCell className={dataTableBodyCellClassName}>{series || "—"}</TableCell>
                                 </TableRow>
                             </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                    </Table>
+                </DataTablePanel>
             </div>
 
             <div className="space-y-3">
@@ -197,7 +189,6 @@ export function OrderExecutionRelease({
                             onToggleSignal={toggleProductionEventSignal}
                             fieldLabel="Сигналы с машин"
                             placeholder="Выберите сигнал с машины"
-                            loadingTitle="Загрузка сигналов выпуска…"
                             errorTitle="Сигналы выпуска"
                         />
                     </div>
@@ -284,18 +275,25 @@ export function OrderExecutionRelease({
                 <div className="flex items-center justify-between gap-3">
                     <div className={cnSectionBlockTitle()}>Выпуски партии</div>
                     {batchAsOf ? (
-                        <span className="shrink-0 text-[11px] text-muted-foreground">Актуально на {batchAsOf}</span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">Обновлено: {batchAsOf}</span>
                     ) : null}
                 </div>
-                <div className={dataTableViewportShellClassName}>
-                    <div className="overflow-x-auto min-w-0">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "min-w-[720px] border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
+                <DataTablePanel
+                    footer={
+                        <DataTablePaginationFooter
+                            totalCount={batchPagination.totalCount}
+                            rangeStart={batchPagination.rangeStart}
+                            rangeEnd={batchPagination.rangeEnd}
+                            page={batchPagination.page}
+                            totalPages={batchPagination.totalPages}
+                            pageSize={batchPageSize}
+                            onPageChange={setBatchPage}
+                            onPageSizeChange={setBatchPageSize}
+                        />
+                    }
+                >
+                    <Table className={cn(dataTablePanelTableClassName, "min-w-[720px]")}>
+                            <TableHeader>
                                 <TableRow className="hover:!bg-transparent">
                                     <TableHead
                                         className={cn(headCellClassName, batchRollSelectionColumnClassName)}
@@ -400,21 +398,8 @@ export function OrderExecutionRelease({
                                     </TableRow>
                                 )}
                             </TableBody>
-                        </Table>
-                    </div>
-                    <div className={dataTableViewportFooterClassName}>
-                        <DataTablePaginationFooter
-                            totalCount={batchPagination.totalCount}
-                            rangeStart={batchPagination.rangeStart}
-                            rangeEnd={batchPagination.rangeEnd}
-                            page={batchPagination.page}
-                            totalPages={batchPagination.totalPages}
-                            pageSize={batchPageSize}
-                            onPageChange={setBatchPage}
-                            onPageSizeChange={setBatchPageSize}
-                        />
-                    </div>
-                </div>
+                    </Table>
+                </DataTablePanel>
 
                 <section className="flex flex-col gap-3 border-t border-border pt-3">
                     <div className={cnSectionBlockTitle()}>Причины блокировки</div>

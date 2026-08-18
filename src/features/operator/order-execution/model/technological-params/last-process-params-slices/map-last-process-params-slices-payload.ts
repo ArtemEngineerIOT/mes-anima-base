@@ -1,3 +1,11 @@
+/**
+ * Порядок разбора getLastProcessParamsSlices:
+ * 1. Каркас строк UI (подписи, STOMP-ключи).
+ * 2. Дефолты технолога из корневых `machine_params` / `print_slots`
+ *    (standard_value, tolerance, setpoint, color, slot_role, is_empty).
+ * 3. Срезы из `slices[]`: `slice_kind` → колонка, `captured_at` → время в шапке,
+ *    вложенные `machine_params[].value` / `print_slots[].value` → ячейки.
+ */
 import type { ApiSchemas } from "@/shared/api/schema";
 
 import { assertReleaseRpcOk, pickNumber, pickString } from "../../release/map-release-rpc-utils";
@@ -18,6 +26,13 @@ import {
 } from "./types";
 
 const UNDEFINED_MARKERS = new Set(["не определено", "—", "-"]);
+
+type MappedSlice = {
+    meta: LastProcessParamsSliceMeta;
+    isStart: boolean;
+    machineParamByCode: Map<string, string>;
+    printSlotByNo: Map<number, string>;
+};
 
 function isUndefinedValue(value: string | undefined): boolean {
     if (!value) {
@@ -50,6 +65,10 @@ function isPrintSlotEmpty(row: Record<string, unknown>): boolean {
     return raw?.toLowerCase() === "true";
 }
 
+function isStartSliceKind(kind: string): boolean {
+    return kind.trim().toUpperCase() === "START";
+}
+
 function readResultRow(
     payload: ApiSchemas["OrderExecutionLastProcessParamsSlicesResponse"] | undefined,
 ): Record<string, unknown> | null {
@@ -69,60 +88,120 @@ function readResultRow(
     return row as Record<string, unknown>;
 }
 
-function mapSliceMetas(rows: unknown): LastProcessParamsSliceMeta[] {
+function mapNestedMachineParamValues(rows: unknown): Map<string, string> {
+    const values = new Map<string, string>();
+    if (!Array.isArray(rows)) {
+        return values;
+    }
+
+    for (const item of rows) {
+        if (typeof item !== "object" || item === null) {
+            continue;
+        }
+
+        const row = item as Record<string, unknown>;
+        const paramCode = pickString(row.param_code ?? row.paramCode);
+        if (!paramCode) {
+            continue;
+        }
+
+        values.set(paramCode, normalizeDisplayValue(row.value));
+    }
+
+    return values;
+}
+
+function mapNestedPrintSlotValues(rows: unknown): Map<number, string> {
+    const values = new Map<number, string>();
+    if (!Array.isArray(rows)) {
+        return values;
+    }
+
+    for (const item of rows) {
+        if (typeof item !== "object" || item === null) {
+            continue;
+        }
+
+        const row = item as Record<string, unknown>;
+        const slotNo = pickNumber(row.slot_no ?? row.slotNo);
+        if (!slotNo) {
+            continue;
+        }
+
+        values.set(slotNo, normalizeDisplayValue(row.value));
+    }
+
+    return values;
+}
+
+function mapSlices(rows: unknown): MappedSlice[] {
     if (!Array.isArray(rows)) {
         return [];
     }
 
-    return rows
+    const slices = rows
         .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-        .map((row) => ({
-            sliceNo: pickNumber(row.slice_no ?? row.sliceNo) || 0,
-            sliceKind: pickString(row.slice_kind ?? row.sliceKind) ?? "",
-            externalSeriesKey:
-                pickString(row.external_series_key ?? row.externalSeriesKey) ??
-                pickString(row.column_label ?? row.columnLabel) ??
-                "—",
-            updatedAt: pickString(row.updated_at ?? row.updatedAt) ?? "—",
-        }))
-        .filter((meta) => meta.sliceNo > 0)
-        .sort((a, b) => a.sliceNo - b.sliceNo);
+        .map((row) => {
+            const sliceNo = pickNumber(row.slice_no ?? row.sliceNo) || 0;
+            const sliceKind = pickString(row.slice_kind ?? row.sliceKind) ?? "";
+            const capturedAt =
+                pickString(row.captured_at ?? row.capturedAt) ??
+                pickString(row.updated_at ?? row.updatedAt) ??
+                "—";
+
+            return {
+                meta: {
+                    sliceNo,
+                    sliceKind,
+                    externalSeriesKey:
+                        pickString(row.external_series_key ?? row.externalSeriesKey) ??
+                        pickString(row.column_label ?? row.columnLabel) ??
+                        "—",
+                    updatedAt: capturedAt,
+                },
+                isStart: isStartSliceKind(sliceKind),
+                machineParamByCode: mapNestedMachineParamValues(row.machine_params ?? row.machineParams),
+                printSlotByNo: mapNestedPrintSlotValues(row.print_slots ?? row.printSlots),
+            };
+        })
+        .filter((slice) => slice.meta.sliceNo > 0)
+        .sort((a, b) => a.meta.sliceNo - b.meta.sliceNo);
+
+    return slices;
 }
 
-function resolveSliceMeta(
-    sliceMetas: LastProcessParamsSliceMeta[],
-    sliceNo: number,
-): LastProcessParamsSliceMeta | undefined {
-    return sliceMetas.find((meta) => meta.sliceNo === sliceNo);
+function historyEntryFromSlice(
+    slice: MappedSlice,
+    value: string,
+): TechnologicalParamHistoryEntry {
+    return {
+        rollNumber: slice.meta.externalSeriesKey,
+        checkedAt: slice.meta.updatedAt,
+        value,
+    };
 }
 
-function buildHistoryFromSliceValues(
-    startValue: unknown,
-    slice1Value: unknown,
-    slice2Value: unknown,
-    sliceMetas: LastProcessParamsSliceMeta[],
-): TechnologicalParamHistoryEntry[] {
-    const entries: TechnologicalParamHistoryEntry[] = [];
+function buildRowHistoryFromSlices(
+    slices: MappedSlice[],
+    getValue: (slice: MappedSlice) => string | undefined,
+): { start: string; history: TechnologicalParamHistoryEntry[] } {
+    const startSlice = slices.find((slice) => slice.isStart);
+    const start = startSlice ? (getValue(startSlice) ?? "—") : "—";
+    const history: TechnologicalParamHistoryEntry[] = [
+        startSlice
+            ? historyEntryFromSlice(startSlice, start)
+            : { rollNumber: "—", checkedAt: "—", value: "—" },
+    ];
 
-    const appendEntry = (value: unknown, sliceNo: number) => {
-        const normalized = normalizeDisplayValue(value);
-        if (normalized === "—") {
-            return;
+    for (const slice of slices) {
+        if (slice.isStart) {
+            continue;
         }
 
-        const meta = resolveSliceMeta(sliceMetas, sliceNo);
-        entries.push({
-            rollNumber: meta?.externalSeriesKey ?? "—",
-            checkedAt: meta?.updatedAt ?? "—",
-            value: normalized,
-        });
-    };
+        history.push(historyEntryFromSlice(slice, getValue(slice) ?? "—"));
+    }
 
-    appendEntry(startValue, 1);
-    appendEntry(slice1Value, 2);
-    appendEntry(slice2Value, 3);
-
-    return entries;
+    return { start, history };
 }
 
 function resolvePrintingSectionTemplate(
@@ -155,7 +234,7 @@ function resolvePrintingSectionTemplate(
 function mapPrintSlots(
     rows: unknown,
     baseSections: TechnologicalParamsSections,
-    sliceMetas: LastProcessParamsSliceMeta[],
+    slices: MappedSlice[],
     historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>,
 ): TechnologicalPrintingSectionRow[] {
     if (!Array.isArray(rows)) {
@@ -190,22 +269,19 @@ function mapPrintSlots(
             }
 
             const color = normalizeDisplayValue(row.color);
-            const presserNo = normalizeDisplayValue(row.presser_no ?? row.presserNo);
+            const presserNo = pickString(row.presser_no ?? row.presserNo) ?? "";
             const standard = normalizeDisplayValue(row.setpoint);
             const deviationPm = formatDeviationPm(row.tolerance);
-            const start = normalizeDisplayValue(row.start_value ?? row.startValue);
-
-            historyByRowId[rowId] = buildHistoryFromSliceValues(
-                row.start_value ?? row.startValue,
-                row.slice1_value ?? row.slice1Value,
-                row.slice2_value ?? row.slice2Value,
-                sliceMetas,
+            const { start, history } = buildRowHistoryFromSlices(slices, (slice) =>
+                slice.printSlotByNo.get(sectionNumber),
             );
+
+            historyByRowId[rowId] = history;
 
             return {
                 ...template,
                 color: color === "—" ? "" : color,
-                presserNo: presserNo === "—" ? "" : presserNo,
+                presserNo,
                 standard,
                 deviationPm,
                 start,
@@ -222,10 +298,58 @@ function applyMachineParamRowPatch<T extends TechnologicalProcessParamRow | Tech
     return { ...row, ...patch };
 }
 
+function buildHistoryByRowIdFromSlices(
+    slices: MappedSlice[],
+    sections: TechnologicalParamsSections,
+): Record<string, TechnologicalParamHistoryEntry[]> {
+    const historyByRowId: Record<string, TechnologicalParamHistoryEntry[]> = {};
+
+    for (const row of sections.printingSections) {
+        if (row.isEmpty) {
+            historyByRowId[row.id] = [];
+            continue;
+        }
+
+        const { history } = buildRowHistoryFromSlices(slices, (slice) =>
+            slice.printSlotByNo.get(row.sectionNumber),
+        );
+        historyByRowId[row.id] = history;
+    }
+
+    const paramCodeByRowId = new Map(
+        Object.entries(LAST_PROCESS_PARAMS_MACHINE_PARAM_ROW_BY_CODE).map(([paramCode, rowId]) => [
+            rowId,
+            paramCode,
+        ]),
+    );
+
+    const applyMachineRow = (rowId: string) => {
+        const paramCode = paramCodeByRowId.get(rowId);
+        if (!paramCode) {
+            return;
+        }
+
+        const { history } = buildRowHistoryFromSlices(slices, (slice) =>
+            slice.machineParamByCode.get(paramCode),
+        );
+        historyByRowId[rowId] = history;
+    };
+
+    for (const row of sections.unwinding) {
+        applyMachineRow(row.id);
+    }
+    for (const row of sections.winding) {
+        applyMachineRow(row.id);
+    }
+    applyMachineRow(sections.speed.id);
+
+    return historyByRowId;
+}
+
 function mapMachineParams(
     rows: unknown,
     sections: TechnologicalParamsSections,
-    sliceMetas: LastProcessParamsSliceMeta[],
+    slices: MappedSlice[],
     historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>,
 ): TechnologicalParamsSections {
     if (!Array.isArray(rows)) {
@@ -255,18 +379,17 @@ function mapMachineParams(
             continue;
         }
 
+        const { start, history } = buildRowHistoryFromSlices(slices, (slice) =>
+            slice.machineParamByCode.get(paramCode),
+        );
+
         const patch = {
             standard: normalizeDisplayValue(row.standard_value ?? row.standardValue),
             deviationPm: formatDeviationPm(row.tolerance),
-            start: normalizeDisplayValue(row.start_value ?? row.startValue),
+            start,
         };
 
-        historyByRowId[rowId] = buildHistoryFromSliceValues(
-            row.start_value ?? row.startValue,
-            row.slice1_value ?? row.slice1Value,
-            row.slice2_value ?? row.slice2Value,
-            sliceMetas,
-        );
+        historyByRowId[rowId] = history;
 
         if (rowId === nextSections.speed.id) {
             nextSections.speed = applyMachineParamRowPatch(nextSections.speed, patch);
@@ -306,25 +429,35 @@ export function mapLastProcessParamsSlicesPayload(
         return { sections: baseSections, historyByRowId };
     }
 
-    const sliceMetas = mapSliceMetas(resultRow.slices);
+    const slices = mapSlices(resultRow.slices);
     const printingSections = mapPrintSlots(
         resultRow.print_slots ?? resultRow.printSlots,
         baseSections,
-        sliceMetas,
+        slices,
         historyByRowId,
     );
-
-    let sections: TechnologicalParamsSections = {
-        ...baseSections,
-        printingSections,
-    };
-
-    sections = mapMachineParams(
+    const sections = mapMachineParams(
         resultRow.machine_params ?? resultRow.machineParams,
-        sections,
-        sliceMetas,
+        {
+            ...baseSections,
+            printingSections,
+        },
+        slices,
         historyByRowId,
     );
 
     return { sections, historyByRowId };
+}
+
+/** После STOMP `processParamsSliceCreated`: из ответа берём только `slices`. */
+export function mapLastProcessParamsSlicesHistory(
+    payload: ApiSchemas["OrderExecutionLastProcessParamsSlicesResponse"] | undefined,
+    sections: TechnologicalParamsSections,
+): Record<string, TechnologicalParamHistoryEntry[]> {
+    const resultRow = readResultRow(payload);
+    if (!resultRow) {
+        return buildHistoryByRowIdFromSlices([], sections);
+    }
+
+    return buildHistoryByRowIdFromSlices(mapSlices(resultRow.slices), sections);
 }

@@ -23,6 +23,7 @@ import {
     type ReleaseProductionEventSnapshot,
 } from "./production-event-types";
 import { sanitizeReleaseNumericInput } from "./sanitize-release-numeric-input";
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import { useReleaseBlockReasons } from "./use-release-block-reasons";
 
 type UseReleaseOptions = {
@@ -54,7 +55,8 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
     const [form, setForm] = useState<ReleaseFormState>(RELEASE_INITIAL_FORM);
     const [initSnapshot, setInitSnapshot] = useState<ReleaseInitSnapshot>(RELEASE_EMPTY_INIT);
     const [batchSnapshot, setBatchSnapshot] = useState<ReleaseBatchSnapshot>(RELEASE_EMPTY_BATCH_SNAPSHOT);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
     const [isRegisteringRelease, setIsRegisteringRelease] = useState(false);
     const [printingReleaseId, setPrintingReleaseId] = useState<string | null>(null);
@@ -255,6 +257,7 @@ export function useRelease({ workAreaId, enabled, onReleaseRegistered }: UseRele
         if (!trimmedWorkAreaId) {
             resetState();
             setError("Не удалось определить workAreaId этапа");
+            setIsLoading(false);
             return;
         }
 

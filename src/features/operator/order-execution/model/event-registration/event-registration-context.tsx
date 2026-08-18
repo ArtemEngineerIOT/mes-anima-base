@@ -12,15 +12,23 @@ export function EventRegistrationProvider({
     workAreaId,
     enabled,
     journalEnabled,
+    onMonitoringSummaryReload,
     children,
 }: {
     machineId: MachineId;
     workAreaId?: string;
     enabled: boolean;
     journalEnabled: boolean;
+    onMonitoringSummaryReload?: () => void;
     children: ReactNode;
 }) {
-    const value = useEventRegistration({ machineId, workAreaId, enabled, journalEnabled });
+    const value = useEventRegistration({
+        machineId,
+        workAreaId,
+        enabled,
+        journalEnabled,
+        onMonitoringSummaryReload,
+    });
     return <EventRegistrationContext.Provider value={value}>{children}</EventRegistrationContext.Provider>;
 }
 

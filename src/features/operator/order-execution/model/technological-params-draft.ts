@@ -7,7 +7,6 @@ export type ManualInputMeta = {
 };
 
 export type TechnologicalParamsDraft = {
-    presserWidth: string;
     presserNumbers: Record<string, string>;
     manualValues: Record<string, string>;
     manualInputMeta: ManualInputMeta;
@@ -25,7 +24,6 @@ export function buildTechnologicalParamsDraft(
     defaultRollNumber = "",
 ): TechnologicalParamsDraft {
     return {
-        presserWidth: data.presserWidth,
         presserNumbers: Object.fromEntries(
             data.printingSections.map((row) => [row.id, row.presserNo]),
         ),
@@ -39,13 +37,11 @@ export function createEmptyManualDraft(rowIds: string[]): Record<string, string>
 }
 
 export type SavedPresserState = {
-    width: string;
     numbers: Record<string, string>;
 };
 
 export function buildSavedPresserState(data: TechnologicalParamsSections): SavedPresserState {
     return {
-        width: data.presserWidth,
         numbers: Object.fromEntries(data.printingSections.map((row) => [row.id, row.presserNo])),
     };
 }

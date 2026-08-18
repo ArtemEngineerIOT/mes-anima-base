@@ -16,6 +16,7 @@ import { mapEventRegistrationRegisterEventPayload } from "./map-event-registrati
 import { mapListUnprocessedSignalsPayload } from "./map-list-unprocessed-signals-payload";
 import { EMPTY_EVENT_REGISTRATION_SNAPSHOT } from "./empty-event-registration-snapshot";
 import { buildStep2PrefillFromSignal, buildStep2SensorPrefill, mergeStep2SensorPrefill } from "./prefill-event-registration-draft";
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import type {
     EventRegistrationDraft,
     EventRegistrationSnapshot,
@@ -34,6 +35,8 @@ type UseEventRegistrationOptions = {
     workAreaId?: string;
     enabled: boolean;
     journalEnabled: boolean;
+    /** После успешной регистрации события — silent-reload мониторинга (summary + roll tables) */
+    onMonitoringSummaryReload?: () => void;
 };
 
 const SETUP_RUN_EVENT_CODE = 120;
@@ -58,7 +61,11 @@ export function useEventRegistration({
     workAreaId,
     enabled,
     journalEnabled,
+    onMonitoringSummaryReload,
 }: UseEventRegistrationOptions) {
+    const onMonitoringSummaryReloadRef = useRef(onMonitoringSummaryReload);
+    onMonitoringSummaryReloadRef.current = onMonitoringSummaryReload;
+
     const machineSnapshot = useOrderExecutionMachineStompSnapshot();
     const { initWizard } = useEventRegistrationInitWizard();
     const { listSignals } = useListUnprocessedSignals();
@@ -70,6 +77,8 @@ export function useEventRegistration({
     const [snapshot, setSnapshot] = useState<EventRegistrationSnapshot>(EMPTY_EVENT_REGISTRATION_SNAPSHOT);
     const [wizardSessionId, setWizardSessionId] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
 
     const [step, setStep] = useState<EventRegistrationStep>(1);
     const [draft, setDraft] = useState<EventRegistrationDraft>(() =>
@@ -77,7 +86,8 @@ export function useEventRegistration({
     );
     const [journal, setJournal] = useState<ProcessJournalEntry[]>([]);
     const [totalLengthM, setTotalLengthM] = useState<number | null>(null);
-    const [isJournalLoading, setIsJournalLoading] = useState(false);
+    const [isJournalLoading, setIsJournalLoading] = useState(journalEnabled);
+    useSyncLoadingOnEnable(journalEnabled, setIsJournalLoading);
     const [journalLoadError, setJournalLoadError] = useState<string | null>(null);
     const [unprocessed, setUnprocessed] = useState<UnprocessedMachineEvent[]>([]);
     const [selectedUnprocessedId, setSelectedUnprocessedId] = useState<string | null>(null);
@@ -154,6 +164,7 @@ export function useEventRegistration({
             setSelectedUnprocessedId(null);
             lastAppliedSignalIdRef.current = null;
             setLoadError("Не удалось определить workAreaId этапа");
+            setIsLoading(false);
             return;
         }
 
@@ -161,6 +172,7 @@ export function useEventRegistration({
         setLoadError(null);
         setSelectedUnprocessedId(null);
         lastAppliedSignalIdRef.current = null;
+        setIsLoading(true);
 
         try {
             const [initPayload] = await Promise.all([
@@ -176,6 +188,8 @@ export function useEventRegistration({
             setLoadError(
                 error instanceof Error ? error.message : "Не удалось загрузить данные регистрации события",
             );
+        } finally {
+            setIsLoading(false);
         }
     }, [loadUnprocessedTable, resetToEmptySnapshot, workAreaId]);
 
@@ -195,6 +209,7 @@ export function useEventRegistration({
             setJournal(journalFallbackRef.current);
             setTotalLengthM(null);
             setJournalLoadError("Не удалось определить workAreaId этапа");
+            setIsJournalLoading(false);
             return;
         }
 
@@ -428,6 +443,8 @@ export function useEventRegistration({
             if (mapped.processJournalRefreshHint) {
                 void loadJournal();
             }
+
+            onMonitoringSummaryReloadRef.current?.();
         } catch (error) {
             setRegisterError(
                 error instanceof Error ? error.message : "Не удалось зарегистрировать событие",
@@ -511,6 +528,7 @@ export function useEventRegistration({
         snapshot,
         wizardSessionId,
         loadError,
+        isLoading,
         reload: load,
         isWizardDisabled,
         step,

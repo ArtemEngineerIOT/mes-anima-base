@@ -316,6 +316,42 @@ components:
                     nullable: true
             additionalProperties: true
 
+        OrderExecutionStageBlockingIssue:
+            type: object
+            description: Элемент `blocking_issues` в `stage_completion_block` / STOMP `stageCompletionReadinessChanged`
+            properties:
+                code:
+                    type: string
+                    nullable: true
+                message:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionStageCompletionBlockItem:
+            type: object
+            description: >
+                Элемент `stage_completion_block` в ответе getOrderExecution (стартовая сводка блока «Завершить этап»);
+                дальше — STOMP `stageCompletionReadinessChanged` (тело: JSON-массив `[{ … }]`, один элемент).
+            properties:
+                work_area_id:
+                    type: string
+                    nullable: true
+                blocking_issues:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionStageBlockingIssue"
+                changed_at:
+                    type: string
+                    nullable: true
+                can_complete:
+                    type: boolean
+                    nullable: true
+                blocker_count:
+                    type: integer
+                    nullable: true
+            additionalProperties: true
+
         OrderExecutionMachineSignalsBlockItem:
             type: object
             description: >
@@ -385,6 +421,13 @@ components:
                     description: Стартовая сводка блока «Регистрация события» (badge + плашка до STOMP machineSignalsSummaryChanged)
                     items:
                         $ref: "#/components/schemas/OrderExecutionMachineSignalsBlockItem"
+                stage_completion_block:
+                    type: array
+                    description: >
+                        Стартовая сводка блока «Завершить этап» (счётчик в шапке, баннер blocking_issues, can_complete)
+                        до STOMP stageCompletionReadinessChanged
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionStageCompletionBlockItem"
             additionalProperties: true
 
         OrderExecutionResultRow:
@@ -2013,9 +2056,33 @@ components:
                               items:
                                   $ref: "#/components/schemas/OrderExecutionReleaseProductionEventFieldLabel"
 
+        OrderExecutionLastProcessParamsSlicesSliceMachineParamValueRow:
+            type: object
+            description: Значение параметра машины внутри среза getLastProcessParamsSlices
+            properties:
+                param_code:
+                    type: string
+                    nullable: true
+                value:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
+        OrderExecutionLastProcessParamsSlicesSlicePrintSlotValueRow:
+            type: object
+            description: Значение печатной секции внутри среза getLastProcessParamsSlices
+            properties:
+                slot_no:
+                    type: integer
+                    nullable: true
+                value:
+                    type: string
+                    nullable: true
+            additionalProperties: true
+
         OrderExecutionLastProcessParamsSlicesColumnRow:
             type: object
-            description: Колонка-срез в ответе getLastProcessParamsSlices (JB Process control)
+            description: Срез в ответе getLastProcessParamsSlices (JB Process control)
             properties:
                 slice_no:
                     type: integer
@@ -2023,6 +2090,7 @@ components:
                 slice_kind:
                     type: string
                     nullable: true
+                    description: Колонка среза. START — «Старт»; прочие kind — колонки «Срез 1/2»
                 column_label:
                     type: string
                     nullable: true
@@ -2038,14 +2106,25 @@ components:
                 captured_at:
                     type: string
                     nullable: true
+                    description: Время обновления среза (шапка колонки)
                 source:
                     type: string
                     nullable: true
+                machine_params:
+                    type: array
+                    description: Фактические значения параметров в этом срезе
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesSliceMachineParamValueRow"
+                print_slots:
+                    type: array
+                    description: Фактические значения печатных секций в этом срезе
+                    items:
+                        $ref: "#/components/schemas/OrderExecutionLastProcessParamsSlicesSlicePrintSlotValueRow"
             additionalProperties: true
 
         OrderExecutionLastProcessParamsSlicesMachineParamRow:
             type: object
-            description: Строка machine_params getLastProcessParamsSlices (JB Process control)
+            description: Дефолты технолога machine_params (норматив и допуск), не значения срезов
             properties:
                 param_code:
                     type: string
@@ -2056,20 +2135,11 @@ components:
                 tolerance:
                     type: string
                     nullable: true
-                start_value:
-                    type: string
-                    nullable: true
-                slice1_value:
-                    type: string
-                    nullable: true
-                slice2_value:
-                    type: string
-                    nullable: true
             additionalProperties: true
 
         OrderExecutionLastProcessParamsSlicesPrintSlotRow:
             type: object
-            description: Строка print_slots getLastProcessParamsSlices (JB Process control)
+            description: Дефолты технолога print_slots (роль, цвет, уставка), не значения срезов
             properties:
                 slot_no:
                     type: integer
@@ -2090,15 +2160,6 @@ components:
                     type: string
                     nullable: true
                 is_empty:
-                    type: string
-                    nullable: true
-                start_value:
-                    type: string
-                    nullable: true
-                slice1_value:
-                    type: string
-                    nullable: true
-                slice2_value:
                     type: string
                     nullable: true
             additionalProperties: true
@@ -2214,30 +2275,26 @@ components:
                 workAreaId:
                     type: string
                     description: Идентификатор рабочей области этапа (`work_area_id`)
-                materialRollId:
-                    type: string
-                    description: Идентификатор рулона (`material_roll_id`)
                 externalSeriesKey:
                     type: string
-                    description: Внешний ключ серии / номер рулона (`external_series_key`)
+                    description: Серия рулона, введённая оператором (`external_series_key`). Id рулона не передаём.
                 payloadJson:
                     type: string
                     description: >
                         JSON-строка: `tables.parameters[]` (`param_code`, `value`, `origin`: `OPERATOR`)
-                        и `fields` (`work_area_id`, `material_roll_id`, `external_series_key`)
+                        и `fields` (`work_area_id`, `external_series_key`)
                 operatorRef:
                     type: string
                     description: Ссылка на оператора в MES (`operator_ref`, из сессии)
             required:
                 - workAreaId
-                - materialRollId
                 - externalSeriesKey
                 - payloadJson
 
         OrderExecutionSaveManualProcessParamsRequest:
             type: array
             minItems: 1
-            description: Тело `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]`
+            description: Тело `[{ workAreaId, externalSeriesKey, payloadJson, operatorRef }]`
             items:
                 $ref: "#/components/schemas/OrderExecutionSaveManualProcessParamsRequestItem"
 

@@ -13,14 +13,13 @@ export type StageIncomingRollRow = {
 
 export type StageReleasedSeriesRow = {
     id: string;
-    article: string;
+    /** nomenclature_code */
     nomenclature: string;
-    rewind: boolean;
     series: string;
-    netWeight: number;
-    grossWeight: number;
-    unit: string;
-    quantity: number;
+    quantityPrimary: number;
+    uomPrimary: string;
+    quantitySecondary: number;
+    uomSecondary: string;
     fr: string;
     blocked: boolean;
 };

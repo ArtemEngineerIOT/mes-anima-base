@@ -80,7 +80,6 @@ export type MachineSignalsComboboxProps = {
     className?: string;
     fieldLabel?: string;
     placeholder?: string;
-    loadingTitle?: string;
     errorTitle?: string;
     /** Нет доступных сигналов — триггер виден, но недоступен для выбора. */
     disabled?: boolean;
@@ -110,13 +109,13 @@ export function MachineSignalsCombobox({
     className,
     fieldLabel = "Сигнал машины",
     placeholder = "Выберите сигнал машины",
-    loadingTitle = "Загрузка сигналов…",
     errorTitle = "Сигналы с машины",
     disabled = false,
 }: MachineSignalsComboboxProps) {
     const triggerId = useId();
     const [open, setOpen] = useState(false);
     const [sort, setSort] = useState<SortState>({ column: "registered_at", direction: "desc" });
+    const isTriggerDisabled = disabled || isLoading;
 
     const sortedRows = useMemo(
         () => sortReleaseProductionEventList(rows, sort.column, sort.direction),
@@ -154,21 +153,13 @@ export function MachineSignalsCombobox({
     };
 
     const handleClear = () => {
-        if (disabled) {
+        if (isTriggerDisabled) {
             return;
         }
         if (selectedSignalId) {
             onToggleSignal(selectedSignalId);
         }
     };
-
-    if (isLoading) {
-        return (
-            <div className={className}>
-                <Informer tone="system" variant="bordered" size="s" title={loadingTitle} />
-            </div>
-        );
-    }
 
     if (error) {
         return (
@@ -180,9 +171,9 @@ export function MachineSignalsCombobox({
 
     return (
         <Popover
-            open={disabled ? false : open}
+            open={isTriggerDisabled ? false : open}
             onOpenChange={(nextOpen) => {
-                if (!disabled) {
+                if (!isTriggerDisabled) {
                     setOpen(nextOpen);
                 }
             }}
@@ -205,13 +196,13 @@ export function MachineSignalsCombobox({
                             type="button"
                             variant="outline"
                             aria-required
-                            disabled={disabled}
+                            disabled={isTriggerDisabled}
                             className={cn(
                                 "h-9 min-w-0 flex-1 justify-between gap-2 border-emerald-500 bg-emerald-50 px-3 font-normal text-emerald-950",
                                 "hover:bg-emerald-100 hover:text-emerald-950",
                                 "dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-50 dark:hover:bg-emerald-950/60",
                                 "focus-visible:border-emerald-600 focus-visible:ring-emerald-500/40",
-                                disabled && "opacity-50",
+                                isTriggerDisabled && "opacity-50",
                             )}
                         >
                             <span

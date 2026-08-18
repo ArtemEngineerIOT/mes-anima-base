@@ -2,16 +2,15 @@ import { Fragment } from "react";
 
 import type { MaterialsPresenceRow } from "@/features/operator/order-execution/model/materials-writeoff/types";
 import { Button } from "@/shared/ui/kit/button";
-import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
-    dataTableInsetShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
     dataTableShellClassName,
-    dataTableSplitScrollBodyClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -45,6 +44,7 @@ function PresenceStatusPill({ status }: { status: MaterialsPresenceRow["status"]
 }
 
 const presenceActionButtonClassName = "hover:bg-accent hover:text-accent-foreground";
+const presenceHeadCellClassName = dataTablePanelHeadCellClassName;
 
 export function MaterialsWriteoffPresenceTable({
     rows,
@@ -68,30 +68,25 @@ export function MaterialsWriteoffPresenceTable({
                 ) : null}
             </div>
 
-            <DataTableViewport layout="fixed">
-                <Table
-                    className={cn(
-                        dataTableInsetShellClassName,
-                        "min-w-[720px] border-separate border-spacing-0 text-[12px]",
-                    )}
-                >
+            <DataTablePanel>
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[720px]")}>
                     <TableHeader>
                         <TableRow className="hover:!bg-transparent">
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "w-9")} />
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                            <TableHead className={cn(presenceHeadCellClassName, "w-9")} />
+                            <TableHead className={presenceHeadCellClassName}>
                                 Номенклатура
                             </TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Серия</TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>
+                            <TableHead className={presenceHeadCellClassName}>Серия</TableHead>
+                            <TableHead className={presenceHeadCellClassName}>
                                 Время сканирования
                             </TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Статус</TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                            <TableHead className={presenceHeadCellClassName}>Статус</TableHead>
+                            <TableHead className={cn(presenceHeadCellClassName, "text-right")}>
                                 Действие
                             </TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody className={dataTableSplitScrollBodyClassName}>
+                    <TableBody>
                         {isLoading ? (
                             <TableRow>
                                 <TableCell
@@ -260,7 +255,7 @@ export function MaterialsWriteoffPresenceTable({
                         )}
                     </TableBody>
                 </Table>
-            </DataTableViewport>
+            </DataTablePanel>
         </div>
     );
 }

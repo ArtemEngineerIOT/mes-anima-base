@@ -111,30 +111,45 @@ export function MachineDataPanel({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            rows.map((row) => (
-                                <TableRow key={row.characteristic}>
-                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                        {row.characteristic}
-                                    </TableCell>
-                                    <TableCell className={dataTableBodyCellClassName}>
-                                        {row.valueDisplay?.pill ? (
-                                            <InformerPill
-                                                tone={row.valueDisplay.tone}
-                                                variant={row.valueDisplay.variant ?? "filled"}
-                                            >
-                                                {row.value}
-                                            </InformerPill>
-                                        ) : (
-                                            row.value
-                                        )}
-                                    </TableCell>
-                                    {showUnitColumn ? (
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {row.unit}
+                            rows.map((row) => {
+                                const keepOnOneLine = Boolean(row.valueDisplay?.pill);
+                                return (
+                                    <TableRow key={row.characteristic}>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "text-muted-foreground",
+                                                keepOnOneLine && "whitespace-nowrap",
+                                            )}
+                                        >
+                                            {row.characteristic}
                                         </TableCell>
-                                    ) : null}
-                                </TableRow>
-                            ))
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                keepOnOneLine && "whitespace-nowrap",
+                                            )}
+                                        >
+                                            {row.valueDisplay?.pill ? (
+                                                <InformerPill
+                                                    className="whitespace-nowrap"
+                                                    tone={row.valueDisplay.tone}
+                                                    variant={row.valueDisplay.variant ?? "filled"}
+                                                >
+                                                    {row.value}
+                                                </InformerPill>
+                                            ) : (
+                                                row.value
+                                            )}
+                                        </TableCell>
+                                        {showUnitColumn ? (
+                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                                {row.unit}
+                                            </TableCell>
+                                        ) : null}
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>

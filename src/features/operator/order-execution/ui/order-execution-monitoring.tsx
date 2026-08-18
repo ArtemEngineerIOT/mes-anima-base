@@ -11,6 +11,7 @@ type OrderExecutionMonitoringProps = {
     workAreaId?: string;
     lineMetersSilentReloadRef?: MutableRefObject<(() => void) | null>;
     rollTablesSilentReloadRef?: MutableRefObject<(() => void) | null>;
+    stageEventsSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function OrderExecutionMonitoring({
@@ -18,6 +19,7 @@ export function OrderExecutionMonitoring({
     workAreaId,
     lineMetersSilentReloadRef,
     rollTablesSilentReloadRef,
+    stageEventsSilentReloadRef,
 }: OrderExecutionMonitoringProps) {
     return (
         <Card className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden py-0">
@@ -28,13 +30,14 @@ export function OrderExecutionMonitoring({
             </CardHeader>
 
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-                <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 pb-4 pt-3">
+                <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto overscroll-contain px-4 pb-4 pt-3">
                     <OrderExecutionMonitoringContent
                         machineId={machineId}
                         workAreaId={workAreaId}
                         showShowAllButton
                         lineMetersSilentReloadRef={lineMetersSilentReloadRef}
                         rollTablesSilentReloadRef={rollTablesSilentReloadRef}
+                        stageEventsSilentReloadRef={stageEventsSilentReloadRef}
                     />
                 </div>
             </CardContent>

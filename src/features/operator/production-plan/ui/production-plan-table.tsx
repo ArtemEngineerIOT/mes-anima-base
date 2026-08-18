@@ -37,13 +37,13 @@ const COLUMN_COUNT = 13;
  */
 const PRODUCTION_PLAN_COLUMN_WIDTHS = [
     "3%",
-    "8%",
+    "9%",
     "8%",
     "11%",
     "8%",
     "5%",
     "5%",
-    "18%",
+    "17%",
     "5%",
     "5%",
     "6%",
@@ -72,6 +72,7 @@ const tableBodyCellClassName = cn(dataTableBodyCellClassName, "px-2 py-2 text-[1
 
 /** Доп. классы колонок — одинаковые на th и td. */
 const selectionColClassName = "shrink-0 overflow-hidden";
+const statusHeadColClassName = "shrink-0 whitespace-nowrap";
 const statusColClassName = "shrink-0 overflow-hidden";
 const dateColClassName = "shrink-0 overflow-hidden whitespace-nowrap";
 const clientColClassName = "shrink-0 overflow-hidden";
@@ -143,7 +144,7 @@ export const ProductionPlanTable = memo(function ProductionPlanTable({
                             aria-label="select"
                         />
                         <TableHead
-                            className={cn(tableHeadCellClassName, statusColClassName)}
+                            className={cn(tableHeadCellClassName, statusHeadColClassName)}
                             style={productionPlanColumnWidthStyle(1)}
                         >
                             <ProductionPlanStatusColumnHead

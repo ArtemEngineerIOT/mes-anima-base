@@ -1,13 +1,13 @@
 import { Button } from "@/shared/ui/kit/button";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Input } from "@/shared/ui/kit/input";
 import { Informer } from "@/shared/ui/kit/informer";
 import { cn } from "@/shared/lib/css";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import {
     dataTableBodyCellClassName,
-    dataTableInsetShellClassName,
-    dataTableStickyHeadCellClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -73,21 +73,15 @@ export function OrderExecutionProcessControl({
                 </div>
             </div>
 
-            <div className={dataTableViewportShellClassName}>
-                <div className="min-w-0 overflow-x-auto">
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "min-w-[480px] border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
-                        <TableHeader className="bg-muted/40">
+            <DataTablePanel>
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[480px]")}>
+                        <TableHeader>
                             <TableRow className="hover:!bg-transparent">
-                                <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[70%]")}>
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[70%]")}>
                                     Участок
                                 </TableHead>
                                 <TableHead
-                                    className={cn(dataTableStickyHeadCellClassName, "w-[30%] text-center")}
+                                    className={cn(dataTablePanelHeadCellClassName, "w-[30%] text-center")}
                                 >
                                     Признак
                                 </TableHead>
@@ -124,9 +118,8 @@ export function OrderExecutionProcessControl({
                                 </TableRow>
                             ))}
                         </TableBody>
-                    </Table>
-                </div>
-            </div>
+                </Table>
+            </DataTablePanel>
 
             {infoBlocks.map((block) => (
                 <Informer

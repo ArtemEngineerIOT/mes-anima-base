@@ -4,6 +4,7 @@ import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 import { useSession } from "@/shared/model/session";
 
+import { useSyncLoadingOnEnable } from "./use-loading-on-enable";
 import { mapStageCompletionInitPayload } from "./map-stage-completion-init-payload";
 import { mapStageCompletionSubmitPayload } from "./map-stage-completion-submit-payload";
 import { resolveReleaseOperatorRef } from "./release/resolve-release-operator-ref";
@@ -12,15 +13,22 @@ import {
     type StageCompletionSnapshot,
 } from "./stage-completion-types";
 
+type LoadOptions = {
+    silent?: boolean;
+};
+
 type UseStageCompletionOptions = {
     workAreaId?: string;
     enabled: boolean;
+    /** Готовность из `stage_completion_block` / STOMP; иначе — `can_complete` из init */
+    canComplete?: boolean;
 };
 
-export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOptions) {
+export function useStageCompletion({ workAreaId, enabled, canComplete }: UseStageCompletionOptions) {
     const { session } = useSession();
     const [snapshot, setSnapshot] = useState<StageCompletionSnapshot>(EMPTY_STAGE_COMPLETION_SNAPSHOT);
-    const [isInitLoading, setIsInitLoading] = useState(false);
+    const [isInitLoading, setIsInitLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsInitLoading);
     const [initError, setInitError] = useState<string | null>(null);
     const [stageCompleted, setStageCompleted] = useState(false);
     const [comment, setComment] = useState("");
@@ -43,16 +51,20 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
     const submitStageCompletionRef = useRef(submitStageCompletion);
     submitStageCompletionRef.current = submitStageCompletion;
 
-    const loadInit = useCallback(async () => {
+    const loadInit = useCallback(async (options?: LoadOptions) => {
+        const silent = options?.silent ?? false;
         const trimmedWorkAreaId = workAreaId?.trim();
         if (!trimmedWorkAreaId) {
             setSnapshot(EMPTY_STAGE_COMPLETION_SNAPSHOT);
             setInitError("Не удалось определить workAreaId этапа");
+            setIsInitLoading(false);
             return;
         }
 
-        setIsInitLoading(true);
-        setInitError(null);
+        if (!silent) {
+            setIsInitLoading(true);
+            setInitError(null);
+        }
 
         try {
             const payload = await fetchStageCompletionInitRef.current({
@@ -60,15 +72,24 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
             });
             const mapped = mapStageCompletionInitPayload(payload);
             setSnapshot(mapped);
-            setExpandedEventIds(new Set());
+            if (!silent) {
+                setExpandedEventIds(new Set());
+            }
+            if (silent) {
+                setInitError(null);
+            }
         } catch (error) {
-            setSnapshot(EMPTY_STAGE_COMPLETION_SNAPSHOT);
-            setExpandedEventIds(new Set());
-            setInitError(
-                error instanceof Error ? error.message : "Не удалось загрузить данные завершения этапа",
-            );
+            if (!silent) {
+                setSnapshot(EMPTY_STAGE_COMPLETION_SNAPSHOT);
+                setExpandedEventIds(new Set());
+                setInitError(
+                    error instanceof Error ? error.message : "Не удалось загрузить данные завершения этапа",
+                );
+            }
         } finally {
-            setIsInitLoading(false);
+            if (!silent) {
+                setIsInitLoading(false);
+            }
         }
     }, [workAreaId]);
 
@@ -80,7 +101,8 @@ export function useStageCompletion({ workAreaId, enabled }: UseStageCompletionOp
         void loadInit();
     }, [enabled, loadInit]);
 
-    const canSubmitPrerequisites = snapshot.canComplete && !stageCompleted && !isSubmitting;
+    const resolvedCanComplete = canComplete ?? snapshot.canComplete;
+    const canSubmitPrerequisites = resolvedCanComplete && !stageCompleted && !isSubmitting;
     const canCompleteStage = canSubmitPrerequisites && !snapshot.hasSuspendedStageOnMachine;
     const completionHints = snapshot.blockingIssues.map((issue) => issue.message);
 

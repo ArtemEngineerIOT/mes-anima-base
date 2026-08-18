@@ -62,7 +62,7 @@ function pickDefaultMachineByAllowedResources(
 export function useOrderExecution(mockMachines: MachineData[] = ORDER_EXECUTION_MOCK) {
     const { session, isBootstrapLoading } = useSession();
     const [machineOptions, setMachineOptions] = useState<ProductionPlanMachine[]>([]);
-    const [isMachineOptionsLoading, setIsMachineOptionsLoading] = useState(false);
+    const [isMachineOptionsLoading, setIsMachineOptionsLoading] = useState(true);
     const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
     const [current, setCurrent] = useState<MachineData>(() => buildOrderExecutionEmptyMachine("—"));
     const [isMachineDataLoading, setIsMachineDataLoading] = useState(false);
@@ -70,6 +70,8 @@ export function useOrderExecution(mockMachines: MachineData[] = ORDER_EXECUTION_
 
     const mockMachinesRef = useRef(mockMachines);
     mockMachinesRef.current = mockMachines;
+    const selectedMachineRef = useRef(selectedMachine);
+    selectedMachineRef.current = selectedMachine;
 
     const allowedResourceCodes = session?.mesBootstrap?.resourceRights.allowedResourceCodes ?? [];
     const allowedResourceCodesRef = useRef(allowedResourceCodes);
@@ -98,16 +100,20 @@ export function useOrderExecution(mockMachines: MachineData[] = ORDER_EXECUTION_
         try {
             const payload = await fetchProductionPlanMachinesRef.current({ body: [] });
             const options = mapProductionPlanMachinesPayload(payload);
+            const prev = selectedMachineRef.current;
+            const next =
+                prev && options.some((item) => item.resourceCode === prev)
+                    ? prev
+                    : pickDefaultMachineByAllowedResources(options, allowedResourceCodesRef.current);
             setMachineOptions(options);
-            setSelectedMachine((prev) => {
-                if (prev && options.some((item) => item.resourceCode === prev)) {
-                    return prev;
-                }
-                return pickDefaultMachineByAllowedResources(options, allowedResourceCodesRef.current);
-            });
+            setSelectedMachine(next);
+            if (next && next !== prev) {
+                setIsMachineDataLoading(true);
+            }
         } catch {
             setMachineOptions([]);
             setSelectedMachine(null);
+            setIsMachineDataLoading(false);
         } finally {
             setIsMachineOptionsLoading(false);
         }
@@ -136,6 +142,16 @@ export function useOrderExecution(mockMachines: MachineData[] = ORDER_EXECUTION_
         }
     }, []);
 
+    const selectMachine = useCallback((resourceCode: string) => {
+        if (resourceCode === selectedMachineRef.current) {
+            return;
+        }
+
+        setFetchError(null);
+        setIsMachineDataLoading(true);
+        setSelectedMachine(resourceCode);
+    }, []);
+
     useEffect(() => {
         if (isBootstrapLoading) {
             return;
@@ -158,7 +174,7 @@ export function useOrderExecution(mockMachines: MachineData[] = ORDER_EXECUTION_
         isMachineOptionsLoading,
         isMachineDataLoading,
         selectedMachine,
-        setSelectedMachine,
+        setSelectedMachine: selectMachine,
         current,
         fetchError,
     };

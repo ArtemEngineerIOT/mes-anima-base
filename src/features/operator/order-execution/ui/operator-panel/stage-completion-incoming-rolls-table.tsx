@@ -1,17 +1,19 @@
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
-    dataTableInsetShellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
 import type { StageIncomingRollRow } from "../../model/stage-completion-types";
+
+const incomingRollHeadCellClassName = cn(dataTablePanelHeadCellClassName, "whitespace-nowrap");
+const incomingRollBodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
 
 function formatNumber(value: number): string {
     return value.toLocaleString("ru-RU");
@@ -29,26 +31,33 @@ export function StageCompletionIncomingRollsTable({ rows }: StageCompletionIncom
     return (
         <div className="grid gap-2">
             <div className={cnSectionBlockTitle()}>Входящие рулоны</div>
-            <div className={dataTableViewportShellClassName}>
-                <div className="min-w-0 overflow-x-auto">
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "min-w-[760px] border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
+            <DataTablePanel
+                footer={
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                }
+            >
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[760px]")}>
                         <TableHeader>
                             <TableRow className="hover:!bg-transparent">
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Номенклатура</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Номенклатура</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Серия</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                <TableHead className={incomingRollHeadCellClassName}>Номенклатура</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>Тип</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>Серия</TableHead>
+                                <TableHead className={cn(incomingRollHeadCellClassName, "text-right")}>
                                     Количество
                                 </TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм.</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Машина</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Статус</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>FR</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>Ед. изм.</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>Машина</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>Статус</TableHead>
+                                <TableHead className={incomingRollHeadCellClassName}>FR</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -62,16 +71,22 @@ export function StageCompletionIncomingRollsTable({ rows }: StageCompletionIncom
                                                 : undefined
                                         }
                                     >
-                                        <TableCell className={dataTableBodyCellClassName}>{row.material}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.nomenclature}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.series}</TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        <TableCell className={incomingRollBodyCellClassName} title={row.material}>
+                                            {row.material}
+                                        </TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName} title={row.nomenclature}>
+                                            {row.nomenclature}
+                                        </TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName} title={row.series}>
+                                            {row.series}
+                                        </TableCell>
+                                        <TableCell className={cn(incomingRollBodyCellClassName, "text-right")}>
                                             {formatNumber(row.quantity)}
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.unit}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.machine}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.status}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.fr}</TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName}>{row.unit}</TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName}>{row.machine}</TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName}>{row.status}</TableCell>
+                                        <TableCell className={incomingRollBodyCellClassName}>{row.fr}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -86,20 +101,7 @@ export function StageCompletionIncomingRollsTable({ rows }: StageCompletionIncom
                             )}
                         </TableBody>
                     </Table>
-                </div>
-                <div className={dataTableViewportFooterClassName}>
-                    <DataTablePaginationFooter
-                        totalCount={pagination.totalCount}
-                        rangeStart={pagination.rangeStart}
-                        rangeEnd={pagination.rangeEnd}
-                        page={pagination.page}
-                        totalPages={pagination.totalPages}
-                        pageSize={pageSize}
-                        onPageChange={setPage}
-                        onPageSizeChange={setPageSize}
-                    />
-                </div>
-            </div>
+            </DataTablePanel>
         </div>
     );
 }

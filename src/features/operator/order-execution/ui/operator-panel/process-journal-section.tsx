@@ -3,14 +3,14 @@ import { Fragment, useMemo, useState } from "react";
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Informer } from "@/shared/ui/kit/informer";
 import {
     dataTableBodyCellClassName,
     dataTableInsetShellClassName,
-    dataTableStickyHeadCellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
     type DataTablePageSize,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
@@ -19,7 +19,7 @@ import { useEventRegistrationContext } from "../../model/event-registration/even
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 
 const expandColumnClassName = "w-10";
-const headCellClassName = dataTableStickyHeadCellClassName;
+const headCellClassName = dataTablePanelHeadCellClassName;
 
 function formatNumber(value: number): string {
     return new Intl.NumberFormat("ru-RU").format(value);
@@ -68,6 +68,7 @@ export function OrderExecutionProcessJournalSection({
         <OrderExecutionCollapsibleSection
             title="Журнал процесса"
             defaultOpen={false}
+            isContentReady={!isJournalLoading}
             onExpandedChange={onExpandedChange}
         >
             <div className="grid gap-3">
@@ -75,19 +76,22 @@ export function OrderExecutionProcessJournalSection({
                     <Informer tone="alert" variant="bordered" size="s" title="Ошибка загрузки" description={journalLoadError} />
                 ) : null}
 
-                {isJournalLoading ? (
-                    <Informer tone="system" variant="bordered" size="s" title="Загрузка журнала процесса…" />
-                ) : null}
-
-                <div className={dataTableViewportShellClassName}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "min-w-[640px] border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
+                <DataTablePanel
+                    footer={
+                        <DataTablePaginationFooter
+                            totalCount={pagination.totalCount}
+                            rangeStart={pagination.rangeStart}
+                            rangeEnd={pagination.rangeEnd}
+                            page={pagination.page}
+                            totalPages={pagination.totalPages}
+                            pageSize={pageSize}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    }
+                >
+                    <Table className={cn(dataTablePanelTableClassName, "min-w-[640px]")}>
+                            <TableHeader>
                                 <TableRow className="hover:!bg-transparent">
                                     <TableHead
                                         className={cn(headCellClassName, expandColumnClassName)}
@@ -142,10 +146,10 @@ export function OrderExecutionProcessJournalSection({
                                                             <Table
                                                                 className={cn(
                                                                     dataTableInsetShellClassName,
-                                                                    "border-separate border-spacing-0 text-[12px]",
+                                                                    "border-collapse text-[12px]",
                                                                 )}
                                                             >
-                                                                <TableHeader className="bg-muted/40">
+                                                                <TableHeader>
                                                                     <TableRow className="hover:!bg-transparent">
                                                                         <TableHead className={headCellClassName}>
                                                                             Параметр
@@ -194,21 +198,8 @@ export function OrderExecutionProcessJournalSection({
                                 </TableRow>
                             )}
                             </TableBody>
-                        </Table>
-                    </div>
-                    <div className={dataTableViewportFooterClassName}>
-                        <DataTablePaginationFooter
-                            totalCount={pagination.totalCount}
-                            rangeStart={pagination.rangeStart}
-                            rangeEnd={pagination.rangeEnd}
-                            page={pagination.page}
-                            totalPages={pagination.totalPages}
-                            pageSize={pageSize}
-                            onPageChange={handlePageChange}
-                            onPageSizeChange={handlePageSizeChange}
-                        />
-                    </div>
-                </div>
+                    </Table>
+                </DataTablePanel>
 
                 <div className="text-right text-[12px] font-bold uppercase text-foreground">
                     Метраж. Итого: {totalLengthLabel}

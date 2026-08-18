@@ -4,6 +4,9 @@ export type TechnologicalParamHistoryEntry = {
     value: string;
 };
 
+/** Сколько колонок срезов видно одновременно (кроме «Старт»). */
+export const PROCESS_PARAMS_SLICE_WINDOW_SIZE = 2;
+
 export function getLastHistoryEntries(
     history: TechnologicalParamHistoryEntry[],
     count: number,
@@ -13,6 +16,55 @@ export function getLastHistoryEntries(
     }
 
     return history.slice(-count);
+}
+
+export function countLaterHistoryEntries(history: TechnologicalParamHistoryEntry[]): number {
+    return Math.max(0, history.length - 1);
+}
+
+export function resolveMaxLaterHistoryCount(
+    historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>,
+): number {
+    let max = 0;
+    for (const entries of Object.values(historyByRowId)) {
+        max = Math.max(max, countLaterHistoryEntries(entries));
+    }
+    return max;
+}
+
+export function clampSliceWindowOffset(
+    laterCount: number,
+    offset: number,
+    windowSize: number = PROCESS_PARAMS_SLICE_WINDOW_SIZE,
+): number {
+    const maxOffset = Math.max(0, laterCount - windowSize);
+    return Math.min(Math.max(0, offset), maxOffset);
+}
+
+/** Смещение окна на последние видимые срезы (кроме «Старт»). */
+export function lastSliceWindowOffset(
+    laterCount: number,
+    windowSize: number = PROCESS_PARAMS_SLICE_WINDOW_SIZE,
+): number {
+    return clampSliceWindowOffset(laterCount, laterCount, windowSize);
+}
+
+/** Первые `count` срезов по порядку `slices[]`, недостающие колонки справа — пустые. */
+export function takeSequentialHistoryEntries(
+    history: TechnologicalParamHistoryEntry[],
+    count: number,
+): Array<TechnologicalParamHistoryEntry | null> {
+    return Array.from({ length: count }, (_, index) => history[index] ?? null);
+}
+
+/** Окно из `windowSize` срезов начиная с `offset` (после колонки «Старт»). */
+export function takeSliceWindowEntries(
+    laterHistory: TechnologicalParamHistoryEntry[],
+    offset: number,
+    windowSize: number = PROCESS_PARAMS_SLICE_WINDOW_SIZE,
+): Array<TechnologicalParamHistoryEntry | null> {
+    const clamped = clampSliceWindowOffset(laterHistory.length, offset, windowSize);
+    return takeSequentialHistoryEntries(laterHistory.slice(clamped), windowSize);
 }
 
 export function padHistoryEntries(
