@@ -7,8 +7,8 @@ export function OrderExecutionEmpty() {
     return (
         <Informer
             tone="system"
-            variant="filled"
-            size="m"
+            variant="bordered"
+            size="s"
             title="На выбранной машине отсутствует назначенный этап"
             description={
                 <>

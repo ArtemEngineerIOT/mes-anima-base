@@ -9,11 +9,24 @@ const STAGE_EVENT_ROW_ORDER: Record<string, number> = {
 };
 
 function readTableRows(value: unknown): unknown[] {
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return [];
+        }
+
+        try {
+            return readTableRows(JSON.parse(trimmed) as unknown);
+        } catch {
+            return [];
+        }
+    }
+
     if (Array.isArray(value)) {
         return value;
     }
 
-    if (value && typeof value === "object" && !Array.isArray(value)) {
+    if (value && typeof value === "object") {
         const obj = value as Record<string, unknown>;
 
         if (Array.isArray(obj.records)) {
@@ -35,7 +48,11 @@ function readEventSummaryRows(resultItem: Record<string, unknown>): unknown[] {
     }
 
     const nested = readTableRows(resultItem.event_summary ?? resultItem.eventSummary);
-    return nested;
+    if (nested.length > 0) {
+        return nested;
+    }
+
+    return readTableRows(resultItem.table);
 }
 
 function mapStageEventRow(row: Record<string, unknown>): MonitoringStageEventRow | null {

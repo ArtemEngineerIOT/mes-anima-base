@@ -473,8 +473,9 @@ postGetLastProcessParamsSlices:
     summary: Срезы и стартовые параметры ТП (JB Process control)
     description: >
         BFF `users.admin.models.processControlJbBff.getLastProcessParamsSlices`.
-        Экран «Технологические параметры машины» — заполнение таблиц при открытии
-        (`slices`, `machine_params`, `print_slots`).
+        Экран «Технологические параметры машины» — заполнение таблиц при открытии.
+        В `result[]`: каталог `machine_params` / `print_slots` (норматив) и `slices[]`
+        с фактическими `machine_params[].value` / `print_slots[].value`.
         Тело: `[{ workAreaId }]`.
     security:
         - bearerAuth: []
@@ -552,7 +553,8 @@ postSaveManualProcessParams:
     description: >
         BFF `users.admin.models.processControlJbBff.saveManualProcessParams`.
         Экран «Технологические параметры машины» — кнопка «Сохранить» в ручном режиме.
-        Тело: `[{ workAreaId, materialRollId, externalSeriesKey, payloadJson, operatorRef }]`.
+        Тело: `[{ workAreaId, externalSeriesKey, payloadJson, operatorRef }]`.
+        Оператор вводит серию рулона; `materialRollId` не передаём.
     security:
         - bearerAuth: []
     requestBody:

@@ -10,14 +10,13 @@ export const orderExecutionSaveManualProcessParamsHandlers = [
             (await request.json().catch(() => [])) as ApiSchemas["OrderExecutionSaveManualProcessParamsRequest"];
         const item = body?.[0];
         const workAreaId = item?.workAreaId?.trim() ?? "";
-        const materialRollId = item?.materialRollId?.trim() ?? "";
         const externalSeriesKey = item?.externalSeriesKey?.trim() ?? "";
         const payloadJson = item?.payloadJson?.trim() ?? "";
         const operatorRef = item?.operatorRef?.trim() ?? "";
 
-        if (!workAreaId || !materialRollId || !externalSeriesKey || !payloadJson) {
+        if (!workAreaId || !externalSeriesKey || !payloadJson) {
             return HttpResponse.json(
-                { message: "Укажите workAreaId, materialRollId, externalSeriesKey и payloadJson" },
+                { message: "Укажите workAreaId, externalSeriesKey и payloadJson" },
                 { status: 400 },
             );
         }

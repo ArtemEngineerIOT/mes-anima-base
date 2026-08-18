@@ -177,6 +177,17 @@ export function OrderExecutionMaterialsWriteoff({
         void search();
     };
 
+    const isSectionLoading =
+        enabled &&
+        (isSignalsLoading || isPresenceLoading || stageRegistry.isLoading) &&
+        signalList.length === 0 &&
+        presenceRows.length === 0 &&
+        stageRegistry.stageOperations.length === 0;
+
+    if (isSectionLoading) {
+        return null;
+    }
+
     return (
         <div className="flex flex-col gap-4">
             {enabled && hasMachineSignals ? (

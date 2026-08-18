@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import {
     mapEventReleaseProductionPayload,
 } from "../release/map-event-release-production-payload";
@@ -33,7 +34,8 @@ export function useListMaterialSignals({
     const [snapshot, setSnapshot] = useState<ReleaseProductionEventSnapshot>(
         RELEASE_EMPTY_PRODUCTION_EVENT,
     );
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
     const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
 

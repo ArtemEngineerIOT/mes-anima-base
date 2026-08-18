@@ -74,14 +74,17 @@ export const dataTableFooterSelectClassName =
  * Ячейка шапки: те же размер/начертание, что у заголовка блока (`section-block-title`), + отступы ячейки.
  * Эталон использования: `material-order-form-panel.tsx`.
  */
-export const dataTableHeadCellClassName = cn(sectionBlockTitleClassName, "h-auto px-3 py-2");
+export const dataTableHeadCellClassName = cn(
+    sectionBlockTitleClassName,
+    "h-auto px-3 py-2",
+);
 
 /**
  * Ячейка шапки внутри {@link dataTableScrollViewportClassName}: липкая при вертикальном скролле.
  */
 export const dataTableStickyHeadCellClassName = cn(
     dataTableHeadCellClassName,
-    "sticky top-0 z-10 bg-muted/40 shadow-[inset_0_-1px_0_var(--border)]",
+    "sticky top-0 z-10 bg-muted/40",
 );
 
 /**
@@ -89,7 +92,7 @@ export const dataTableStickyHeadCellClassName = cn(
  */
 export const dataTableStickyHeadCellOnBackgroundClassName = cn(
     dataTableHeadCellClassName,
-    "sticky top-0 z-10 bg-background shadow-[inset_0_-1px_0_var(--border)]",
+    "sticky top-0 z-10 bg-background",
 );
 
 /**
@@ -104,6 +107,40 @@ export const dataTableStickyFootCellClassName = cn(
  */
 export const dataTableBodyCellClassName =
     "px-3 py-2 font-normal text-sm text-foreground align-middle";
+
+/**
+ * Оболочка {@link DataTablePanel}: рамка без фиксированной высоты tbody.
+ * Живёт параллельно {@link DataTableViewport} (split-scroll шапка/тело).
+ */
+export const dataTablePanelShellClassName =
+    "data-table-panel-shell flex min-w-0 max-w-full flex-col overflow-hidden rounded-sm border bg-background";
+
+/** Горизонтальный скролл внутри {@link DataTablePanel}, без split thead/tbody. */
+export const dataTablePanelScrollClassName =
+    "data-table-panel-scroll min-w-0 w-full overflow-x-auto overflow-y-hidden";
+
+/**
+ * `Table` внутри {@link DataTablePanel}.
+ * Линии и hover — в `index.css` (`.kit-table`): только ячейки, thead/tbody схлопнуты через `display: contents`.
+ */
+export const dataTablePanelTableClassName = cn(
+    dataTableInsetShellClassName,
+    "min-w-full text-[12px]",
+);
+
+/** Ячейка шапки {@link DataTablePanel}. */
+export const dataTablePanelHeadCellClassName = cn(dataTableHeadCellClassName, "bg-muted/40");
+
+/** Футер {@link DataTablePanel} — тот же визуал, что у {@link DataTableViewport}. */
+export const dataTablePanelFooterClassName = dataTableViewportFooterClassName;
+
+export function cnDataTablePanelTable(...classes: (string | undefined | false)[]): string {
+    return cn(dataTablePanelTableClassName, ...classes);
+}
+
+export function cnDataTablePanelHeadCell(...classes: (string | undefined | false)[]): string {
+    return cn(dataTablePanelHeadCellClassName, ...classes);
+}
 
 export function cnDataTableShell(...classes: (string | undefined | false)[]): string {
     return cn(dataTableShellClassName, ...classes);

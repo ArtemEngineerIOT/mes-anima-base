@@ -4,6 +4,7 @@ import type { MachineData, MachineId } from "../model/types";
 import type { ReleaseProductionEventsSummarySnapshot } from "../model/release/production-events-summary/types";
 import type { RollWriteOffEventsSummarySnapshot } from "../model/materials-writeoff/raw-events-summary/types";
 import type { UnprocessedSignalsSummarySnapshot } from "../model/event-registration/unprocessed-signals-summary/types";
+import type { StageCompletionReadinessSnapshot } from "../model/stage-completion-readiness/types";
 import { EventRegistrationProvider } from "../model/event-registration/event-registration-context";
 import {
     OrderExecutionEventRegistrationSection,
@@ -24,6 +25,7 @@ type OrderExecutionOperatorPanelProps = {
     releaseBlockSummary?: ReleaseProductionEventsSummarySnapshot | null;
     writeOffBlockSummary?: RollWriteOffEventsSummarySnapshot | null;
     machineSignalsBlockSummary?: UnprocessedSignalsSummarySnapshot | null;
+    stageCompletionBlockSummary?: StageCompletionReadinessSnapshot | null;
     onMonitoringSummaryReload?: () => void;
     /** После успешного registerRelease — silent-reload мониторинга / прогресса */
     onReleaseRegistered?: () => void;
@@ -38,6 +40,7 @@ export function OrderExecutionOperatorPanel({
     releaseBlockSummary,
     writeOffBlockSummary,
     machineSignalsBlockSummary,
+    stageCompletionBlockSummary,
     onMonitoringSummaryReload,
     onReleaseRegistered,
 }: OrderExecutionOperatorPanelProps) {
@@ -50,8 +53,9 @@ export function OrderExecutionOperatorPanel({
             workAreaId={workAreaId}
             enabled={eventRegistrationExpanded}
             journalEnabled={processJournalExpanded}
+            onMonitoringSummaryReload={onMonitoringSummaryReload}
         >
-            <div className="min-h-0 flex flex-col gap-3 app-scroll overflow-auto">
+            <div className="app-scroll flex h-full min-h-0 flex-col gap-3 overflow-auto overscroll-contain [overflow-anchor:none]">
                 <OrderExecutionJbSection
                     jb={operator.jb}
                     workAreaId={workAreaId}
@@ -80,7 +84,11 @@ export function OrderExecutionOperatorPanel({
                     onReleaseRegistered={onReleaseRegistered}
                 />
 
-                <OrderExecutionStageCompletionSection workAreaId={workAreaId} />
+                <OrderExecutionStageCompletionSection
+                    workAreaId={workAreaId}
+                    initialReadiness={stageCompletionBlockSummary}
+                    readinessEnabled={Boolean(workAreaId?.trim())}
+                />
             </div>
         </EventRegistrationProvider>
     );

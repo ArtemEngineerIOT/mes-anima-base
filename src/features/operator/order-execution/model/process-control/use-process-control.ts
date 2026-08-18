@@ -4,6 +4,7 @@ import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 import { useSession } from "@/shared/model/session";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import { resolveReleaseOperatorRef } from "../release/resolve-release-operator-ref";
 import { buildProcessControlPayloadJson } from "./build-save-process-control-body";
 import {
@@ -37,7 +38,8 @@ export function useProcessControl({ workAreaId, enabled = true }: UseProcessCont
     const { session } = useSession();
     const [form, setForm] = useState<ProcessControlFormState>(createEmptyProcessControlForm);
     const [updatedAt, setUpdatedAt] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [saveFeedback, setSaveFeedback] = useState<ProcessControlSaveFeedback | null>(null);

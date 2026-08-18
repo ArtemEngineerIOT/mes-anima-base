@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { cn } from "@/shared/lib/css";
@@ -9,6 +9,8 @@ import { dataTableHeadCellClassName } from "@/shared/ui/kit/styles/data-table-st
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import { Informer } from "@/shared/ui/kit/informer";
 
+import type { StageCompletionReadinessSnapshot } from "../../model/stage-completion-readiness/types";
+import { useStageCompletionReadiness } from "../../model/stage-completion-readiness/use-stage-completion-readiness";
 import { useStageCompletion } from "../../model/use-stage-completion";
 import { OrderExecutionCollapsibleSection } from "../collapsible-section";
 import { StageCompletionEventJournalTable } from "./stage-completion-event-journal-table";
@@ -16,24 +18,71 @@ import { StageCompletionIncomingRollsTable } from "./stage-completion-incoming-r
 import { StageCompletionPendingEventsTable } from "./stage-completion-pending-events-table";
 import { StageCompletionReleasedSeriesTable } from "./stage-completion-released-series-table";
 
+const STAGE_COMPLETION_SILENT_RELOAD_DEBOUNCE_MS = 300;
+
 type OrderExecutionStageCompletionSectionProps = {
     workAreaId?: string;
+    initialReadiness?: StageCompletionReadinessSnapshot | null;
+    readinessEnabled: boolean;
 };
 
-export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecutionStageCompletionSectionProps) {
+export function OrderExecutionStageCompletionSection({
+    workAreaId,
+    initialReadiness = null,
+    readinessEnabled,
+}: OrderExecutionStageCompletionSectionProps) {
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
-    const m = useStageCompletion({ workAreaId, enabled: expanded });
-    const { snapshot } = m;
+    const initSilentReloadRef = useRef<(() => void) | null>(null);
+    const silentReloadDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const headerTone =
-        m.completionHints.length > 0 && !m.stageCompleted
-            ? ("alert" as const)
-            : m.stageCompleted
-              ? ("success" as const)
-              : undefined;
-    const headerCount =
-        m.stageCompleted ? undefined : m.completionHints.length > 0 ? m.completionHints.length : undefined;
+    useEffect(() => {
+        return () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+        };
+    }, []);
+
+    const { canComplete, blockerCount, blockingIssues, snapshot: readiness } = useStageCompletionReadiness({
+        workAreaId,
+        initialSnapshot: initialReadiness,
+        enabled: readinessEnabled,
+        onReadinessChanged: () => {
+            if (silentReloadDebounceTimerRef.current !== null) {
+                clearTimeout(silentReloadDebounceTimerRef.current);
+            }
+
+            silentReloadDebounceTimerRef.current = setTimeout(() => {
+                initSilentReloadRef.current?.();
+            }, STAGE_COMPLETION_SILENT_RELOAD_DEBOUNCE_MS);
+        },
+    });
+
+    const m = useStageCompletion({ workAreaId, enabled: expanded, canComplete });
+    const { snapshot, reloadInit } = m;
+
+    useEffect(() => {
+        if (!expanded) {
+            initSilentReloadRef.current = null;
+            return;
+        }
+
+        initSilentReloadRef.current = () => {
+            void reloadInit({ silent: true });
+        };
+
+        return () => {
+            initSilentReloadRef.current = null;
+        };
+    }, [expanded, reloadInit]);
+
+    const headerTone = m.stageCompleted
+        ? ("success" as const)
+        : blockerCount > 0
+          ? ("alert" as const)
+          : undefined;
+    const headerCount = m.stageCompleted ? undefined : blockerCount > 0 ? blockerCount : undefined;
 
     const handleCompleteStageClick = () => {
         if (!m.canSubmitPrerequisites || m.stageCompleted) return;
@@ -51,13 +100,13 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
     };
 
     const blockingDescription =
-        m.completionHints.length === 1
-            ? m.completionHints[0]
-            : m.completionHints.length > 1
+        blockingIssues.length === 1
+            ? blockingIssues[0].message
+            : blockingIssues.length > 1
               ? (
                     <ul className="list-disc space-y-1 pl-4">
-                        {m.completionHints.map((hint) => (
-                            <li key={hint}>{hint}</li>
+                        {blockingIssues.map((issue) => (
+                            <li key={issue.code || issue.message}>{issue.message}</li>
                         ))}
                     </ul>
                 )
@@ -70,7 +119,9 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
                 defaultOpen={false}
                 tone={headerTone}
                 count={headerCount}
+                updatedAt={expanded ? readiness.changedAt : undefined}
                 keepMounted
+                isContentReady={!m.isInitLoading}
                 onExpandedChange={setExpanded}
             >
                 <div className="flex flex-col gap-5">
@@ -109,16 +160,6 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
                         totalEventMeterage={snapshot.totalEventMeterage}
                     />
 
-                    {!m.stageCompleted && m.completionHints.length > 0 ? (
-                        <Informer
-                            tone="warning"
-                            variant="filled"
-                            size="s"
-                            title="Невозможно завершить этап"
-                            description={blockingDescription}
-                        />
-                    ) : null}
-
                     <StageCompletionPendingEventsTable rows={snapshot.pendingEvents} />
 
                     <div className="grid gap-2">
@@ -131,6 +172,16 @@ export function OrderExecutionStageCompletionSection({ workAreaId }: OrderExecut
                             disabled={m.stageCompleted || m.isSubmitting}
                         />
                     </div>
+
+                    {!m.stageCompleted && blockingIssues.length > 0 ? (
+                        <Informer
+                            tone="warning"
+                            variant="bordered"
+                            size="s"
+                            title="Невозможно завершить этап"
+                            description={blockingDescription}
+                        />
+                    ) : null}
 
                     <div className="flex justify-end">
                         <Button

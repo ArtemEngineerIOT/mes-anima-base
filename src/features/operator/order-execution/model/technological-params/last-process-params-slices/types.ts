@@ -6,6 +6,7 @@ export type LastProcessParamsSliceMeta = {
     sliceNo: number;
     sliceKind: string;
     externalSeriesKey: string;
+    /** Время обновления колонки — `captured_at` среза. */
     updatedAt: string;
 };
 
@@ -83,6 +84,6 @@ export type ProcessParamsSliceRow = {
     externalSeriesKey: string;
     paramCode: string;
     value: string;
-    /** Время последнего изменения — `updated_at` с бэка. */
+    /** Время последнего изменения — `captured_at` среза. */
     updatedAt: string;
 };

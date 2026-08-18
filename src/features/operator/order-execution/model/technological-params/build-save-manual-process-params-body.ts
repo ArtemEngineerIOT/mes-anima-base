@@ -4,11 +4,9 @@ import { buildProcessParamsParamCodeBindings } from "./last-process-params-slice
 
 type BuildManualProcessParamsPayloadJsonOptions = {
     workAreaId: string;
-    materialRollId: string;
     externalSeriesKey: string;
     sections: TechnologicalParamsSections;
     manualValues: Record<string, string>;
-    presserWidth?: string;
     presserNumbers?: Record<string, string>;
 };
 
@@ -27,11 +25,9 @@ function buildParamCodesByRowId(sections: TechnologicalParamsSections): Map<stri
 
 export function buildManualProcessParamsPayloadJson({
     workAreaId,
-    materialRollId,
     externalSeriesKey,
     sections,
     manualValues,
-    presserWidth = "",
     presserNumbers = {},
 }: BuildManualProcessParamsPayloadJsonOptions): string {
     const codesByRowId = buildParamCodesByRowId(sections);
@@ -59,15 +55,6 @@ export function buildManualProcessParamsPayloadJson({
         });
     }
 
-    const trimmedPresserWidth = presserWidth.trim();
-    if (trimmedPresserWidth) {
-        parameters.push({
-            param_code: "presser_width",
-            value: trimmedPresserWidth,
-            origin: "OPERATOR",
-        });
-    }
-
     for (const row of sections.printingSections) {
         const presserNo = presserNumbers[row.id]?.trim() ?? "";
         if (!presserNo) {
@@ -86,7 +73,6 @@ export function buildManualProcessParamsPayloadJson({
         },
         fields: {
             work_area_id: workAreaId,
-            material_roll_id: materialRollId,
             external_series_key: externalSeriesKey,
         },
     });

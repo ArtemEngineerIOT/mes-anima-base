@@ -2,14 +2,13 @@ import type { ApiSchemas } from "@/shared/api/schema";
 
 import {
     assertReleaseRpcOk,
-    formatReleaseUomLabel,
     pickBoolean,
     pickNumber,
     pickRawString,
     pickString,
 } from "./release/map-release-rpc-utils";
+import { mapStageBlockingIssues } from "./map-stage-blocking-issue";
 import type {
-    StageBlockingIssue,
     StageCompletionSnapshot,
     StageEventDetailRow,
     StageEventJournalRow,
@@ -76,7 +75,7 @@ function mapInputRoll(row: Record<string, unknown>, index: number): StageIncomin
         ),
         series: displayOrDash(pickRawString(row.series) ?? barcode),
         quantity: pickNumber(row.quantity),
-        unit: formatReleaseUomLabel(pickString(row.uom)),
+        unit: displayOrDash(pickString(row.uom)),
         machine: displayOrDash(pickString(row.machine_code ?? row.machineCode)),
         status: displayOrDash(pickString(row.status_label ?? row.statusLabel)),
         fr: displayOrDash(pickString(row.block_reason_label ?? row.blockReasonLabel)),
@@ -92,16 +91,14 @@ function mapOutputRelease(row: Record<string, unknown>, index: number): StageRel
 
     return {
         id: releaseId || materialRollId || barcode || `release-${index}`,
-        article: displayOrDash(pickString(row.nomenclature_code ?? row.nomenclatureCode)),
-        nomenclature: displayOrDash(pickString(row.nomenclature_name ?? row.nomenclatureName)),
-        rewind: pickBoolean(row.requires_rewind ?? row.requiresRewind),
+        nomenclature: displayOrDash(pickString(row.nomenclature_code ?? row.nomenclatureCode)),
         series: displayOrDash(
             pickRawString(row.barcode) ?? pickString(row.external_series_key ?? row.externalSeriesKey),
         ),
-        netWeight: pickNumber(row.net_weight_kg ?? row.netWeightKg),
-        grossWeight: pickNumber(row.gross_weight_kg ?? row.grossWeightKg),
-        unit: formatReleaseUomLabel(pickString(row.uom_primary ?? row.uomPrimary)),
-        quantity: pickNumber(row.quantity_primary ?? row.quantityPrimary),
+        quantityPrimary: pickNumber(row.quantity_primary ?? row.quantityPrimary),
+        uomPrimary: displayOrDash(pickString(row.uom_primary ?? row.uomPrimary)),
+        quantitySecondary: pickNumber(row.quantity_secondary ?? row.quantitySecondary),
+        uomSecondary: displayOrDash(pickString(row.uom_secondary ?? row.uomSecondary)),
         fr: displayOrDash(pickString(row.block_reason_label ?? row.blockReasonLabel)),
         blocked,
     };
@@ -151,18 +148,6 @@ function mapUnprocessedEvent(row: Record<string, unknown>, index: number): Stage
     };
 }
 
-function mapBlockingIssue(row: Record<string, unknown>): StageBlockingIssue | null {
-    const message = pickString(row.message);
-    if (!message) {
-        return null;
-    }
-
-    return {
-        code: pickString(row.code) ?? "",
-        message,
-    };
-}
-
 export function mapStageCompletionInitPayload(
     payload: ApiSchemas["OrderExecutionStageCompletionInitResponse"] | undefined,
 ): StageCompletionSnapshot {
@@ -182,9 +167,7 @@ export function mapStageCompletionInitPayload(
     const pendingEvents = readObjectArray(resultItem.unprocessed_events ?? resultItem.unprocessedEvents).map(
         mapUnprocessedEvent,
     );
-    const blockingIssues = readObjectArray(resultItem.blocking_issues ?? resultItem.blockingIssues)
-        .map(mapBlockingIssue)
-        .filter((row): row is StageBlockingIssue => row !== null);
+    const blockingIssues = mapStageBlockingIssues(resultItem.blocking_issues ?? resultItem.blockingIssues);
 
     return {
         ...EMPTY_STAGE_COMPLETION_SNAPSHOT,

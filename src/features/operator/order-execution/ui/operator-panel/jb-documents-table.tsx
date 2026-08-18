@@ -2,12 +2,12 @@ import { Button } from "@/shared/ui/kit/button";
 import { Icon } from "@/shared/ui/kit/icon";
 import type { InformerTone } from "@/shared/ui/kit/informer";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { cn } from "@/shared/lib/css";
 import {
     dataTableBodyCellClassName,
-    dataTableScrollViewportClassName,
-    dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -64,13 +64,13 @@ type JbDocumentGroupTableProps = {
 
 function JbDocumentGroupTable({ group, printingRowId, onPrint }: JbDocumentGroupTableProps) {
     return (
-        <div className={dataTableScrollViewportClassName}>
-            <Table className={cn(dataTableShellClassName, "text-[12px]")}>
-            <TableHeader className="bg-muted/40">
-                <TableRow>
-                    <TableHead className={dataTableStickyHeadCellClassName}>{group.title}</TableHead>
-                    <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[180px] text-center")}>СТАТУС</TableHead>
-                    <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[72px] text-right")}>ДЕЙСТВИЕ</TableHead>
+        <DataTablePanel>
+            <Table className={dataTablePanelTableClassName}>
+            <TableHeader>
+                <TableRow className="hover:!bg-transparent">
+                    <TableHead className={dataTablePanelHeadCellClassName}>{group.title}</TableHead>
+                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[180px] text-center")}>СТАТУС</TableHead>
+                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[72px] text-right")}>ДЕЙСТВИЕ</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -103,7 +103,7 @@ function JbDocumentGroupTable({ group, printingRowId, onPrint }: JbDocumentGroup
                 )}
             </TableBody>
             </Table>
-        </div>
+        </DataTablePanel>
     );
 }
 

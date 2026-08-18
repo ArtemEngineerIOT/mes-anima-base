@@ -24,6 +24,7 @@ export function OrderExecutionProcessControlSection({ workAreaId }: OrderExecuti
                 keepMounted
                 updatedAt={processControl.updatedAt || null}
                 updatedAtLabel="Обновлено"
+                isContentReady={!processControl.isLoading}
                 onExpandedChange={setExpanded}
             >
                 <OrderExecutionProcessControl {...processControl} workAreaId={workAreaId} />

@@ -4,16 +4,15 @@ import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
-import { DataTableViewport } from "@/shared/ui/kit/data-table-viewport";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
-    dataTableInsetShellClassName,
-    dataTableSplitScrollBodyClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
@@ -69,9 +68,7 @@ export function EventRegistrationUnprocessedPanel({
         <div className="grid gap-3">
             <div className={cnSectionBlockTitle()}>Необработанные сигналы машины</div>
 
-            <DataTableViewport
-                layout="fixed"
-                visibleBodyRows={pageSize}
+            <DataTablePanel
                 footer={
                     <DataTablePaginationFooter
                         totalCount={pagination.totalCount}
@@ -85,21 +82,16 @@ export function EventRegistrationUnprocessedPanel({
                     />
                 }
             >
-                <Table
-                    className={cn(
-                        dataTableInsetShellClassName,
-                        "min-w-[520px] border-separate border-spacing-0 text-[12px]",
-                    )}
-                >
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[520px]")}>
                     <TableHeader>
                         <TableRow className="hover:!bg-transparent">
                             <TableHead
-                                className={cn(dataTableHeadCellClassName, "bg-muted/40", selectionColumnClassName)}
+                                className={cn(dataTablePanelHeadCellClassName, selectionColumnClassName)}
                                 aria-label="Выбор сигнала"
                             />
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Описание</TableHead>
+                            <TableHead className={dataTablePanelHeadCellClassName}>Описание</TableHead>
                             <TableHead
-                                className={cn(dataTableHeadCellClassName, "bg-muted/40")}
+                                className={dataTablePanelHeadCellClassName}
                                 aria-sort={
                                     detectedAtSortDirection === "asc" ? "ascending" : "descending"
                                 }
@@ -127,10 +119,10 @@ export function EventRegistrationUnprocessedPanel({
                                     />
                                 </button>
                             </TableHead>
-                            <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Завершение</TableHead>
+                            <TableHead className={dataTablePanelHeadCellClassName}>Завершение</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody className={dataTableSplitScrollBodyClassName}>
+                    <TableBody>
                         {pageItems.length > 0 ? (
                             pageItems.map((row) => {
                                 const selected = selectedUnprocessedId === row.id;
@@ -174,7 +166,7 @@ export function EventRegistrationUnprocessedPanel({
                         )}
                     </TableBody>
                 </Table>
-            </DataTableViewport>
+            </DataTablePanel>
 
             <div className="grid gap-2">
                 <Label htmlFor="event-discard-comment" className={comboboxFieldLabelClassName}>

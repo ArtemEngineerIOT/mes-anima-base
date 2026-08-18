@@ -31,6 +31,14 @@ export type MockOrderExecutionMachineSignalsBlockItem = {
     summary?: MockOrderExecutionMachineSignalsSummaryRow[];
 };
 
+export type MockOrderExecutionStageCompletionBlockItem = {
+    work_area_id: string;
+    blocking_issues: { code: string; message: string }[];
+    changed_at: string;
+    can_complete: boolean;
+    blocker_count: number;
+};
+
 export type MockOrderExecutionResultItem = {
     work_area_id: string | null;
     start_work_area: string | null;
@@ -39,6 +47,7 @@ export type MockOrderExecutionResultItem = {
     release_block?: MockOrderExecutionReleaseBlockItem[];
     write_off_block?: MockOrderExecutionWriteOffBlockItem[];
     machine_signals_block?: MockOrderExecutionMachineSignalsBlockItem[];
+    stage_completion_block?: MockOrderExecutionStageCompletionBlockItem[];
     header: {
         product: string;
         project: string;
@@ -78,6 +87,25 @@ const MOCK_ORDER_EXECUTION_RESULTS: Record<string, MockOrderExecutionResultItem>
                 processed_count: 146,
                 total_count: 148,
                 changed_at: "07.08.2026 12:56:16",
+            },
+        ],
+        stage_completion_block: [
+            {
+                work_area_id: "191",
+                blocking_issues: [
+                    {
+                        code: "EXECUTION_INTERVAL_STATE_INCONSISTENT",
+                        message:
+                            "Для этапа нет ровно одного открытого интервала выполнения. Требуется проверка данных.",
+                    },
+                    {
+                        code: "UNPROCESSED_EVENTS_REMAIN",
+                        message: "Есть необработанные события. Опишите все события для закрытия этапа.",
+                    },
+                ],
+                changed_at: "14.08.2026 11:20:44",
+                can_complete: false,
+                blocker_count: 2,
             },
         ],
         header: [

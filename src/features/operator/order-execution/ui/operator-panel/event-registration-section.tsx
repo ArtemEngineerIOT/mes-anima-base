@@ -42,6 +42,7 @@ export function OrderExecutionEventRegistrationSection({
         goBack,
         registerEvent,
         loadError,
+        isLoading,
         isWizardDisabled,
         reloadUnprocessedSilent,
         registerError,
@@ -105,6 +106,7 @@ export function OrderExecutionEventRegistrationSection({
                 tone={headerTone}
                 count={headerCount > 0 ? headerCount : undefined}
                 keepMounted
+                isContentReady={!isLoading}
                 onExpandedChange={handleExpandedChange}
             >
                 <div className="grid gap-4">

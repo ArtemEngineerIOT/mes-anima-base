@@ -27,7 +27,7 @@ export function ProductionPlanStatusColumnHead({
                     type="button"
                     variant="ghost"
                     className={cn(
-                        "h-auto max-w-full gap-1 px-0 py-0 font-bold uppercase",
+                        "h-auto w-full gap-1 px-0 py-0 font-bold whitespace-nowrap uppercase",
                         "hover:bg-transparent hover:text-foreground",
                         isFiltered && "text-primary",
                     )}
@@ -37,7 +37,7 @@ export function ProductionPlanStatusColumnHead({
                             : "Фильтр по статусу этапа"
                     }
                 >
-                    <span className="truncate">Статус этапа</span>
+                    <span className="shrink-0">Статус этапа</span>
                     <ChevronDown className="size-3.5 shrink-0 opacity-70" aria-hidden />
                 </Button>
             </PopoverTrigger>

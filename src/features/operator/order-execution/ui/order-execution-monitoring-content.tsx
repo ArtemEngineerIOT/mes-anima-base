@@ -4,14 +4,13 @@ import { useMonitoringLineMeters } from "@/features/operator/order-execution/mod
 import { useMonitoringRollTables } from "@/features/operator/order-execution/model/monitoring/use-monitoring-roll-tables";
 import { useMonitoringStageEvents } from "@/features/operator/order-execution/model/monitoring/use-monitoring-stage-events";
 import { Button } from "@/shared/ui/kit/button";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Informer } from "@/shared/ui/kit/informer";
 import { InformerPill } from "@/shared/ui/kit/informer-pill";
 import {
     dataTableBodyCellClassName,
-    dataTableInsetShellClassName,
-    dataTableStickyHeadCellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
@@ -31,6 +30,8 @@ type OrderExecutionMonitoringContentProps = {
     lineMetersSilentReloadRef?: MutableRefObject<(() => void) | null>;
     /** Регистрирует silent-reload таблиц рулонов (getArmExecutionMonitoringRollTables) */
     rollTablesSilentReloadRef?: MutableRefObject<(() => void) | null>;
+    /** Регистрирует silent-reload сводки «События по этапу» */
+    stageEventsSilentReloadRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function OrderExecutionMonitoringContent({
@@ -39,6 +40,7 @@ export function OrderExecutionMonitoringContent({
     showShowAllButton = false,
     lineMetersSilentReloadRef,
     rollTablesSilentReloadRef,
+    stageEventsSilentReloadRef,
 }: OrderExecutionMonitoringContentProps) {
     const machineStompState = useOrderExecutionMachineStompState();
     const machineParams = resolveMonitoringMachineParams(machineStompState);
@@ -79,11 +81,25 @@ export function OrderExecutionMonitoringContent({
         stageEvents,
         isLoading: isStageEventsLoading,
         error: stageEventsError,
+        reload: reloadStageEvents,
     } = useMonitoringStageEvents({ workAreaId });
+
+    useEffect(() => {
+        if (!stageEventsSilentReloadRef) {
+            return;
+        }
+        stageEventsSilentReloadRef.current = () => {
+            void reloadStageEvents({ silent: true });
+        };
+        return () => {
+            stageEventsSilentReloadRef.current = null;
+        };
+    }, [reloadStageEvents, stageEventsSilentReloadRef]);
 
     const formatLength = (value: number) => (isLineMetersLoading ? "…" : `${value} м`);
     const formatRollLength = (value: number) => (isRollTablesLoading ? "…" : `${value}`);
-    const formatStageEventQuantity = (value: number) => (isStageEventsLoading ? "…" : String(value));
+    const formatStageEventQuantity = (value: number) =>
+        isStageEventsLoading ? "…" : value.toLocaleString("ru-RU");
 
     const canOpenMonitoringTab = Boolean(machineId);
 
@@ -91,34 +107,60 @@ export function OrderExecutionMonitoringContent({
         <div className="flex flex-col gap-3">
             <section className="space-y-2">
                 <div className={cnSectionBlockTitle("pb-2")}>Данные с машины</div>
-                <div className={dataTableViewportShellClassName}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "min-w-[480px] border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
-                                <TableRow className="hover:!bg-transparent">
-                                    <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[70%]")}>
-                                        Характеристика
-                                    </TableHead>
-                                    <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[30%] text-right")}>
-                                        Значение
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {machineParams.map((param) => (
+                <DataTablePanel
+                    footer={
+                        showShowAllButton ? (
+                            <div className="flex justify-end py-1">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={!canOpenMonitoringTab}
+                                    onClick={() => {
+                                        openOrderExecutionMonitoringTab({ machineId, workAreaId });
+                                    }}
+                                >
+                                    Показать все
+                                </Button>
+                            </div>
+                        ) : undefined
+                    }
+                >
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[max(100%,480px)]")}>
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[70%]")}>
+                                    Характеристика
+                                </TableHead>
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[30%] text-right")}>
+                                    Значение
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {machineParams.map((param) => {
+                                const keepOnOneLine = Boolean(param.showAsPill);
+                                return (
                                     <TableRow key={param.label}>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "text-muted-foreground",
+                                                keepOnOneLine && "whitespace-nowrap",
+                                            )}
+                                        >
                                             {param.label}
                                         </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        <TableCell
+                                            className={cn(
+                                                dataTableBodyCellClassName,
+                                                "text-right",
+                                                keepOnOneLine && "whitespace-nowrap",
+                                            )}
+                                        >
                                             {param.showAsPill ? (
                                                 <div className="flex justify-end">
                                                     <InformerPill
+                                                        className="whitespace-nowrap"
                                                         tone={
                                                             param.informerTone ??
                                                             (param.tone
@@ -126,7 +168,8 @@ export function OrderExecutionMonitoringContent({
                                                                 : "system")
                                                         }
                                                         variant={
-                                                            param.pillVariant ?? monitoringStatPillVariant(param.tone)
+                                                            param.pillVariant ??
+                                                            monitoringStatPillVariant(param.tone)
                                                         }
                                                     >
                                                         {param.value}
@@ -137,25 +180,11 @@ export function OrderExecutionMonitoringContent({
                                             )}
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    {showShowAllButton ? (
-                        <div className={cn(dataTableViewportFooterClassName, "flex justify-end py-2")}>
-                            <Button
-                                type="button"
-                                size="sm"
-                                disabled={!canOpenMonitoringTab}
-                                onClick={() => {
-                                    openOrderExecutionMonitoringTab({ machineId, workAreaId });
-                                }}
-                            >
-                                Показать все
-                            </Button>
-                        </div>
-                    ) : null}
-                </div>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </DataTablePanel>
             </section>
 
             <div className="border-t border-border py-3" aria-hidden />
@@ -171,89 +200,71 @@ export function OrderExecutionMonitoringContent({
                     />
                 ) : null}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div className={dataTableViewportShellClassName}>
-                        <div className="min-w-0 overflow-x-auto">
-                            <Table
-                                className={cn(
-                                    dataTableInsetShellClassName,
-                                    "w-full border-separate border-spacing-0 text-[12px]",
-                                )}
-                            >
-                                <TableHeader className="bg-muted/40">
-                                    <TableRow className="hover:!bg-transparent">
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[70%]")}>
-                                            Вход на линию
-                                        </TableHead>
-                                        <TableHead
-                                            className={cn(dataTableStickyHeadCellClassName, "w-[30%] text-right")}
-                                        >
-                                            Длина
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                            Вход общий
-                                        </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatLength(lineMeters.inLine.totalM)}
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                            Вход ролик
-                                        </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatLength(lineMeters.inLine.rollInM)}
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
+                    <DataTablePanel>
+                        <Table className={dataTablePanelTableClassName}>
+                            <TableHeader>
+                                <TableRow className="hover:!bg-transparent">
+                                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[70%]")}>
+                                        Вход на линию
+                                    </TableHead>
+                                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[30%] text-right")}>
+                                        Длина
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        Вход общий
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        {formatLength(lineMeters.inLine.totalM)}
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        Вход ролик
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        {formatLength(lineMeters.inLine.rollInM)}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </DataTablePanel>
 
-                    <div className={dataTableViewportShellClassName}>
-                        <div className="min-w-0 overflow-x-auto">
-                            <Table
-                                className={cn(
-                                    dataTableInsetShellClassName,
-                                    "w-full border-separate border-spacing-0 text-[12px]",
-                                )}
-                            >
-                                <TableHeader className="bg-muted/40">
-                                    <TableRow className="hover:!bg-transparent">
-                                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[70%]")}>
-                                            Выход с линии
-                                        </TableHead>
-                                        <TableHead
-                                            className={cn(dataTableStickyHeadCellClassName, "w-[30%] text-right")}
-                                        >
-                                            Длина
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                            Выход общий
-                                        </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatLength(lineMeters.outLine.totalM)}
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
-                                            Последний ролик
-                                        </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatLength(lineMeters.outLine.rollOutM)}
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
+                    <DataTablePanel>
+                        <Table className={dataTablePanelTableClassName}>
+                            <TableHeader>
+                                <TableRow className="hover:!bg-transparent">
+                                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[70%]")}>
+                                        Выход с линии
+                                    </TableHead>
+                                    <TableHead className={cn(dataTablePanelHeadCellClassName, "w-[30%] text-right")}>
+                                        Длина
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        Выход общий
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        {formatLength(lineMeters.outLine.totalM)}
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-muted-foreground")}>
+                                        Последний ролик
+                                    </TableCell>
+                                    <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                        {formatLength(lineMeters.outLine.rollOutM)}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </DataTablePanel>
                 </div>
             </section>
 
@@ -265,125 +276,111 @@ export function OrderExecutionMonitoringContent({
 
             <div className="grid grid-cols-1 items-start gap-x-3 gap-y-2 md:grid-cols-2 md:grid-rows-[auto_auto]">
                 <div className={cnSectionBlockTitle("md:col-start-1 md:row-start-1")}>Входные рулоны</div>
-                <div className={cn(dataTableViewportShellClassName, "md:col-start-1 md:row-start-2")}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "w-full border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
-                                <TableRow className="hover:!bg-transparent">
-                                    <TableHead className={dataTableStickyHeadCellClassName}>Рулон</TableHead>
-                                    <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
-                                        Длина
-                                    </TableHead>
+                <DataTablePanel className="md:col-start-1 md:row-start-2">
+                    <Table className={dataTablePanelTableClassName}>
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={dataTablePanelHeadCellClassName}>Рулон</TableHead>
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "text-right")}>
+                                    Длина
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isRollTablesLoading ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={2}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
+                                    >
+                                        Загрузка…
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isRollTablesLoading ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={2}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
-                                        >
-                                            Загрузка…
+                            ) : rollTables.inputRolls.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={2}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
+                                    >
+                                        Нет данных
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                rollTables.inputRolls.map((row) => (
+                                    <TableRow key={row.roll}>
+                                        <TableCell className={dataTableBodyCellClassName}>{row.roll}</TableCell>
+                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                            {formatRollLength(row.lengthM)}
                                         </TableCell>
                                     </TableRow>
-                                ) : rollTables.inputRolls.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={2}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
-                                        >
-                                            Нет данных
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    rollTables.inputRolls.map((row) => (
-                                        <TableRow key={row.roll}>
-                                            <TableCell className={dataTableBodyCellClassName}>{row.roll}</TableCell>
-                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                                {formatRollLength(row.lengthM)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTablePanel>
 
                 <div className={cnSectionBlockTitle("md:col-start-2 md:row-start-1")}>Выходные рулоны</div>
-                <div className={cn(dataTableViewportShellClassName, "md:col-start-2 md:row-start-2")}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "w-full border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
-                                <TableRow className="hover:!bg-transparent">
-                                    <TableHead className={dataTableStickyHeadCellClassName}>Рулон</TableHead>
-                                    <TableHead className={cn(dataTableStickyHeadCellClassName, "text-right")}>
-                                        Длина
-                                    </TableHead>
-                                    <TableHead className={dataTableStickyHeadCellClassName}>Состав</TableHead>
+                <DataTablePanel className="md:col-start-2 md:row-start-2">
+                    <Table className={dataTablePanelTableClassName}>
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={dataTablePanelHeadCellClassName}>Рулон</TableHead>
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "text-right")}>
+                                    Длина
+                                </TableHead>
+                                <TableHead className={dataTablePanelHeadCellClassName}>Состав</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isRollTablesLoading ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
+                                    >
+                                        Загрузка…
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isRollTablesLoading ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={3}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
-                                        >
-                                            Загрузка…
+                            ) : rollTables.outputRolls.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
+                                    >
+                                        Нет данных
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                rollTables.outputRolls.map((row) => (
+                                    <TableRow
+                                        key={row.roll}
+                                        className={row.blocked ? "bg-destructive/10 text-destructive" : undefined}
+                                    >
+                                        <TableCell className={dataTableBodyCellClassName}>{row.roll}</TableCell>
+                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
+                                            {formatRollLength(row.lengthM)}
+                                        </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>
+                                            {row.composition ?? "—"}
                                         </TableCell>
                                     </TableRow>
-                                ) : rollTables.outputRolls.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={3}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
-                                        >
-                                            Нет данных
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    rollTables.outputRolls.map((row) => (
-                                        <TableRow
-                                            key={row.roll}
-                                            className={row.blocked ? "bg-destructive/10 text-destructive" : undefined}
-                                        >
-                                            <TableCell className={dataTableBodyCellClassName}>{row.roll}</TableCell>
-                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                                {formatRollLength(row.lengthM)}
-                                            </TableCell>
-                                            <TableCell className={dataTableBodyCellClassName}>
-                                                {row.composition ?? "—"}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTablePanel>
             </div>
 
             <div className="border-t border-border py-3" aria-hidden />
@@ -394,77 +391,60 @@ export function OrderExecutionMonitoringContent({
 
             <div className="grid gap-2">
                 <div className={cnSectionBlockTitle()}>События по этапу</div>
-                <div className={dataTableViewportShellClassName}>
-                    <div className="min-w-0 overflow-x-auto">
-                        <Table
-                            className={cn(
-                                dataTableInsetShellClassName,
-                                "w-full border-separate border-spacing-0 text-[12px]",
-                            )}
-                        >
-                            <TableHeader className="bg-muted/40">
-                                <TableRow className="hover:!bg-transparent">
-                                    <TableHead className={cn(dataTableStickyHeadCellClassName, "w-[50%]")}>
-                                        Наименование
-                                    </TableHead>
-                                    <TableHead
-                                        className={cn(dataTableStickyHeadCellClassName, "w-[25%] text-right")}
+                <DataTablePanel>
+                    <Table className={dataTablePanelTableClassName}>
+                        <TableHeader>
+                            <TableRow className="hover:!bg-transparent">
+                                <TableHead className={dataTablePanelHeadCellClassName}>Наименование</TableHead>
+                                <TableHead className={cn(dataTablePanelHeadCellClassName, "text-right")}>
+                                    Кол-во
+                                </TableHead>
+                                <TableHead className={dataTablePanelHeadCellClassName}>Ед. изм.</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isStageEventsLoading ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
                                     >
-                                        Кол-во
-                                    </TableHead>
-                                    <TableHead
-                                        className={cn(dataTableStickyHeadCellClassName, "w-[25%] text-center")}
-                                    >
-                                        Ед.изм.
-                                    </TableHead>
+                                        Загрузка…
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isStageEventsLoading ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={3}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
-                                        >
-                                            Загрузка…
+                            ) : stageEvents.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className={cn(
+                                            dataTableBodyCellClassName,
+                                            "py-6 text-center text-muted-foreground",
+                                        )}
+                                    >
+                                        Нет данных
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                stageEvents.map((event) => (
+                                    <TableRow key={event.label}>
+                                        <TableCell className={dataTableBodyCellClassName} title={event.label}>
+                                            {event.label}
                                         </TableCell>
-                                    </TableRow>
-                                ) : stageEvents.length === 0 ? (
-                                    <TableRow>
                                         <TableCell
-                                            colSpan={3}
-                                            className={cn(
-                                                dataTableBodyCellClassName,
-                                                "py-6 text-center text-muted-foreground",
-                                            )}
+                                            className={cn(dataTableBodyCellClassName, "text-right tabular-nums")}
                                         >
-                                            Нет данных
+                                            {formatStageEventQuantity(event.quantity)}
                                         </TableCell>
+                                        <TableCell className={dataTableBodyCellClassName}>{event.uom}</TableCell>
                                     </TableRow>
-                                ) : (
-                                    stageEvents.map((event) => (
-                                        <TableRow key={event.label}>
-                                            <TableCell
-                                                className={cn(dataTableBodyCellClassName, "text-muted-foreground")}
-                                            >
-                                                {event.label}
-                                            </TableCell>
-                                            <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                                {formatStageEventQuantity(event.quantity)}
-                                            </TableCell>
-                                            <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
-                                                {event.uom}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </DataTablePanel>
             </div>
         </div>
     );

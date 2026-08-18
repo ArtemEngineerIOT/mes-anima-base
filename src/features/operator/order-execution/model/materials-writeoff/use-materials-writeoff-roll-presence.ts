@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rqClient } from "@/shared/api/instance";
 import { REST_FUNCTION_PATHS } from "@/shared/api/rest-paths";
 
+import { useSyncLoadingOnEnable } from "../use-loading-on-enable";
 import {
     mapStageRollPresencePayload,
     MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT,
@@ -22,7 +23,8 @@ export function useMaterialsWriteoffRollPresence({
 }: UseMaterialsWriteoffRollPresenceOptions) {
     const [rows, setRows] = useState<MaterialsPresenceRow[]>(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
     const [asOf, setAsOf] = useState<string | null>(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(enabled);
+    useSyncLoadingOnEnable(enabled, setIsLoading);
     const [error, setError] = useState<string | null>(null);
 
     const { mutateAsync: fetchStageRollPresence } = rqClient.useMutation(
@@ -40,6 +42,7 @@ export function useMaterialsWriteoffRollPresence({
             setRows(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
             setAsOf(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
             setError("Не удалось определить workAreaId этапа");
+            setIsLoading(false);
             return;
         }
 

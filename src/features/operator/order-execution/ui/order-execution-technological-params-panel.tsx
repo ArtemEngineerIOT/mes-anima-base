@@ -40,12 +40,15 @@ import {
 } from "../model/technological-params-draft";
 import {
     appendHistoryEntry,
+    clampSliceWindowOffset,
     createManualHistoryEntry,
     formatHistoryValue,
     formatManualCheckedAtFromDateTimeLocal,
     formatManualCheckedAtToDateTimeLocal,
-    getLastHistoryEntries,
-    padHistoryEntries,
+    lastSliceWindowOffset,
+    PROCESS_PARAMS_SLICE_WINDOW_SIZE,
+    resolveMaxLaterHistoryCount,
+    takeSliceWindowEntries,
     type TechnologicalParamHistoryEntry,
 } from "../model/technological-params-history";
 import {
@@ -75,6 +78,10 @@ const standardCellClassName = "text-center tabular-nums";
 const currentValueCellClassName = "text-center tabular-nums font-medium";
 /** Колонка «Текущее значение» / ручной ввод — фиксированная ширина. */
 const currentValueColumnClassName = "w-[450px] min-w-[450px] max-w-[450px]";
+/** Старт / Срез N — фиксированная ширина, чтобы окно срезов не дёргало таблицу. */
+const sliceColumnClassName = "w-40 min-w-40 max-w-40 overflow-hidden";
+/** Уставка / отклонение. */
+const measureColumnClassName = "w-28 min-w-28 max-w-28";
 const manualInputClassName = "h-8 w-full text-center text-[12px] tabular-nums";
 const manualPartInputClassName = cn(manualInputClassName, "min-w-0 flex-1 px-1");
 const historyValueCellClassName = "text-center tabular-nums";
@@ -143,6 +150,56 @@ function TechnologicalParamsSectionTitle({ iconName, title }: { iconName: string
     );
 }
 
+function SliceWindowControls({
+    laterCount,
+    offset,
+    onOffsetChange,
+}: {
+    laterCount: number;
+    offset: number;
+    onOffsetChange: (offset: number) => void;
+}) {
+    const maxOffset = Math.max(0, laterCount - PROCESS_PARAMS_SLICE_WINDOW_SIZE);
+    if (laterCount <= PROCESS_PARAMS_SLICE_WINDOW_SIZE) {
+        return null;
+    }
+
+    const from = offset + 1;
+    const to = Math.min(offset + PROCESS_PARAMS_SLICE_WINDOW_SIZE, laterCount);
+
+    return (
+        <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+                Срезы {from}–{to} из {laterCount}
+            </span>
+            <div className="flex items-center gap-0.5">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    className="size-7"
+                    disabled={offset <= 0}
+                    onClick={() => onOffsetChange(offset - 1)}
+                    aria-label="Предыдущие срезы"
+                >
+                    <Icon name="chevron_left" className="text-sm" />
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    className="size-7"
+                    disabled={offset >= maxOffset}
+                    onClick={() => onOffsetChange(offset + 1)}
+                    aria-label="Следующие срезы"
+                >
+                    <Icon name="chevron_right" className="text-sm" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 type MeasurableRow = {
     id: string;
     standard: string;
@@ -160,11 +217,19 @@ type HistoryColumnMeta = {
     checkedAt: string;
 };
 
+function getStartHistoryEntry(history: TechnologicalParamHistoryEntry[]) {
+    return history[0] ?? null;
+}
+
+function getLaterHistoryEntries(history: TechnologicalParamHistoryEntry[]) {
+    return history.slice(1);
+}
+
 function buildStartColumnMeta(
     row: MeasurableRow,
     history: TechnologicalParamHistoryEntry[],
 ): HistoryColumnMeta {
-    const firstEntry = history[0];
+    const firstEntry = getStartHistoryEntry(history);
 
     return {
         rollNumber: firstEntry?.rollNumber ?? "—",
@@ -173,60 +238,82 @@ function buildStartColumnMeta(
 }
 
 function HistoryColumnHeader({ meta }: { meta: HistoryColumnMeta | null }) {
-    if (!meta) {
+    const checkedAt = meta?.checkedAt.trim();
+    if (!checkedAt || checkedAt === "—") {
         return <span className="text-muted-foreground">—</span>;
     }
 
     return (
-        <div className="flex flex-col items-center gap-0.5 text-center text-[10px] leading-4 font-normal text-muted-foreground">
-            <span>{meta.rollNumber}</span>
-            <span>{meta.checkedAt}</span>
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-center text-[10px] leading-4 font-normal text-muted-foreground">
+            {checkedAt}
         </div>
     );
 }
 
+function resolveDeviationToneClassName(
+    value: string,
+    standardValue: string,
+    deviationPm: string,
+): string | undefined {
+    return isTechnologicalParamOutOfDeviation({
+        currentValue: value,
+        standardValue,
+        deviationPm,
+    })
+        ? "text-destructive"
+        : undefined;
+}
+
 function HistoryValueCells({
     entries,
+    standardValue,
+    deviationPm,
 }: {
     entries: Array<TechnologicalParamHistoryEntry | null>;
+    standardValue: string;
+    deviationPm: string;
 }) {
     return (
         <>
-            {entries.map((entry, index) => (
-                <TableCell
-                    key={`${entry?.checkedAt ?? "empty"}-${index}`}
-                    className={cn(bodyCellClassName, historyValueCellClassName)}
-                >
-                    {formatHistoryValue(entry)}
-                </TableCell>
-            ))}
+            {entries.map((entry, index) => {
+                const value = formatHistoryValue(entry);
+
+                return (
+                    <TableCell
+                        key={`${entry?.checkedAt ?? "empty"}-${index}`}
+                        className={cn(
+                            bodyCellClassName,
+                            historyValueCellClassName,
+                            sliceColumnClassName,
+                            resolveDeviationToneClassName(value, standardValue, deviationPm),
+                        )}
+                    >
+                        {value}
+                    </TableCell>
+                );
+            })}
         </>
     );
 }
 
-function DynamicHeaderGroupCells({ manualEntry }: { manualEntry: boolean }) {
-    if (manualEntry) {
-        return (
-            <>
-                <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")} colSpan={3} />
-                <TableHead
-                    className={cn(
-                        dataTableStickyHeadCellClassName,
-                        currentValueColumnClassName,
-                        "text-center",
-                    )}
-                >
-                    Текущее значение
-                </TableHead>
-            </>
-        );
-    }
-
+function DynamicHeaderGroupCells({
+    sliceWindowOffset = 0,
+}: {
+    sliceWindowOffset?: number;
+}) {
     return (
         <>
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Старт</TableHead>
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Срез 1</TableHead>
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center")}>Срез 2</TableHead>
+            <TableHead className={cn(dataTableStickyHeadCellClassName, sliceColumnClassName, "text-center")}>
+                Старт
+            </TableHead>
+            {Array.from({ length: PROCESS_PARAMS_SLICE_WINDOW_SIZE }, (_, index) => (
+                <TableHead
+                    key={`slice-window-title-${index}`}
+                    className={cn(dataTableStickyHeadCellClassName, sliceColumnClassName, "text-center")}
+                >
+                    Срез {sliceWindowOffset + index + 1}
+                </TableHead>
+            ))}
             <TableHead
                 className={cn(dataTableStickyHeadCellClassName, currentValueColumnClassName, "text-center")}
             >
@@ -236,86 +323,32 @@ function DynamicHeaderGroupCells({ manualEntry }: { manualEntry: boolean }) {
     );
 }
 
-const manualMetaInputClassName = "h-7 text-center text-[10px] tabular-nums";
-
-function ManualInputColumnHeader({
-    meta,
-    onMetaChange,
-}: {
-    meta: ManualInputMeta;
-    onMetaChange: (patch: Partial<ManualInputMeta>) => void;
-}) {
-    return (
-        <div className="flex flex-col gap-1">
-            <Input
-                className={manualMetaInputClassName}
-                value={meta.rollNumber}
-                onChange={(event) => onMetaChange({ rollNumber: event.target.value })}
-                placeholder="№ рулона"
-                aria-label="Номер рулона"
-            />
-            <Input
-                type="datetime-local"
-                step={1}
-                className={manualMetaInputClassName}
-                value={formatManualCheckedAtToDateTimeLocal(meta.checkedAt)}
-                onChange={(event) =>
-                    onMetaChange({ checkedAt: formatManualCheckedAtFromDateTimeLocal(event.target.value) })
-                }
-                aria-label="Время проверки"
-            />
-        </div>
-    );
-}
-
 function DynamicHeaderMetaCells({
-    manualEntry,
     startMeta,
     historyMetas,
-    manualInputMeta,
-    onManualInputMetaChange,
 }: {
-    manualEntry: boolean;
     startMeta: HistoryColumnMeta | null;
     historyMetas: Array<HistoryColumnMeta | null>;
-    manualInputMeta?: ManualInputMeta;
-    onManualInputMetaChange?: (patch: Partial<ManualInputMeta>) => void;
 }) {
-    if (manualEntry) {
-        return (
-            <>
-                {historyMetas.map((meta, index) => (
-                    <TableHead
-                        key={`manual-history-meta-${index}`}
-                        className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center align-top")}
-                    >
-                        <HistoryColumnHeader meta={meta} />
-                    </TableHead>
-                ))}
-                <TableHead
-                    className={cn(
-                        dataTableStickyHeadCellClassName,
-                        currentValueColumnClassName,
-                        "text-center align-top",
-                    )}
-                >
-                    {manualInputMeta && onManualInputMetaChange ? (
-                        <ManualInputColumnHeader meta={manualInputMeta} onMetaChange={onManualInputMetaChange} />
-                    ) : null}
-                </TableHead>
-            </>
-        );
-    }
-
     return (
         <>
-            <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center align-top")}>
+            <TableHead
+                className={cn(
+                    dataTableStickyHeadCellClassName,
+                    sliceColumnClassName,
+                    "text-center align-top",
+                )}
+            >
                 <HistoryColumnHeader meta={startMeta} />
             </TableHead>
             {historyMetas.map((meta, index) => (
                 <TableHead
                     key={`auto-history-meta-${index}`}
-                    className={cn(dataTableStickyHeadCellClassName, "min-w-28 text-center align-top")}
+                    className={cn(
+                        dataTableStickyHeadCellClassName,
+                        sliceColumnClassName,
+                        "text-center align-top",
+                    )}
                 >
                     <HistoryColumnHeader meta={meta} />
                 </TableHead>
@@ -325,31 +358,27 @@ function DynamicHeaderMetaCells({
     );
 }
 
+function pickHistorySourceRow(
+    rows: MeasurableRow[],
+    historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>,
+): MeasurableRow | undefined {
+    return rows.find((row) => (historyByRowId[row.id] ?? []).length > 0) ?? rows[0];
+}
+
 function buildTableHistoryHeaderMeta(
     rows: MeasurableRow[],
     historyByRowId: Record<string, TechnologicalParamHistoryEntry[]>,
-    manualEntry: boolean,
+    sliceWindowOffset = 0,
 ): {
     startMeta: HistoryColumnMeta | null;
     historyMetas: Array<HistoryColumnMeta | null>;
 } {
-    const firstRow = rows[0];
-    const firstHistory = firstRow ? (historyByRowId[firstRow.id] ?? []) : [];
-
-    if (manualEntry) {
-        const slots = padHistoryEntries(getLastHistoryEntries(firstHistory, 3), 3);
-        return {
-            startMeta: null,
-            historyMetas: slots.map((entry) =>
-                entry ? { rollNumber: entry.rollNumber, checkedAt: entry.checkedAt } : null,
-            ),
-        };
-    }
-
-    const historySlots = padHistoryEntries(getLastHistoryEntries(firstHistory, 2), 2);
+    const sourceRow = pickHistorySourceRow(rows, historyByRowId);
+    const sourceHistory = sourceRow ? (historyByRowId[sourceRow.id] ?? []) : [];
+    const historySlots = takeSliceWindowEntries(getLaterHistoryEntries(sourceHistory), sliceWindowOffset);
 
     return {
-        startMeta: firstRow ? buildStartColumnMeta(firstRow, firstHistory) : null,
+        startMeta: sourceRow ? buildStartColumnMeta(sourceRow, sourceHistory) : null,
         historyMetas: historySlots.map((entry) =>
             entry ? { rollNumber: entry.rollNumber, checkedAt: entry.checkedAt } : null,
         ),
@@ -365,6 +394,7 @@ function DynamicValueCells({
     currentValue,
     standardValue,
     partsCount = 1,
+    sliceWindowOffset = 0,
 }: {
     row: MeasurableRow;
     manualEntry: boolean;
@@ -374,33 +404,48 @@ function DynamicValueCells({
     currentValue: string;
     standardValue: string;
     partsCount?: number;
+    sliceWindowOffset?: number;
 }) {
     const canManualInput =
         Boolean(row.manualOnly) || (standardValue.trim() !== "" && standardValue !== "—");
 
     const displayedCurrentValue = manualEntry ? manualValue : currentValue;
-    const isOutOfDeviation = isTechnologicalParamOutOfDeviation({
-        currentValue: displayedCurrentValue,
+    const currentValueToneClassName = resolveDeviationToneClassName(
+        displayedCurrentValue,
         standardValue,
-        deviationPm: row.deviationPm,
-    });
-    const currentValueToneClassName = isOutOfDeviation ? "text-destructive" : undefined;
+        row.deviationPm,
+    );
 
-    if (manualEntry) {
-        const historyCells = padHistoryEntries(history, 3);
+    const historyCells = takeSliceWindowEntries(getLaterHistoryEntries(history), sliceWindowOffset);
+    const startValue = getStartHistoryEntry(history)?.value ?? "—";
 
-        return (
-            <>
-                <HistoryValueCells entries={historyCells} />
-                <TableCell
-                    className={cn(
-                        bodyCellClassName,
-                        currentValueCellClassName,
-                        currentValueColumnClassName,
-                        currentValueToneClassName,
-                    )}
-                >
-                    {canManualInput ? (
+    return (
+        <>
+            <TableCell
+                className={cn(
+                    bodyCellClassName,
+                    historyValueCellClassName,
+                    sliceColumnClassName,
+                    resolveDeviationToneClassName(startValue, standardValue, row.deviationPm),
+                )}
+            >
+                {startValue}
+            </TableCell>
+            <HistoryValueCells
+                entries={historyCells}
+                standardValue={standardValue}
+                deviationPm={row.deviationPm}
+            />
+            <TableCell
+                className={cn(
+                    bodyCellClassName,
+                    currentValueCellClassName,
+                    currentValueColumnClassName,
+                    currentValueToneClassName,
+                )}
+            >
+                {manualEntry ? (
+                    canManualInput ? (
                         <ManualCompositeValueInput
                             partsCount={partsCount}
                             value={manualValue}
@@ -410,28 +455,10 @@ function DynamicValueCells({
                         />
                     ) : (
                         "—"
-                    )}
-                </TableCell>
-            </>
-        );
-    }
-
-    const historyCells = padHistoryEntries(getLastHistoryEntries(history, 2), 2);
-    const startValue = history[0]?.value ?? "—";
-
-    return (
-        <>
-            <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>{startValue}</TableCell>
-            <HistoryValueCells entries={historyCells} />
-            <TableCell
-                className={cn(
-                    bodyCellClassName,
-                    currentValueCellClassName,
-                    currentValueColumnClassName,
-                    currentValueToneClassName,
+                    )
+                ) : (
+                    currentValue
                 )}
-            >
-                {currentValue}
             </TableCell>
         </>
     );
@@ -449,8 +476,7 @@ function PrintingSectionsTable({
     onPresserNoChange,
     resolveCurrentValue,
     resolveStandardValue,
-    manualInputMeta,
-    onManualInputMetaChange,
+    sliceWindowOffset = 0,
 }: {
     title: string;
     iconName: string;
@@ -463,37 +489,39 @@ function PrintingSectionsTable({
     onPresserNoChange: (rowId: string, value: string) => void;
     resolveCurrentValue: (row: MeasurableRow) => string;
     resolveStandardValue: (row: MeasurableRow) => string;
-    manualInputMeta?: ManualInputMeta;
-    onManualInputMetaChange?: (patch: Partial<ManualInputMeta>) => void;
+    sliceWindowOffset?: number;
 }) {
-    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta(rows, historyByRowId, manualEntry);
+    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta(
+        rows,
+        historyByRowId,
+        sliceWindowOffset,
+    );
 
     return (
         <section className="flex flex-col gap-2">
             <TechnologicalParamsSectionTitle iconName={iconName} title={title} />
-            <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+            <Table className={cn(dataTableShellClassName, "table-fixed text-[12px]")}>
                 <TableHeader className="bg-muted/40">
                     <TableRow>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 text-center")}>Печатная секция</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 text-center")}>Цвет</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 text-center")}>№ прессёра</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-28 text-center")} colSpan={2}>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24 text-center")}>Печатная секция</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24 text-center")}>Цвет</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24 text-center")}>№ прессёра</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-56 min-w-56 max-w-56 text-center")} colSpan={2}>
                             Температура, °C
                         </TableHead>
-                        <DynamicHeaderGroupCells manualEntry={manualEntry} />
+                        <DynamicHeaderGroupCells
+                            sliceWindowOffset={sliceWindowOffset}
+                        />
                     </TableRow>
                     <TableRow>
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-center")}>Уставка</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "text-center whitespace-nowrap")}>Отклонение ±</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24")} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24")} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-24 min-w-24 max-w-24")} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center")}>Уставка</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center whitespace-nowrap")}>Отклонение ±</TableHead>
                         <DynamicHeaderMetaCells
-                            manualEntry={manualEntry}
                             startMeta={startMeta}
                             historyMetas={historyMetas}
-                            manualInputMeta={manualInputMeta}
-                            onManualInputMetaChange={onManualInputMetaChange}
                         />
                     </TableRow>
                 </TableHeader>
@@ -509,9 +537,9 @@ function PrintingSectionsTable({
                                     <TableCell className={bodyCellClassName}>—</TableCell>
                                     <TableCell className={cn(bodyCellClassName, standardCellClassName)}>—</TableCell>
                                     <TableCell className={cn(bodyCellClassName, "tabular-nums")}>—</TableCell>
-                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
-                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
-                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName, sliceColumnClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName, sliceColumnClassName)}>—</TableCell>
+                                    <TableCell className={cn(bodyCellClassName, historyValueCellClassName, sliceColumnClassName)}>—</TableCell>
                                     <TableCell
                                         className={cn(
                                             bodyCellClassName,
@@ -553,13 +581,13 @@ function PrintingSectionsTable({
                                 {manualEntry ? (
                                     <Input
                                         className={manualInputClassName}
-                                        value={presserNumbers[row.id] ?? ""}
+                                        value={presserNumbers[row.id] ?? row.presserNo}
                                         onChange={(event) => onPresserNoChange(row.id, event.target.value)}
                                         inputMode="numeric"
                                         aria-label={`№ прессёра, секция ${row.sectionNumber}`}
                                     />
                                 ) : (
-                                    <span className="tabular-nums">{presserNumbers[row.id] || "—"}</span>
+                                    <span className="tabular-nums">{row.presserNo || "—"}</span>
                                 )}
                             </TableCell>
                             <TableCell className={cn(bodyCellClassName, standardCellClassName)}>
@@ -577,6 +605,7 @@ function PrintingSectionsTable({
                                 currentValue={currentValue}
                                 standardValue={standardValue}
                                 partsCount={partsCount}
+                                sliceWindowOffset={sliceWindowOffset}
                             />
                         </TableRow>
                         );
@@ -597,8 +626,7 @@ function ProcessParamsTable({
     onManualValueChange,
     resolveCurrentValue,
     resolveStandardValue,
-    manualInputMeta,
-    onManualInputMetaChange,
+    sliceWindowOffset = 0,
 }: {
     title: string;
     iconName: string;
@@ -609,32 +637,34 @@ function ProcessParamsTable({
     onManualValueChange: (rowId: string, value: string) => void;
     resolveCurrentValue: (row: MeasurableRow) => string;
     resolveStandardValue: (row: MeasurableRow) => string;
-    manualInputMeta?: ManualInputMeta;
-    onManualInputMetaChange?: (patch: Partial<ManualInputMeta>) => void;
+    sliceWindowOffset?: number;
 }) {
-    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta(rows, historyByRowId, manualEntry);
+    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta(
+        rows,
+        historyByRowId,
+        sliceWindowOffset,
+    );
 
     return (
         <section className="flex flex-col gap-2">
             <TechnologicalParamsSectionTitle iconName={iconName} title={title} />
-            <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+            <Table className={cn(dataTableShellClassName, "table-fixed text-[12px]")}>
                 <TableHeader className="bg-muted/40">
                     <TableRow>
                         <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[12rem]")} />
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-28 text-center")}>Уставка</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-28 text-center whitespace-nowrap")}>Отклонение ±</TableHead>
-                        <DynamicHeaderGroupCells manualEntry={manualEntry} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center")}>Уставка</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center whitespace-nowrap")}>Отклонение ±</TableHead>
+                        <DynamicHeaderGroupCells
+                            sliceWindowOffset={sliceWindowOffset}
+                        />
                     </TableRow>
                     <TableRow>
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[12rem]")} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName)} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName)} />
                         <DynamicHeaderMetaCells
-                            manualEntry={manualEntry}
                             startMeta={startMeta}
                             historyMetas={historyMetas}
-                            manualInputMeta={manualInputMeta}
-                            onManualInputMetaChange={onManualInputMetaChange}
                         />
                     </TableRow>
                 </TableHeader>
@@ -665,6 +695,7 @@ function ProcessParamsTable({
                                 onManualValueChange={(value) => onManualValueChange(row.id, value)}
                                 currentValue={resolveCurrentValue(row)}
                                 standardValue={resolveStandardValue(row)}
+                                sliceWindowOffset={sliceWindowOffset}
                             />
                         </TableRow>
                     ))}
@@ -684,8 +715,7 @@ function SpeedTable({
     onManualValueChange,
     resolveCurrentValue,
     resolveStandardValue,
-    manualInputMeta,
-    onManualInputMetaChange,
+    sliceWindowOffset = 0,
 }: {
     title: string;
     iconName: string;
@@ -696,32 +726,34 @@ function SpeedTable({
     onManualValueChange: (value: string) => void;
     resolveCurrentValue: (row: MeasurableRow) => string;
     resolveStandardValue: (row: MeasurableRow) => string;
-    manualInputMeta?: ManualInputMeta;
-    onManualInputMetaChange?: (patch: Partial<ManualInputMeta>) => void;
+    sliceWindowOffset?: number;
 }) {
-    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta([row], { [row.id]: history }, manualEntry);
+    const { startMeta, historyMetas } = buildTableHistoryHeaderMeta(
+        [row],
+        { [row.id]: history },
+        sliceWindowOffset,
+    );
 
     return (
         <section className="flex flex-col gap-2">
             <TechnologicalParamsSectionTitle iconName={iconName} title={title} />
-            <Table className={cn(dataTableShellClassName, "text-[12px]")}>
+            <Table className={cn(dataTableShellClassName, "table-fixed text-[12px]")}>
                 <TableHeader className="bg-muted/40">
                     <TableRow>
                         <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[12rem]")} />
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-28 text-center")}>Уставка</TableHead>
-                        <TableHead className={cn(dataTableStickyHeadCellClassName, "w-28 text-center whitespace-nowrap")}>Отклонение ±</TableHead>
-                        <DynamicHeaderGroupCells manualEntry={manualEntry} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center")}>Уставка</TableHead>
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName, "text-center whitespace-nowrap")}>Отклонение ±</TableHead>
+                        <DynamicHeaderGroupCells
+                            sliceWindowOffset={sliceWindowOffset}
+                        />
                     </TableRow>
                     <TableRow>
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
-                        <TableHead className={dataTableStickyHeadCellClassName} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, "min-w-[12rem]")} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName)} />
+                        <TableHead className={cn(dataTableStickyHeadCellClassName, measureColumnClassName)} />
                         <DynamicHeaderMetaCells
-                            manualEntry={manualEntry}
                             startMeta={startMeta}
                             historyMetas={historyMetas}
-                            manualInputMeta={manualInputMeta}
-                            onManualInputMetaChange={onManualInputMetaChange}
                         />
                     </TableRow>
                 </TableHeader>
@@ -744,6 +776,7 @@ function SpeedTable({
                             onManualValueChange={onManualValueChange}
                             currentValue={resolveCurrentValue(row)}
                             standardValue={resolveStandardValue(row)}
+                            sliceWindowOffset={sliceWindowOffset}
                         />
                     </TableRow>
                 </TableBody>
@@ -768,6 +801,7 @@ export function OrderExecutionTechnologicalParamsPanel({
         historyByRowId: slicesHistoryByRowId,
         isLoading: isSlicesLoading,
         error: slicesError,
+        errorKey: slicesErrorKey,
         dismissError: dismissSlicesError,
         reload: reloadSlices,
     } = useLastProcessParamsSlices({
@@ -787,11 +821,12 @@ export function OrderExecutionTechnologicalParamsPanel({
     const {
         save: saveManualProcessParams,
         isSaving,
-        saveError,
-        clearSaveError,
+        saveFeedback,
+        dismissSaveFeedback,
     } = useSaveManualProcessParams({ workAreaId });
 
     const [manualEntry, setManualEntry] = useState(false);
+    const [sliceWindowOffset, setSliceWindowOffset] = useState(0);
     const [draft, setDraft] = useState<TechnologicalParamsDraft>(() => buildTechnologicalParamsDraft(data));
     const [savedPresser, setSavedPresser] = useState<SavedPresserState>(() => buildSavedPresserState(data));
     const [historyByRowId, setHistoryByRowId] = useState<Record<string, TechnologicalParamHistoryEntry[]>>(() =>
@@ -799,12 +834,13 @@ export function OrderExecutionTechnologicalParamsPanel({
     );
 
     const resetState = useCallback(() => {
-        clearSaveError();
+        dismissSaveFeedback();
         setManualEntry(false);
         setDraft(buildTechnologicalParamsDraft(data));
         setSavedPresser(buildSavedPresserState(data));
         setHistoryByRowId(buildInitialTechnologicalParamHistory(data));
-    }, [clearSaveError, data]);
+        setSliceWindowOffset(0);
+    }, [data, dismissSaveFeedback]);
 
     useEffect(() => {
         setDraft(buildTechnologicalParamsDraft(data));
@@ -830,6 +866,14 @@ export function OrderExecutionTechnologicalParamsPanel({
         setHistoryByRowId(next);
     }, [data, hasWorkAreaId, isSlicesLoading, slicesHistoryByRowId]);
 
+    useEffect(() => {
+        const laterCount = resolveMaxLaterHistoryCount(slicesHistoryByRowId);
+        setSliceWindowOffset(manualEntry ? lastSliceWindowOffset(laterCount) : 0);
+    }, [manualEntry, slicesHistoryByRowId]);
+
+    const laterSliceCount = useMemo(() => resolveMaxLaterHistoryCount(historyByRowId), [historyByRowId]);
+    const clampedSliceWindowOffset = clampSliceWindowOffset(laterSliceCount, sliceWindowOffset);
+
     const resolveCurrentValue = useCallback(
         (row: MeasurableRow) =>
             resolveTechnologicalParamStompValue(stompState, row.stompFieldKey, row.fallbackCurrent),
@@ -848,10 +892,9 @@ export function OrderExecutionTechnologicalParamsPanel({
     }, [stompState]);
 
     const handleManualEntryChange = (checked: boolean) => {
-        clearSaveError();
+        dismissSaveFeedback();
         setManualEntry(checked);
         setDraft({
-            presserWidth: savedPresser.width,
             presserNumbers: { ...savedPresser.numbers },
             manualValues: createEmptyManualDraft(rowIds),
             manualInputMeta: createDefaultManualInputMeta(currentRollNumber),
@@ -895,7 +938,6 @@ export function OrderExecutionTechnologicalParamsPanel({
         }
 
         setSavedPresser({
-            width: draft.presserWidth,
             numbers: { ...draft.presserNumbers },
         });
 
@@ -950,7 +992,7 @@ export function OrderExecutionTechnologicalParamsPanel({
 
             {slicesError ? (
                 <FloatingAutoDismissInformer
-                    key={slicesError}
+                    key={`tech-params-slices-error:${slicesErrorKey}`}
                     title="Ошибка"
                     description={slicesError}
                     tone="alert"
@@ -960,50 +1002,59 @@ export function OrderExecutionTechnologicalParamsPanel({
                 />
             ) : null}
 
-            {saveError ? (
-                <Informer
-                    tone="alert"
+            {saveFeedback ? (
+                <FloatingAutoDismissInformer
+                    key={saveFeedback.key}
+                    title={saveFeedback.title}
+                    description={saveFeedback.description}
+                    tone={saveFeedback.tone}
                     variant="bordered"
                     size="s"
-                    title="Ошибка сохранения"
-                    description={saveError}
-                />
-            ) : null}
-
-            {isSlicesLoading ? (
-                <Informer
-                    tone="system"
-                    variant="bordered"
-                    size="s"
-                    title="Загрузка технологических параметров…"
+                    onDismiss={dismissSaveFeedback}
                 />
             ) : null}
 
             <Informer tone="system" variant="bordered" size="s" title="Правила заполнения" description={data.rulesText} />
 
-            <div className="flex flex-col gap-1 sm:items-end">
-                <Label htmlFor="tech-params-presser-width" className="text-sm text-muted-foreground">
-                    Ширина прессёров:
-                </Label>
-                {manualEntry ? (
-                    <Input
-                        id="tech-params-presser-width"
-                        className="h-8 max-w-xs text-right text-[12px]"
-                        value={draft.presserWidth}
-                        onChange={(event) =>
-                            setDraft((prev) => ({
-                                ...prev,
-                                presserWidth: event.target.value,
-                            }))
-                        }
-                        placeholder="Обязательно вписать ширину прессёра"
-                    />
-                ) : (
-                    <div className="min-h-8 max-w-xs px-1 text-right text-[12px] tabular-nums">
-                        {savedPresser.width || "—"}
+            {manualEntry ? (
+                <div className="flex flex-wrap items-end justify-end gap-4">
+                    <div className="flex flex-col gap-1">
+                        <Label htmlFor="tech-params-roll-number" className="text-sm text-muted-foreground">
+                            Наименование рулона
+                        </Label>
+                        <Input
+                            id="tech-params-roll-number"
+                            className="h-8 w-40 overflow-hidden text-[12px] tabular-nums placeholder:truncate"
+                            value={draft.manualInputMeta.rollNumber}
+                            onChange={(event) => handleManualInputMetaChange({ rollNumber: event.target.value })}
+                            placeholder="Введите имя"
+                        />
                     </div>
-                )}
-            </div>
+                    <div className="flex flex-col gap-1">
+                        <Label htmlFor="tech-params-checked-at" className="text-sm text-muted-foreground">
+                            Дата и время
+                        </Label>
+                        <Input
+                            id="tech-params-checked-at"
+                            type="datetime-local"
+                            step={1}
+                            className="h-8 w-[15.5rem] text-[12px] tabular-nums"
+                            value={formatManualCheckedAtToDateTimeLocal(draft.manualInputMeta.checkedAt)}
+                            onChange={(event) =>
+                                handleManualInputMetaChange({
+                                    checkedAt: formatManualCheckedAtFromDateTimeLocal(event.target.value),
+                                })
+                            }
+                        />
+                    </div>
+                </div>
+            ) : null}
+
+            <SliceWindowControls
+                laterCount={laterSliceCount}
+                offset={clampedSliceWindowOffset}
+                onOffsetChange={setSliceWindowOffset}
+            />
 
             <PrintingSectionsTable
                 title={data.printingTitle}
@@ -1017,8 +1068,7 @@ export function OrderExecutionTechnologicalParamsPanel({
                 onPresserNoChange={handlePresserNoChange}
                 resolveCurrentValue={resolveCurrentValue}
                 resolveStandardValue={resolveStandardValue}
-                manualInputMeta={manualEntry ? draft.manualInputMeta : undefined}
-                onManualInputMetaChange={manualEntry ? handleManualInputMetaChange : undefined}
+                sliceWindowOffset={clampedSliceWindowOffset}
             />
             <ProcessParamsTable
                 title={data.unwindingTitle}
@@ -1030,8 +1080,7 @@ export function OrderExecutionTechnologicalParamsPanel({
                 onManualValueChange={handleManualValueChange}
                 resolveCurrentValue={resolveCurrentValue}
                 resolveStandardValue={resolveStandardValue}
-                manualInputMeta={manualEntry ? draft.manualInputMeta : undefined}
-                onManualInputMetaChange={manualEntry ? handleManualInputMetaChange : undefined}
+                sliceWindowOffset={clampedSliceWindowOffset}
             />
             <ProcessParamsTable
                 title={data.windingTitle}
@@ -1043,8 +1092,7 @@ export function OrderExecutionTechnologicalParamsPanel({
                 onManualValueChange={handleManualValueChange}
                 resolveCurrentValue={resolveCurrentValue}
                 resolveStandardValue={resolveStandardValue}
-                manualInputMeta={manualEntry ? draft.manualInputMeta : undefined}
-                onManualInputMetaChange={manualEntry ? handleManualInputMetaChange : undefined}
+                sliceWindowOffset={clampedSliceWindowOffset}
             />
             <SpeedTable
                 title={data.speedTitle}
@@ -1056,8 +1104,7 @@ export function OrderExecutionTechnologicalParamsPanel({
                 onManualValueChange={(value) => handleManualValueChange(data.speed.id, value)}
                 resolveCurrentValue={resolveCurrentValue}
                 resolveStandardValue={resolveStandardValue}
-                manualInputMeta={manualEntry ? draft.manualInputMeta : undefined}
-                onManualInputMetaChange={manualEntry ? handleManualInputMetaChange : undefined}
+                sliceWindowOffset={clampedSliceWindowOffset}
             />
             </div>
 

@@ -1,20 +1,19 @@
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import {
     dataTableBodyCellClassName,
-    dataTableHeadCellClassName,
-    dataTableInsetShellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
 import type { StageReleasedSeriesRow } from "../../model/stage-completion-types";
 
-/** Временно скрыта колонка «Перемотка». */
-const SHOW_REWIND_COLUMN = false;
+const releasedSeriesHeadCellClassName = cn(dataTablePanelHeadCellClassName, "whitespace-nowrap");
+const releasedSeriesBodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
 
 function formatNumber(value: number): string {
     return value.toLocaleString("ru-RU");
@@ -32,35 +31,34 @@ export function StageCompletionReleasedSeriesTable({ rows }: StageCompletionRele
     return (
         <div className="grid gap-2">
             <div className={cnSectionBlockTitle()}>Выпущенные серии</div>
-            <div className={dataTableViewportShellClassName}>
-                <div className="min-w-0 overflow-x-auto">
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "min-w-[760px] border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
+            <DataTablePanel
+                footer={
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                }
+            >
+                <Table className={cn(dataTablePanelTableClassName, "min-w-[720px]")}>
                         <TableHeader>
                             <TableRow className="hover:!bg-transparent">
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Артикул</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Номен.</TableHead>
-                                {SHOW_REWIND_COLUMN ? (
-                                    <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-center")}>
-                                        Перемотка
-                                    </TableHead>
-                                ) : null}
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Серия</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                    Нетто
-                                </TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
-                                    Брутто
-                                </TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>Ед. изм. 1</TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40", "text-right")}>
+                                <TableHead className={releasedSeriesHeadCellClassName}>Номенклатура</TableHead>
+                                <TableHead className={releasedSeriesHeadCellClassName}>Серия</TableHead>
+                                <TableHead className={cn(releasedSeriesHeadCellClassName, "text-right")}>
                                     Кол-во 1
                                 </TableHead>
-                                <TableHead className={cn(dataTableHeadCellClassName, "bg-muted/40")}>FR</TableHead>
+                                <TableHead className={releasedSeriesHeadCellClassName}>Ед. изм. 1</TableHead>
+                                <TableHead className={cn(releasedSeriesHeadCellClassName, "text-right")}>
+                                    Кол-во 2
+                                </TableHead>
+                                <TableHead className={releasedSeriesHeadCellClassName}>Ед. изм. 2</TableHead>
+                                <TableHead className={releasedSeriesHeadCellClassName}>FR</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -74,38 +72,27 @@ export function StageCompletionReleasedSeriesTable({ rows }: StageCompletionRele
                                                 : undefined
                                         }
                                     >
-                                        <TableCell className={dataTableBodyCellClassName}>{row.article}</TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.nomenclature}</TableCell>
-                                        {SHOW_REWIND_COLUMN ? (
-                                            <TableCell className={cn(dataTableBodyCellClassName, "text-center")}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={row.rewind}
-                                                    readOnly
-                                                    className="h-4 w-4 accent-primary"
-                                                    disabled
-                                                    aria-label={`Серия ${row.series}`}
-                                                />
-                                            </TableCell>
-                                        ) : null}
-                                        <TableCell className={dataTableBodyCellClassName}>{row.series}</TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatNumber(row.netWeight)}
+                                        <TableCell className={releasedSeriesBodyCellClassName} title={row.nomenclature}>
+                                            {row.nomenclature}
                                         </TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatNumber(row.grossWeight)}
+                                        <TableCell className={releasedSeriesBodyCellClassName} title={row.series}>
+                                            {row.series}
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.unit}</TableCell>
-                                        <TableCell className={cn(dataTableBodyCellClassName, "text-right")}>
-                                            {formatNumber(row.quantity)}
+                                        <TableCell className={cn(releasedSeriesBodyCellClassName, "text-right tabular-nums")}>
+                                            {formatNumber(row.quantityPrimary)}
                                         </TableCell>
-                                        <TableCell className={dataTableBodyCellClassName}>{row.fr}</TableCell>
+                                        <TableCell className={releasedSeriesBodyCellClassName}>{row.uomPrimary}</TableCell>
+                                        <TableCell className={cn(releasedSeriesBodyCellClassName, "text-right tabular-nums")}>
+                                            {formatNumber(row.quantitySecondary)}
+                                        </TableCell>
+                                        <TableCell className={releasedSeriesBodyCellClassName}>{row.uomSecondary}</TableCell>
+                                        <TableCell className={releasedSeriesBodyCellClassName}>{row.fr}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={SHOW_REWIND_COLUMN ? 9 : 8}
+                                        colSpan={7}
                                         className={cn(dataTableBodyCellClassName, "py-6 text-center text-muted-foreground")}
                                     >
                                         Нет выпущенных серий
@@ -114,20 +101,7 @@ export function StageCompletionReleasedSeriesTable({ rows }: StageCompletionRele
                             )}
                         </TableBody>
                     </Table>
-                </div>
-                <div className={dataTableViewportFooterClassName}>
-                    <DataTablePaginationFooter
-                        totalCount={pagination.totalCount}
-                        rangeStart={pagination.rangeStart}
-                        rangeEnd={pagination.rangeEnd}
-                        page={pagination.page}
-                        totalPages={pagination.totalPages}
-                        pageSize={pageSize}
-                        onPageChange={setPage}
-                        onPageSizeChange={setPageSize}
-                    />
-                </div>
-            </div>
+            </DataTablePanel>
         </div>
     );
 }

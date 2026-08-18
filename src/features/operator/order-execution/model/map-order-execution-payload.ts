@@ -3,6 +3,7 @@ import type { ApiSchemas } from "@/shared/api/schema";
 import { buildOrderExecutionEmptyMachine } from "./mock-order-execution";
 import { mapOrderExecutionMachineSignalsBlockSummary } from "./map-order-execution-machine-signals-block-summary";
 import { mapOrderExecutionReleaseBlockSummary } from "./map-order-execution-release-block-summary";
+import { mapOrderExecutionStageCompletionBlockSummary } from "./map-order-execution-stage-completion-block-summary";
 import { mapOrderExecutionWriteOffBlockSummary } from "./map-order-execution-write-off-block-summary";
 import type { MachineData, OrderInfo } from "./types";
 
@@ -101,6 +102,7 @@ export function mergeOrderExecutionMachineData(
         releaseBlockSummary: apiData.releaseBlockSummary,
         writeOffBlockSummary: apiData.writeOffBlockSummary,
         machineSignalsBlockSummary: apiData.machineSignalsBlockSummary,
+        stageCompletionBlockSummary: apiData.stageCompletionBlockSummary,
         hasAssignedStage: apiData.hasAssignedStage,
         order: apiData.order,
         operator: {
@@ -150,6 +152,7 @@ export function mapOrderExecutionPayload(
     const releaseBlockSummary = mapOrderExecutionReleaseBlockSummary(record, workAreaId);
     const writeOffBlockSummary = mapOrderExecutionWriteOffBlockSummary(record, workAreaId);
     const machineSignalsBlockSummary = mapOrderExecutionMachineSignalsBlockSummary(record, workAreaId);
+    const stageCompletionBlockSummary = mapOrderExecutionStageCompletionBlockSummary(record, workAreaId);
 
     return {
         ...base,
@@ -159,6 +162,7 @@ export function mapOrderExecutionPayload(
         releaseBlockSummary,
         writeOffBlockSummary,
         machineSignalsBlockSummary,
+        stageCompletionBlockSummary,
         hasAssignedStage,
         order,
         operator: {

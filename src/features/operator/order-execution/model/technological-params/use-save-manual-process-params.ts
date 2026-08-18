@@ -22,10 +22,18 @@ type SaveManualProcessParamsInput = {
     draft: TechnologicalParamsDraft;
 };
 
+export type ManualProcessParamsSaveFeedback = {
+    key: number;
+    title: string;
+    description?: string;
+    tone: "success" | "alert";
+};
+
 export function useSaveManualProcessParams({ workAreaId }: UseSaveManualProcessParamsOptions = {}) {
     const { session } = useSession();
     const [isSaving, setIsSaving] = useState(false);
-    const [saveError, setSaveError] = useState<string | null>(null);
+    const [saveFeedback, setSaveFeedback] = useState<ManualProcessParamsSaveFeedback | null>(null);
+    const saveFeedbackKeyRef = useRef(0);
 
     const { mutateAsync: saveManualProcessParams } = rqClient.useMutation(
         "post",
@@ -36,6 +44,19 @@ export function useSaveManualProcessParams({ workAreaId }: UseSaveManualProcessP
     const saveManualProcessParamsRef = useRef(saveManualProcessParams);
     saveManualProcessParamsRef.current = saveManualProcessParams;
 
+    const showSaveFeedback = useCallback(
+        (title: string, tone: ManualProcessParamsSaveFeedback["tone"], description?: string) => {
+            saveFeedbackKeyRef.current += 1;
+            setSaveFeedback({
+                key: saveFeedbackKeyRef.current,
+                title,
+                description,
+                tone,
+            });
+        },
+        [],
+    );
+
     const save = useCallback(
         async ({ sections, draft }: SaveManualProcessParamsInput) => {
             const trimmedWorkAreaId = workAreaId?.trim() ?? "";
@@ -43,44 +64,41 @@ export function useSaveManualProcessParams({ workAreaId }: UseSaveManualProcessP
             const operatorRef = resolveReleaseOperatorRef(session);
 
             if (!trimmedWorkAreaId) {
-                setSaveError("Не удалось определить workAreaId этапа");
+                showSaveFeedback("Не удалось определить workAreaId этапа", "alert");
                 return false;
             }
 
             if (!externalSeriesKey) {
-                setSaveError("Укажите номер рулона");
+                showSaveFeedback("Укажите наименование", "alert");
                 return false;
             }
 
             if (!operatorRef) {
-                setSaveError("Не удалось определить оператора для сохранения");
+                showSaveFeedback("Не удалось определить оператора для сохранения", "alert");
                 return false;
             }
 
             const payloadJson = buildManualProcessParamsPayloadJson({
                 workAreaId: trimmedWorkAreaId,
-                materialRollId: externalSeriesKey,
                 externalSeriesKey,
                 sections,
                 manualValues: draft.manualValues,
-                presserWidth: draft.presserWidth,
                 presserNumbers: draft.presserNumbers,
             });
 
             if (countManualProcessParams(payloadJson) === 0) {
-                setSaveError("Заполните хотя бы один параметр для сохранения");
+                showSaveFeedback("Заполните хотя бы один параметр для сохранения", "alert");
                 return false;
             }
 
             setIsSaving(true);
-            setSaveError(null);
+            setSaveFeedback(null);
 
             try {
                 const payload = await saveManualProcessParamsRef.current({
                     body: [
                         {
                             workAreaId: trimmedWorkAreaId,
-                            materialRollId: externalSeriesKey,
                             externalSeriesKey,
                             payloadJson,
                             operatorRef,
@@ -90,7 +108,9 @@ export function useSaveManualProcessParams({ workAreaId }: UseSaveManualProcessP
                 mapSaveManualProcessParamsPayload(payload);
                 return true;
             } catch (error) {
-                setSaveError(
+                showSaveFeedback(
+                    "Ошибка",
+                    "alert",
                     error instanceof Error
                         ? error.message
                         : "Не удалось сохранить ручной срез технологических параметров",
@@ -100,17 +120,17 @@ export function useSaveManualProcessParams({ workAreaId }: UseSaveManualProcessP
                 setIsSaving(false);
             }
         },
-        [session, workAreaId],
+        [session, showSaveFeedback, workAreaId],
     );
 
-    const clearSaveError = useCallback(() => {
-        setSaveError(null);
+    const dismissSaveFeedback = useCallback(() => {
+        setSaveFeedback(null);
     }, []);
 
     return {
         save,
         isSaving,
-        saveError,
-        clearSaveError,
+        saveFeedback,
+        dismissSaveFeedback,
     };
 }

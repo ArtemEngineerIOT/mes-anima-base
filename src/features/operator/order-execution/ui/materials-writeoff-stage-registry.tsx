@@ -6,14 +6,13 @@ import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
+import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
 import { Icon } from "@/shared/ui/kit/icon";
 import {
     dataTableBodyCellClassName,
-    dataTableInsetShellClassName,
+    dataTablePanelHeadCellClassName,
+    dataTablePanelTableClassName,
     dataTableShellClassName,
-    dataTableStickyHeadCellClassName,
-    dataTableViewportFooterClassName,
-    dataTableViewportShellClassName,
 } from "@/shared/ui/kit/styles/data-table-stack";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -29,7 +28,7 @@ type MaterialsWriteoffStageRegistryProps = {
     onPrintReturnLabel: (materialRollId: string) => void;
 };
 
-const headCellClassName = cn(dataTableStickyHeadCellClassName, "whitespace-nowrap");
+const headCellClassName = cn(dataTablePanelHeadCellClassName, "whitespace-nowrap");
 const bodyCellClassName = cn(dataTableBodyCellClassName, "whitespace-nowrap");
 
 export function MaterialsWriteoffStageRegistry({
@@ -65,15 +64,22 @@ export function MaterialsWriteoffStageRegistry({
                 <div className="text-[12px] text-destructive">{stageRegistryError}</div>
             ) : null}
 
-            <div className={dataTableViewportShellClassName}>
-                <div className="min-w-0 overflow-x-auto">
-                    <Table
-                        className={cn(
-                            dataTableInsetShellClassName,
-                            "w-full border-separate border-spacing-0 text-[12px]",
-                        )}
-                    >
-                        <TableHeader className="bg-muted/40">
+            <DataTablePanel
+                footer={
+                    <DataTablePaginationFooter
+                        totalCount={pagination.totalCount}
+                        rangeStart={pagination.rangeStart}
+                        rangeEnd={pagination.rangeEnd}
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                    />
+                }
+            >
+                <Table className={dataTablePanelTableClassName}>
+                        <TableHeader>
                             <TableRow className="hover:!bg-transparent">
                                 <TableHead className={cn(headCellClassName, "w-9")} />
                                 <TableHead className={headCellClassName}>Номенклатура</TableHead>
@@ -156,11 +162,11 @@ export function MaterialsWriteoffStageRegistry({
                                                             <Table
                                                                 className={cn(dataTableShellClassName, "text-[12px]")}
                                                             >
-                                                                <TableHeader className="bg-muted/40">
+                                                                <TableHeader>
                                                                     <TableRow>
                                                                         <TableHead
                                                                             className={cn(
-                                                                                dataTableStickyHeadCellClassName,
+                                                                                headCellClassName,
                                                                                 "w-[45%]",
                                                                             )}
                                                                         >
@@ -168,40 +174,34 @@ export function MaterialsWriteoffStageRegistry({
                                                                         </TableHead>
                                                                         <TableHead
                                                                             className={cn(
-                                                                                dataTableStickyHeadCellClassName,
-                                                                                "whitespace-nowrap text-right",
+                                                                                headCellClassName,
+                                                                                "text-right",
                                                                             )}
                                                                         >
                                                                             Кол-во 1
                                                                         </TableHead>
                                                                         <TableHead
-                                                                            className={cn(
-                                                                                dataTableStickyHeadCellClassName,
-                                                                                "whitespace-nowrap",
-                                                                            )}
+                                                                            className={headCellClassName}
                                                                         >
                                                                             Ед. изм. 1
                                                                         </TableHead>
                                                                         <TableHead
                                                                             className={cn(
-                                                                                dataTableStickyHeadCellClassName,
-                                                                                "whitespace-nowrap text-right",
+                                                                                headCellClassName,
+                                                                                "text-right",
                                                                             )}
                                                                         >
                                                                             Кол-во 2
                                                                         </TableHead>
                                                                         <TableHead
-                                                                            className={cn(
-                                                                                dataTableStickyHeadCellClassName,
-                                                                                "whitespace-nowrap",
-                                                                            )}
+                                                                            className={headCellClassName}
                                                                         >
                                                                             Ед. изм. 2
                                                                         </TableHead>
                                                                         <TableHead
                                                                             className={cn(
-                                                                                dataTableStickyHeadCellClassName,
-                                                                                "w-12 text-right whitespace-nowrap",
+                                                                                headCellClassName,
+                                                                                "w-12 text-right",
                                                                             )}
                                                                         >
                                                                             Действие
@@ -298,21 +298,8 @@ export function MaterialsWriteoffStageRegistry({
                                 })
                             )}
                         </TableBody>
-                    </Table>
-                </div>
-                <div className={dataTableViewportFooterClassName}>
-                    <DataTablePaginationFooter
-                        totalCount={pagination.totalCount}
-                        rangeStart={pagination.rangeStart}
-                        rangeEnd={pagination.rangeEnd}
-                        page={pagination.page}
-                        totalPages={pagination.totalPages}
-                        pageSize={pageSize}
-                        onPageChange={setPage}
-                        onPageSizeChange={setPageSize}
-                    />
-                </div>
-            </div>
+                </Table>
+            </DataTablePanel>
         </div>
     );
 }
