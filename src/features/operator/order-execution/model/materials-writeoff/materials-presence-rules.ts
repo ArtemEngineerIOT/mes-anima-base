@@ -1,5 +1,9 @@
 import type { MaterialsInstallationPlace } from "./materials-writeoff-form";
-import type { MaterialsPresenceRow } from "./types";
+import type { MaterialsPresenceRow, MaterialsPresenceSlot } from "./types";
+
+export function hasUnwindingRollInSlot(rows: MaterialsPresenceRow[], unwindNo: string): boolean {
+    return rows.some((row) => row.unwindNo === unwindNo && row.status === "ON_UNWIND");
+}
 
 export function hasUnwindingRollForNomenclature(
     rows: MaterialsPresenceRow[],
@@ -8,24 +12,28 @@ export function hasUnwindingRollForNomenclature(
     return rows.some((row) => row.nomenclatureCode === nomenclatureCode && row.status === "ON_UNWIND");
 }
 
+export function hasFreeUnwindSlot(slots: MaterialsPresenceSlot[]): boolean {
+    return slots.some((slot) => !slot.rows.some((row) => row.status === "ON_UNWIND"));
+}
+
 export function hasAnyUnwindingRoll(rows: MaterialsPresenceRow[]): boolean {
     return rows.some((row) => row.status === "ON_UNWIND");
 }
 
-export function resolveDefaultInstallationPlace(rows: MaterialsPresenceRow[]): MaterialsInstallationPlace {
-    return hasAnyUnwindingRoll(rows) ? "WAITING" : "ON_UNWIND";
+export function resolveDefaultInstallationPlace(slots: MaterialsPresenceSlot[]): MaterialsInstallationPlace {
+    return hasFreeUnwindSlot(slots) ? "ON_UNWIND" : "WAITING";
 }
 
 export function canInstallAtUnwind(
     rows: MaterialsPresenceRow[],
-    nomenclatureCode: string,
+    unwindNo: string,
     place: MaterialsInstallationPlace,
 ): boolean {
     if (place !== "ON_UNWIND") {
         return true;
     }
 
-    return !hasUnwindingRollForNomenclature(rows, nomenclatureCode);
+    return !hasUnwindingRollInSlot(rows, unwindNo);
 }
 
 export function upsertPresenceRow(rows: MaterialsPresenceRow[], nextRow: MaterialsPresenceRow): MaterialsPresenceRow[] {
@@ -39,7 +47,7 @@ export function movePresenceRowToUnwind(rows: MaterialsPresenceRow[], rowId: str
         return rows;
     }
 
-    if (hasUnwindingRollForNomenclature(rows, target.nomenclatureCode)) {
+    if (hasUnwindingRollInSlot(rows, target.unwindNo)) {
         return rows;
     }
 

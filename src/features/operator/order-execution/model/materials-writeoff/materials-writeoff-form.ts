@@ -1,4 +1,4 @@
-import type { MaterialsPresenceRow } from "./types";
+import type { MaterialsPresenceSlot } from "./types";
 
 export type MaterialsInstallationPlace = "WAITING" | "ON_UNWIND";
 
@@ -16,13 +16,14 @@ export const MATERIALS_INSTALLATION_PLACE_OPTIONS: ReadonlyArray<MaterialsInstal
 export const DEFAULT_MATERIALS_INSTALLATION_PLACE: MaterialsInstallationPlace = "WAITING";
 
 export function resolveInstallationPlaceOptions(
-    rows: MaterialsPresenceRow[],
+    slots: MaterialsPresenceSlot[],
 ): ReadonlyArray<MaterialsInstallationPlaceOption> {
-    const unwindOccupied = rows.some((row) => row.status === "ON_UNWIND");
+    const unwindAvailable =
+        slots.length === 0 || slots.some((slot) => !slot.rows.some((row) => row.status === "ON_UNWIND"));
 
     return MATERIALS_INSTALLATION_PLACE_OPTIONS.map((option) => ({
         ...option,
-        disabled: unwindOccupied && option.value === "ON_UNWIND",
+        disabled: !unwindAvailable && option.value === "ON_UNWIND",
     }));
 }
 

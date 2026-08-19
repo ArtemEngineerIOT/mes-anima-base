@@ -1003,7 +1003,7 @@ export interface paths {
         put?: never;
         /**
          * Рулоны в машине на этапе
-         * @description Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат»
+         * @description Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат». В `result[].slot_groups[]` — независимые слоты размотки (`unwind_no`, `unwind_label`, `delivery_kind`); пустой слот (`waiting_rows` / `unwind_row` = []) тоже отображается.
          */
         post: {
             parameters: {
@@ -1700,6 +1700,51 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderExecutionReleaseProductionEventResponse"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["UnauthorizedError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/contexts/users.admin.models.rest/functions/getJbTable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Таблица документов JB на АРМ оператора
+         * @description BFF `users.admin.models.processControlJbBff.getJbTable`. Блок «JB» на экране «Исполнение заказа» — заполнение таблиц при раскрытии. Ответ — массив `[{ id, description, action, status }]`. `id` 1–7 — «ПО ЛИСТАМ», 8 — «ВЕСЬ ДОКУМЕНТ». `status: true` — готов к печати; `action: true` — доступна кнопка печати. Тело: `[{ machineId }]`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OrderExecutionGetJbTableRequest"];
+                };
+            };
+            responses: {
+                /** @description Таблица JB (error_code OK — успех) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderExecutionGetJbTableResponse"];
                     };
                 };
                 400: components["responses"]["Error"];
@@ -3627,8 +3672,14 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** @description Группа рулонов одной номенклатуры в `slot_groups` */
+        /** @description Слот размотки в `slot_groups` (живёт независимо от других слотов, в т.ч. пустой) */
         OrderExecutionStageRollPresenceSlotGroup: {
+            /** @description Номер слота размотки (`1`, `2`, …) */
+            unwind_no?: string | null;
+            /** @description Подпись слота (`Размотка 1`) */
+            unwind_label?: string | null;
+            /** @description Вид поставки (`RAW_MATERIAL` / `SEMI_FINISHED`) */
+            delivery_kind?: string | null;
             nomenclature_name?: string | null;
             nomenclature_code?: string | null;
             waiting_rows?: components["schemas"]["OrderExecutionStageRollPresencePresenceRow"][];
@@ -4013,6 +4064,30 @@ export interface components {
             /** @description Подписи полей для плашки сводки */
             result_field_labels?: components["schemas"]["OrderExecutionReleaseProductionEventFieldLabel"][];
         })[];
+        /** @description Запрос getJbTable — таблица документов JB на АРМ оператора */
+        OrderExecutionGetJbTableRequestItem: {
+            /** @description Код машины (`machineId` / `resourceCode` экрана исполнения заказа) */
+            machineId: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Тело `[{ machineId }]` для getJbTable */
+        OrderExecutionGetJbTableRequest: components["schemas"]["OrderExecutionGetJbTableRequestItem"][];
+        /** @description Строка таблицы JB в ответе getJbTable */
+        OrderExecutionGetJbTableRowItem: {
+            /** @description Код документа (1–7 — по листам, 8 — весь документ JB) */
+            id?: number | null;
+            /** @description Название документа */
+            description?: string | null;
+            /** @description Доступна ли печать (кнопка «Печать») */
+            action?: boolean | null;
+            /** @description Готовность документа (`true` — готов к печати) */
+            status?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** @description Ответ getJbTable — массив строк таблицы JB */
+        OrderExecutionGetJbTableResponse: components["schemas"]["OrderExecutionGetJbTableRowItem"][];
         /** @description Значение параметра машины внутри среза getLastProcessParamsSlices */
         OrderExecutionLastProcessParamsSlicesSliceMachineParamValueRow: {
             param_code?: string | null;

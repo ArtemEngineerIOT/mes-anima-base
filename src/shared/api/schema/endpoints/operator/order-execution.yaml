@@ -92,7 +92,10 @@ postGetStageRollRegistry:
 
 postGetStageRollPresence:
     summary: Рулоны в машине на этапе
-    description: Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат»
+    description: >
+        Таблица «Рулоны в машине» при открытии блока «Материалы. Списание/возврат».
+        В `result[].slot_groups[]` — независимые слоты размотки (`unwind_no`, `unwind_label`,
+        `delivery_kind`); пустой слот (`waiting_rows` / `unwind_row` = []) тоже отображается.
     security:
         - bearerAuth: []
     requestBody:
@@ -464,6 +467,35 @@ postGetListMaterialSignal:
                 application/json:
                     schema:
                         $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionReleaseProductionEventResponse"
+        "400":
+            $ref: "../../shared/responses.yaml#/components/responses/Error"
+        "401":
+            $ref: "../../shared/responses.yaml#/components/responses/UnauthorizedError"
+
+postGetJbTable:
+    summary: Таблица документов JB на АРМ оператора
+    description: >
+        BFF `users.admin.models.processControlJbBff.getJbTable`.
+        Блок «JB» на экране «Исполнение заказа» — заполнение таблиц при раскрытии.
+        Ответ — массив `[{ id, description, action, status }]`.
+        `id` 1–7 — «ПО ЛИСТАМ», 8 — «ВЕСЬ ДОКУМЕНТ».
+        `status: true` — готов к печати; `action: true` — доступна кнопка печати.
+        Тело: `[{ machineId }]`.
+    security:
+        - bearerAuth: []
+    requestBody:
+        required: true
+        content:
+            application/json:
+                schema:
+                    $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionGetJbTableRequest"
+    responses:
+        "200":
+            description: Таблица JB (error_code OK — успех)
+            content:
+                application/json:
+                    schema:
+                        $ref: "../../shared/schemas.yaml#/components/schemas/OrderExecutionGetJbTableResponse"
         "400":
             $ref: "../../shared/responses.yaml#/components/responses/Error"
         "401":

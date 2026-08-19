@@ -162,6 +162,10 @@ paths:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetListMaterialSignal"
 
+    /v1/contexts/users.admin.models.rest/functions/getJbTable:
+        post:
+            $ref: "./endpoints/operator/order-execution.yaml#/postGetJbTable"
+
     /v1/contexts/users.admin.models.rest/functions/getLastProcessParamsSlices:
         post:
             $ref: "./endpoints/operator/order-execution.yaml#/postGetLastProcessParamsSlices"

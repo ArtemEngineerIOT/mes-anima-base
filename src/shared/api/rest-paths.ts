@@ -39,6 +39,7 @@ export const REST_FUNCTION_PATHS = {
     getEventsSummary: `${REST_FUNCTIONS_BASE}/getEventsSummary`,
     getMaterialEventsSummary: `${REST_FUNCTIONS_BASE}/getMaterialEventsSummary`,
     getListMaterialSignal: `${REST_FUNCTIONS_BASE}/getListMaterialSignal`,
+    getJbTable: `${REST_FUNCTIONS_BASE}/getJbTable`,
     getLastProcessParamsSlices: `${REST_FUNCTIONS_BASE}/getLastProcessParamsSlices`,
     getProcessControl: `${REST_FUNCTIONS_BASE}/getProcessControl`,
     saveProcessControl: `${REST_FUNCTIONS_BASE}/saveProcessControl`,

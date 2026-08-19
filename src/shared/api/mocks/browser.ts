@@ -18,6 +18,7 @@ import { orderExecutionEventRollWriteOffHandlers } from "./handlers/order-execut
 import { orderExecutionMonitoringHandlers } from "./handlers/order-execution-monitoring";
 import { orderExecutionStageProgressHandlers } from "./handlers/order-execution-stage-progress";
 import { orderExecutionUnprocessedSignalsSummaryHandlers } from "./handlers/order-execution-unprocessed-signals-summary";
+import { orderExecutionJbTableHandlers } from "./handlers/order-execution-jb-table";
 import { orderExecutionLastProcessParamsSlicesHandlers } from "./handlers/order-execution-last-process-params-slices";
 import { orderExecutionSaveManualProcessParamsHandlers } from "./handlers/order-execution-save-manual-process-params";
 import { orderExecutionProcessControlHandlers } from "./handlers/order-execution-process-control";
@@ -73,6 +74,7 @@ export const worker = setupWorker(
     ...orderExecutionMonitoringHandlers,
     ...orderExecutionStageProgressHandlers,
     ...orderExecutionUnprocessedSignalsSummaryHandlers,
+    ...orderExecutionJbTableHandlers,
     ...orderExecutionLastProcessParamsSlicesHandlers,
     ...orderExecutionSaveManualProcessParamsHandlers,
     ...orderExecutionProcessControlHandlers,

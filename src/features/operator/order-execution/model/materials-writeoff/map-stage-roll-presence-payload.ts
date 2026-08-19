@@ -1,16 +1,26 @@
 import type { ApiSchemas } from "@/shared/api/schema";
 
-import type { MaterialsPresenceRow, MaterialsPresenceStatus, MaterialsRollPresenceSnapshot } from "./types";
+import type {
+    MaterialsPresenceDeliveryKind,
+    MaterialsPresenceRow,
+    MaterialsPresenceSlot,
+    MaterialsPresenceStatus,
+    MaterialsRollPresenceSnapshot,
+} from "./types";
 
 const OK_ERROR_CODE = "OK";
 
 const EMPTY_SNAPSHOT: MaterialsRollPresenceSnapshot = {
+    slots: [],
     rows: [],
     asOf: null,
     workAreaId: null,
 };
 
 type SlotGroupContext = {
+    unwindNo: string;
+    unwindLabel: string;
+    deliveryKind: MaterialsPresenceDeliveryKind;
     nomenclatureName: string;
     nomenclatureCode: string;
 };
@@ -50,6 +60,15 @@ function pickNullableString(value: unknown): string | null {
     return trimmed || null;
 }
 
+function mapDeliveryKind(value: unknown): MaterialsPresenceDeliveryKind {
+    const normalized = pickString(value).toUpperCase();
+    if (normalized === "RAW_MATERIAL" || normalized === "SEMI_FINISHED") {
+        return normalized;
+    }
+
+    return "";
+}
+
 function mapPresenceStatus(value: unknown, fallback: MaterialsPresenceStatus): MaterialsPresenceStatus {
     const normalized = pickString(value).toUpperCase();
     if (normalized === "ON_UNWIND" || normalized === "UNWIND") {
@@ -73,6 +92,16 @@ function readPresenceRows(value: unknown): Record<string, unknown>[] {
     }
 
     return [];
+}
+
+function compareUnwindNo(left: string, right: string): number {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
+    if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber) && leftNumber !== rightNumber) {
+        return leftNumber - rightNumber;
+    }
+
+    return left.localeCompare(right, "ru");
 }
 
 function mapPresenceSlotRow(
@@ -106,11 +135,20 @@ function mapPresenceSlotRow(
         currentWeightKg: pickNumber(row.current_weight_kg ?? row.currentWeightKg),
         canMoveToUnwind: canMoveToUnwind ?? status === "WAITING",
         writeOffAllowed: writeOffAllowed ?? status === "ON_UNWIND",
+        unwindNo: group.unwindNo,
+        unwindLabel: group.unwindLabel,
+        deliveryKind: group.deliveryKind,
     };
 }
 
-function mapSlotGroup(group: Record<string, unknown>): MaterialsPresenceRow[] {
+function mapSlotGroup(group: Record<string, unknown>, index: number): MaterialsPresenceSlot {
+    const unwindNo = pickString(group.unwind_no ?? group.unwindNo) || String(index + 1);
+    const unwindLabel =
+        pickString(group.unwind_label ?? group.unwindLabel) || `Размотка ${unwindNo}`;
     const context: SlotGroupContext = {
+        unwindNo,
+        unwindLabel,
+        deliveryKind: mapDeliveryKind(group.delivery_kind ?? group.deliveryKind),
         nomenclatureName: pickString(group.nomenclature_name ?? group.nomenclatureName),
         nomenclatureCode: pickString(group.nomenclature_code ?? group.nomenclatureCode),
     };
@@ -125,18 +163,28 @@ function mapSlotGroup(group: Record<string, unknown>): MaterialsPresenceRow[] {
         return mapped ? [mapped] : [];
     });
 
-    return [...waitingRows, ...unwindRows];
+    return {
+        id: unwindNo,
+        unwindNo,
+        unwindLabel,
+        deliveryKind: context.deliveryKind,
+        nomenclatureName: context.nomenclatureName,
+        nomenclatureCode: context.nomenclatureCode,
+        rows: [...waitingRows, ...unwindRows],
+    };
 }
 
-function mapPresenceSnapshot(snapshot: Record<string, unknown>): MaterialsPresenceRow[] {
+function mapPresenceSlots(snapshot: Record<string, unknown>): MaterialsPresenceSlot[] {
     const slotGroups = snapshot.slot_groups ?? snapshot.slotGroups;
     if (!Array.isArray(slotGroups)) {
         return [];
     }
 
-    return slotGroups.flatMap((group) =>
-        group && typeof group === "object" ? mapSlotGroup(group as Record<string, unknown>) : [],
-    );
+    return slotGroups
+        .flatMap((group, index) =>
+            group && typeof group === "object" ? [mapSlotGroup(group as Record<string, unknown>, index)] : [],
+        )
+        .sort((left, right) => compareUnwindNo(left.unwindNo, right.unwindNo));
 }
 
 export function mapStageRollPresencePayload(
@@ -163,9 +211,11 @@ export function mapStageRollPresencePayload(
         (snapshot): snapshot is Record<string, unknown> => Boolean(snapshot) && typeof snapshot === "object",
     );
     const firstSnapshot = snapshots[0];
+    const slots = snapshots.flatMap((snapshot) => mapPresenceSlots(snapshot));
 
     return {
-        rows: snapshots.flatMap((snapshot) => mapPresenceSnapshot(snapshot)),
+        slots,
+        rows: slots.flatMap((slot) => slot.rows),
         asOf:
             pickNullableString(firstSnapshot?.as_of ?? firstSnapshot?.asOf) ??
             pickNullableString(wrapperRecord.as_of ?? wrapperRecord.asOf),

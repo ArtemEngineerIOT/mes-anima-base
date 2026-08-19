@@ -819,8 +819,20 @@ components:
 
         OrderExecutionStageRollPresenceSlotGroup:
             type: object
-            description: Группа рулонов одной номенклатуры в `slot_groups`
+            description: Слот размотки в `slot_groups` (живёт независимо от других слотов, в т.ч. пустой)
             properties:
+                unwind_no:
+                    type: string
+                    nullable: true
+                    description: Номер слота размотки (`1`, `2`, …)
+                unwind_label:
+                    type: string
+                    nullable: true
+                    description: Подпись слота (`Размотка 1`)
+                delivery_kind:
+                    type: string
+                    nullable: true
+                    description: Вид поставки (`RAW_MATERIAL` / `SEMI_FINISHED`)
                 nomenclature_name:
                     type: string
                     nullable: true
@@ -2228,6 +2240,52 @@ components:
                               type: array
                               items:
                                   $ref: "#/components/schemas/OrderExecutionProcessControlResultItem"
+
+        OrderExecutionGetJbTableRequestItem:
+            type: object
+            description: Запрос getJbTable — таблица документов JB на АРМ оператора
+            properties:
+                machineId:
+                    type: string
+                    description: Код машины (`machineId` / `resourceCode` экрана исполнения заказа)
+            required:
+                - machineId
+            additionalProperties: true
+
+        OrderExecutionGetJbTableRequest:
+            type: array
+            minItems: 1
+            description: Тело `[{ machineId }]` для getJbTable
+            items:
+                $ref: "#/components/schemas/OrderExecutionGetJbTableRequestItem"
+
+        OrderExecutionGetJbTableRowItem:
+            type: object
+            description: Строка таблицы JB в ответе getJbTable
+            properties:
+                id:
+                    type: integer
+                    nullable: true
+                    description: Код документа (1–7 — по листам, 8 — весь документ JB)
+                description:
+                    type: string
+                    nullable: true
+                    description: Название документа
+                action:
+                    type: boolean
+                    nullable: true
+                    description: Доступна ли печать (кнопка «Печать»)
+                status:
+                    type: boolean
+                    nullable: true
+                    description: Готовность документа (`true` — готов к печати)
+            additionalProperties: true
+
+        OrderExecutionGetJbTableResponse:
+            type: array
+            description: Ответ getJbTable — массив строк таблицы JB
+            items:
+                $ref: "#/components/schemas/OrderExecutionGetJbTableRowItem"
 
         OrderExecutionSaveProcessControlRequestItem:
             type: object
