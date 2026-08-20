@@ -1,14 +1,12 @@
 import { useEffect, useRef } from "react";
 import { ROUTES } from "@/shared/model/routes";
 import { useSession } from "@/shared/model/session";
-import { isWebSocketActive, useTestEventStompSubscription, webSocket } from "@/shared/api/websocket";
+import { isWebSocketActive, webSocket } from "@/shared/api/websocket";
 import { Navigate, Outlet } from "react-router";
 
 export function ProtectedRoute() {
     const { session, token, isBootstrapLoading } = useSession();
     const initCalled = useRef(false);
-
-    useTestEventStompSubscription({ enabled: Boolean(token) });
 
     useEffect(() => {
         if (token && !initCalled.current) {

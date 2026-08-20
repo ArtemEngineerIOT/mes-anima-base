@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import { useDataTablePagination } from "@/shared/lib/data-table-pagination";
 import { cn } from "@/shared/lib/css";
 import { Button } from "@/shared/ui/kit/button";
 import { DataTablePaginationFooter } from "@/shared/ui/kit/data-table-pagination-footer";
 import { DataTablePanel } from "@/shared/ui/kit/data-table-panel";
-import { Icon } from "@/shared/ui/kit/icon";
 import { Label } from "@/shared/ui/kit/label";
 import { comboboxFieldLabelClassName } from "@/shared/ui/kit/styles/combobox-field-label";
 import { cnSectionBlockTitle } from "@/shared/ui/kit/styles/section-block-title";
@@ -17,6 +17,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/kit/table";
 
 import {
+    nextUnprocessedMachineEventDetectedAtSortDirection,
     sortUnprocessedMachineEventsByDetectedAt,
     type UnprocessedMachineEventDetectedAtSortDirection,
 } from "../../../model/event-registration/sort-unprocessed-machine-events-by-detected-at";
@@ -48,7 +49,7 @@ export function EventRegistrationUnprocessedPanel({
     } = registration;
 
     const [detectedAtSortDirection, setDetectedAtSortDirection] =
-        useState<UnprocessedMachineEventDetectedAtSortDirection>("desc");
+        useState<UnprocessedMachineEventDetectedAtSortDirection>("none");
 
     const sortedUnprocessed = useMemo(
         () => sortUnprocessedMachineEventsByDetectedAt(unprocessed, detectedAtSortDirection),
@@ -62,7 +63,21 @@ export function EventRegistrationUnprocessedPanel({
         },
     );
 
-    const sortLabel = detectedAtSortDirection === "asc" ? "по возрастанию" : "по убыванию";
+    const sortLabel =
+        detectedAtSortDirection === "none"
+            ? "без сортировки"
+            : detectedAtSortDirection === "desc"
+              ? "по убыванию"
+              : "по возрастанию";
+
+    const sortIcon =
+        detectedAtSortDirection === "none" ? (
+            <ArrowUpDown className="size-3.5 shrink-0 text-muted-foreground/50" aria-hidden />
+        ) : detectedAtSortDirection === "desc" ? (
+            <ArrowDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        ) : (
+            <ArrowUp className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        );
 
     return (
         <div className="grid gap-3">
@@ -93,30 +108,26 @@ export function EventRegistrationUnprocessedPanel({
                             <TableHead
                                 className={dataTablePanelHeadCellClassName}
                                 aria-sort={
-                                    detectedAtSortDirection === "asc" ? "ascending" : "descending"
+                                    detectedAtSortDirection === "none"
+                                        ? "none"
+                                        : detectedAtSortDirection === "asc"
+                                          ? "ascending"
+                                          : "descending"
                                 }
                             >
                                 <button
                                     type="button"
-                                    className="inline-flex items-center gap-1 text-left uppercase hover:text-foreground"
+                                    className="inline-flex items-center gap-0.5 text-left uppercase hover:text-foreground"
                                     onClick={() => {
                                         setDetectedAtSortDirection((prev) =>
-                                            prev === "asc" ? "desc" : "asc",
+                                            nextUnprocessedMachineEventDetectedAtSortDirection(prev),
                                         );
                                         setPage(1);
                                     }}
                                     aria-label={`Сортировать по началу: ${sortLabel}`}
                                 >
                                     <span>{"Начало".toLocaleUpperCase("ru-RU")}</span>
-                                    <Icon
-                                        name={
-                                            detectedAtSortDirection === "asc"
-                                                ? "arrow_upward"
-                                                : "arrow_downward"
-                                        }
-                                        size="sm"
-                                        className="text-[14px] text-muted-foreground"
-                                    />
+                                    {sortIcon}
                                 </button>
                             </TableHead>
                             <TableHead className={dataTablePanelHeadCellClassName}>Завершение</TableHead>

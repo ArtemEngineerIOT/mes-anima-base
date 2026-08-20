@@ -42,6 +42,7 @@ function OrderExecutionMonitoringPage() {
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3">
                     <OrderExecutionMachineStompProvider
                         enabled={Boolean(workAreaId)}
+                        machineId={machineId}
                         workAreaId={workAreaId}
                         subscribeToTags
                     >

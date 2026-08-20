@@ -43,7 +43,7 @@ export function OrderExecutionMonitoringContent({
     stageEventsSilentReloadRef,
 }: OrderExecutionMonitoringContentProps) {
     const machineStompState = useOrderExecutionMachineStompState();
-    const machineParams = resolveMonitoringMachineParams(machineStompState);
+    const machineParams = resolveMonitoringMachineParams(machineStompState, machineId);
     const { lineMeters, isLoading: isLineMetersLoading, error: lineMetersError, reload } = useMonitoringLineMeters({
         workAreaId,
     });

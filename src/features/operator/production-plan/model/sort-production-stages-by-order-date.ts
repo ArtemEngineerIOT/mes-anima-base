@@ -1,12 +1,10 @@
-import type { UnprocessedMachineEvent } from "./types";
+import type { ProductionStage } from "./types";
 
 /** `none` — без сортировки (порядок с бэка); далее desc → asc. */
-export type UnprocessedMachineEventDetectedAtSortDirection = "none" | "desc" | "asc";
+export type ProductionPlanOrderDateSortDirection = "none" | "desc" | "asc";
 
-/** Парсит `detectedAt` вида `24.07.2026 08:32:48` (и ISO) в timestamp для сортировки. */
-export function parseUnprocessedMachineEventDetectedAt(
-    value: string | null | undefined,
-): number | null {
+/** Парсит `orderDate` (ISO / `dd.MM.yyyy` / с временем) в timestamp для сортировки. */
+export function parseProductionPlanOrderDate(value: string | null | undefined): number | null {
     if (typeof value !== "string") {
         return null;
     }
@@ -30,7 +28,10 @@ export function parseUnprocessedMachineEventDetectedAt(
         return Number.isNaN(timestamp) ? null : timestamp;
     }
 
-    const isoLike = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(trimmed);
+    const isoLike =
+        /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?(?:\+\d{2}(?::?\d{2})?)?/.exec(
+            trimmed,
+        );
     if (isoLike) {
         const year = Number(isoLike[1]);
         const month = Number(isoLike[2]);
@@ -46,9 +47,9 @@ export function parseUnprocessedMachineEventDetectedAt(
     return Number.isNaN(parsed) ? null : parsed;
 }
 
-export function nextUnprocessedMachineEventDetectedAtSortDirection(
-    current: UnprocessedMachineEventDetectedAtSortDirection,
-): UnprocessedMachineEventDetectedAtSortDirection {
+export function nextProductionPlanOrderDateSortDirection(
+    current: ProductionPlanOrderDateSortDirection,
+): ProductionPlanOrderDateSortDirection {
     if (current === "none") {
         return "desc";
     }
@@ -58,22 +59,24 @@ export function nextUnprocessedMachineEventDetectedAtSortDirection(
     return "none";
 }
 
-export function sortUnprocessedMachineEventsByDetectedAt(
-    rows: readonly UnprocessedMachineEvent[],
-    direction: UnprocessedMachineEventDetectedAtSortDirection,
-): UnprocessedMachineEvent[] {
+export function sortProductionStagesByOrderDate(
+    stages: readonly ProductionStage[],
+    direction: ProductionPlanOrderDateSortDirection,
+): ProductionStage[] {
     if (direction === "none") {
-        return [...rows];
+        return [...stages];
     }
 
     const multiplier = direction === "asc" ? 1 : -1;
 
-    return [...rows].sort((left, right) => {
-        const leftTs = parseUnprocessedMachineEventDetectedAt(left.detectedAt);
-        const rightTs = parseUnprocessedMachineEventDetectedAt(right.detectedAt);
+    return [...stages].sort((left, right) => {
+        const leftTs = parseProductionPlanOrderDate(left.orderDate);
+        const rightTs = parseProductionPlanOrderDate(right.orderDate);
 
         if (leftTs === null && rightTs === null) {
-            return left.id.localeCompare(right.id);
+            return `${left.workAreaId}:${left.stageId}`.localeCompare(
+                `${right.workAreaId}:${right.stageId}`,
+            );
         }
         if (leftTs === null) {
             return 1;
@@ -86,6 +89,8 @@ export function sortUnprocessedMachineEventsByDetectedAt(
             return (leftTs - rightTs) * multiplier;
         }
 
-        return left.id.localeCompare(right.id);
+        return `${left.workAreaId}:${left.stageId}`.localeCompare(
+            `${right.workAreaId}:${right.stageId}`,
+        );
     });
 }

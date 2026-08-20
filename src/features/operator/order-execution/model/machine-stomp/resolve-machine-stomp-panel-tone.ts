@@ -6,7 +6,7 @@ import type { OrderExecutionMachineStompState } from "./order-execution-machine-
 const DISCONNECTED_PANEL_TONE: InformerTone = "alert";
 const DEFAULT_PANEL_TONE: InformerTone = "success";
 
-/** Цвет плашки `MachineDataPanel` по STOMP `parameters` / `sync_status`. */
+/** Цвет плашки `MachineDataPanel` по STOMP-параметрам машины / `sync_status`. */
 export function resolveMachineStompPanelTone(stompState: OrderExecutionMachineStompState): InformerTone {
     if (!stompState.isStompConnected) {
         return DISCONNECTED_PANEL_TONE;
