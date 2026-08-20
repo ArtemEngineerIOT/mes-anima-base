@@ -76,6 +76,7 @@ export function OrderExecutionMaterialsWriteoff({
         setInstallationPlace,
         installationPlaceOptions,
         presenceRows,
+        presenceSlots,
         isPresenceLoading,
         presenceAsOf,
         presenceError,
@@ -181,6 +182,7 @@ export function OrderExecutionMaterialsWriteoff({
         enabled &&
         (isSignalsLoading || isPresenceLoading || stageRegistry.isLoading) &&
         signalList.length === 0 &&
+        presenceSlots.length === 0 &&
         presenceRows.length === 0 &&
         stageRegistry.stageOperations.length === 0;
 
@@ -297,7 +299,7 @@ export function OrderExecutionMaterialsWriteoff({
             ) : null}
 
             <MaterialsWriteoffPresenceTable
-                rows={presenceRows}
+                slots={presenceSlots}
                 isLoading={isPresenceLoading}
                 presenceAsOf={presenceAsOf}
                 expandedRowId={expandedPresenceRowId}

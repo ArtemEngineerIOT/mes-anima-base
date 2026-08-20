@@ -53,6 +53,8 @@ export type MaterialsStageRegistrySnapshot = {
 
 export type MaterialsPresenceStatus = "WAITING" | "ON_UNWIND";
 
+export type MaterialsPresenceDeliveryKind = "RAW_MATERIAL" | "SEMI_FINISHED" | "";
+
 export type MaterialsPresenceRow = {
     id: string;
     materialRollId: string;
@@ -66,9 +68,24 @@ export type MaterialsPresenceRow = {
     currentWeightKg: number;
     canMoveToUnwind: boolean;
     writeOffAllowed: boolean;
+    unwindNo: string;
+    unwindLabel: string;
+    deliveryKind: MaterialsPresenceDeliveryKind;
+};
+
+/** Слот размотки из `slot_groups` — независим от других слотов, может быть пустым. */
+export type MaterialsPresenceSlot = {
+    id: string;
+    unwindNo: string;
+    unwindLabel: string;
+    deliveryKind: MaterialsPresenceDeliveryKind;
+    nomenclatureName: string;
+    nomenclatureCode: string;
+    rows: MaterialsPresenceRow[];
 };
 
 export type MaterialsRollPresenceSnapshot = {
+    slots: MaterialsPresenceSlot[];
     rows: MaterialsPresenceRow[];
     asOf: string | null;
     workAreaId: string | null;

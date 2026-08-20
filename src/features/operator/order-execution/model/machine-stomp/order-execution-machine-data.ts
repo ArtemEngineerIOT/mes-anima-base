@@ -9,14 +9,14 @@ export type OrderExecutionMachineDataSnapshot = {
 };
 
 export type OrderExecutionMachineStompState = {
-    /** Переменная STOMP `parameters` — синхронизация и общие параметры машины. */
+    /** STOMP-переменная машины (`…/variables/{machineCode}`) — синхронизация и параметры. */
     snapshot: OrderExecutionMachineDataSnapshot;
-    /** Переменная STOMP `tags` — текущие значения для таблиц технологических параметров. */
+    /** STOMP-переменная tags машины (`…/variables/{machineCode}Tags`) — техпараметры. */
     tagsSnapshot: OrderExecutionMachineDataSnapshot;
     isStompConnected: boolean;
-    /** Получено сообщение по `parameters`. */
+    /** Получено сообщение по переменной выбранной машины. */
     hasReceivedStompData: boolean;
-    /** Получено сообщение по `tags`. */
+    /** Получено сообщение по `{machineCode}Tags`. */
     hasReceivedTagsData: boolean;
 };
 

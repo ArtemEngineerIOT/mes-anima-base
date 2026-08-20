@@ -119,6 +119,8 @@ export type JobBagDocumentRow = {
     label: string;
     status: JobBagDocumentStatus;
     statusLabel: string;
+    /** Доступна ли печать (поле `action` из getJbTable) */
+    printEnabled?: boolean;
 };
 
 /** Группа документов JB: «ПО ЛИСТАМ» / «ВЕСЬ ДОКУМЕНТ» */

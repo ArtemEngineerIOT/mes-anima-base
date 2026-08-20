@@ -13,19 +13,27 @@ const OrderExecutionMachineStompContext = createContext<OrderExecutionMachineSto
 
 type OrderExecutionMachineStompProviderProps = {
     enabled: boolean;
+    /** Код машины из комбобокса фильтров — destination `…/variables/{code.toLowerCase()}`. */
+    machineId?: string;
     workAreaId?: string;
-    /** Подписка на `tags` (таблицы технологических параметров на «Показать все»). */
+    /** Подписка на `{machineId}Tags` (таблицы технологических параметров на «Показать все»). */
     subscribeToTags?: boolean;
     children: React.ReactNode;
 };
 
 export function OrderExecutionMachineStompProvider({
     enabled,
+    machineId,
     workAreaId,
     subscribeToTags = false,
     children,
 }: OrderExecutionMachineStompProviderProps) {
-    const stompState = useOrderExecutionMachineStomp({ enabled, workAreaId, subscribeToTags });
+    const stompState = useOrderExecutionMachineStomp({
+        enabled,
+        machineId,
+        workAreaId,
+        subscribeToTags,
+    });
 
     return (
         <OrderExecutionMachineStompContext.Provider value={stompState}>

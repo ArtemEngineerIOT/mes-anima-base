@@ -14,8 +14,6 @@ export const webSocket = createWebsocketConnection({
 export const isWebSocketActive = () => webSocket.$opened.getState() || webSocket.$connecting.getState();
 
 export type { IncomingMessage, SubscribeMessage, UnsubscribeMessage } from "./types";
-export { TEST_EVENT_STOMP_DESTINATION } from "./test-event-destination";
-export { useTestEventStompSubscription } from "./use-test-event-subscription";
 
 export {
     MATERIALS_FRONT_MACHINE_PRODUCTION_RELEASE_REGISTERED_STOMP_DESTINATION,

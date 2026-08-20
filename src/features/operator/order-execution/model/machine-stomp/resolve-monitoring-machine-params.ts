@@ -3,7 +3,10 @@ import type { InformerTone } from "@/shared/ui/kit/styles/informer-tone-tokens";
 
 import type { MonitoringStat } from "../types";
 import { DEVICE_SYNC_CHARACTERISTIC, resolveDeviceSyncStatus } from "./device-sync-status";
-import { MONITORING_MACHINE_STOMP_FIELDS } from "./monitoring-machine-stomp-fields";
+import {
+    getMonitoringMachineStompFields,
+    type MonitoringMachineStompField,
+} from "./monitoring-machine-stomp-fields";
 import type { OrderExecutionMachineStompState } from "./order-execution-machine-data";
 
 export type ResolvedMonitoringMachineParam = MonitoringStat & {
@@ -63,7 +66,7 @@ function resolveDisconnectedSyncStatusParam(): ResolvedMonitoringMachineParam {
 }
 
 function resolveConnectedFieldParam(
-    field: (typeof MONITORING_MACHINE_STOMP_FIELDS)[number],
+    field: MonitoringMachineStompField,
     rawValue: unknown,
 ): ResolvedMonitoringMachineParam {
     if (field.kind === "sync_status") {
@@ -92,9 +95,12 @@ function resolveConnectedFieldParam(
 
 export function resolveMonitoringMachineParams(
     stompState: OrderExecutionMachineStompState,
+    machineId?: string,
 ): ResolvedMonitoringMachineParam[] {
+    const fieldsConfig = getMonitoringMachineStompFields(machineId);
+
     if (!stompState.isStompConnected) {
-        return MONITORING_MACHINE_STOMP_FIELDS.map((field) => {
+        return fieldsConfig.map((field) => {
             if (field.kind === "sync_status") {
                 return resolveDisconnectedSyncStatusParam();
             }
@@ -108,7 +114,5 @@ export function resolveMonitoringMachineParams(
 
     const { fields } = stompState.snapshot;
 
-    return MONITORING_MACHINE_STOMP_FIELDS.map((field) =>
-        resolveConnectedFieldParam(field, fields[field.key]),
-    );
+    return fieldsConfig.map((field) => resolveConnectedFieldParam(field, fields[field.key]));
 }

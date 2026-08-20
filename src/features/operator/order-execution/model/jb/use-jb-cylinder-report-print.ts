@@ -29,22 +29,14 @@ type UseJbCylinderReportPrintOptions = {
     order?: string;
 };
 
-/** Открывает вкладку синхронно (до await), чтобы браузер не блокировал popup. */
-function openPreviewTab(): Window | null {
-    return window.open("about:blank", "_blank");
-}
-
-function navigatePreviewTab(tab: Window | null, url: string) {
-    if (tab && !tab.closed) {
-        tab.location.href = url;
-        return;
-    }
+function openPreviewTab(url: string) {
     window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function closePreviewTab(tab: Window | null) {
-    if (tab && !tab.closed) {
-        tab.close();
+function assertPreviewFilePath(previewFilePath: string, fallbackMessage: string): void {
+    const trimmed = previewFilePath?.trim() ?? "";
+    if (!trimmed) {
+        throw new Error(fallbackMessage);
     }
 }
 
@@ -141,17 +133,15 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet2ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet2Payload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -164,8 +154,6 @@ export function useJbCylinderReportPrint({
                     if (!trimmedWorkAreaStart) {
                         throw new Error("Не удалось определить workAreaStart этапа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet1ReportRef.current({
                             body: [
@@ -177,9 +165,9 @@ export function useJbCylinderReportPrint({
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet1Payload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -192,8 +180,6 @@ export function useJbCylinderReportPrint({
                     if (!trimmedWorkAreaStart) {
                         throw new Error("Не удалось определить workAreaStart этапа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet3ReportRef.current({
                             body: [
@@ -205,9 +191,9 @@ export function useJbCylinderReportPrint({
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet3Payload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -217,17 +203,15 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchMapColorControlReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbMapColorControlPayload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -237,17 +221,15 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet4ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet4Payload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -257,17 +239,15 @@ export function useJbCylinderReportPrint({
                     if (!trimmedOrder || trimmedOrder === "—") {
                         throw new Error("Не удалось определить номер заказа");
                     }
-
-                    const previewTab = openPreviewTab();
                     try {
                         const payload = await fetchPrintSheet6ReportRef.current({
                             body: [{ order: trimmedOrder }],
                         });
                         const pathFolder = await resolvePathFolder();
                         const previewFilePath = mapJbPrintSheet6Payload(payload, pathFolder);
-                        navigatePreviewTab(previewTab, previewFilePath);
+                        assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
+                        openPreviewTab(previewFilePath);
                     } catch (error) {
-                        closePreviewTab(previewTab);
                         throw error;
                     }
                     return;
@@ -282,6 +262,7 @@ export function useJbCylinderReportPrint({
                         body: [{ workAreaId: trimmedWorkAreaId }],
                     });
                     const previewFilePath = mapJbProcessControlPayload(payload);
+                    assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
                     window.open(previewFilePath, "_blank", "noopener,noreferrer");
                     return;
                 }
@@ -295,6 +276,7 @@ export function useJbCylinderReportPrint({
                         body: [{ workAreaId: trimmedWorkAreaId }],
                     });
                     const previewFilePath = mapJbFullPrintPayload(payload);
+                    assertPreviewFilePath(previewFilePath, "Не удалось сформировать файл отчёта");
                     window.open(previewFilePath, "_blank", "noopener,noreferrer");
                     return;
                 }

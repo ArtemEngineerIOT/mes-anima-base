@@ -25,7 +25,14 @@ function OrderExecutionPage() {
     const isMachineContextPending =
         isMachineOptionsLoading || isMachineDataLoading || (Boolean(selectedMachine) && !machineMatchesSelection);
     const showAssignedStage = machineMatchesSelection && !isMachineDataLoading && current.hasAssignedStage;
-    const workAreaId = showAssignedStage ? current.workAreaId : undefined;
+    /**
+     * Не размонтируем мониторинг/панель при смене машины: иначе cleanup снимает все STOMP
+     * (сигналы, списание, выпуск…). Параметры машины переподписываются отдельно по machineId.
+     */
+    const keepStageWorkspaceDuringMachineSwitch =
+        isMachineDataLoading && current.hasAssignedStage && Boolean(selectedMachine);
+    const showStageWorkspace = showAssignedStage || keepStageWorkspaceDuringMachineSwitch;
+    const workAreaId = showStageWorkspace ? current.workAreaId : undefined;
     const jobInfo = showAssignedStage ? current.operator.jobInfo : null;
     const lineMetersSilentReloadRef = useRef<(() => void) | null>(null);
     const rollTablesSilentReloadRef = useRef<(() => void) | null>(null);
@@ -60,47 +67,57 @@ function OrderExecutionPage() {
                 />
             )}
 
-            {showAssignedStage ? (
+            {selectedMachine ? (
                 <OrderExecutionMachineStompProvider
-                    key={`${current.machineId}:${current.workAreaId ?? ""}`}
                     enabled
-                    workAreaId={current.workAreaId}
+                    machineId={selectedMachine}
+                    workAreaId={workAreaId}
                 >
-                    <div className="mt-3 grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,2.5fr)_minmax(0,3.5fr)] lg:grid-rows-[minmax(0,1fr)]">
-                        <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden contain-layout">
-                            <OrderExecutionMonitoring
-                                machineId={current.machineId}
-                                workAreaId={current.workAreaId}
-                                lineMetersSilentReloadRef={lineMetersSilentReloadRef}
-                                rollTablesSilentReloadRef={rollTablesSilentReloadRef}
-                                stageEventsSilentReloadRef={stageEventsSilentReloadRef}
-                            />
+                    {showStageWorkspace ? (
+                        <div className="mt-3 grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,2.5fr)_minmax(0,3.5fr)] lg:grid-rows-[minmax(0,1fr)]">
+                            <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden contain-layout">
+                                <OrderExecutionMonitoring
+                                    machineId={current.machineId}
+                                    workAreaId={current.workAreaId}
+                                    lineMetersSilentReloadRef={lineMetersSilentReloadRef}
+                                    rollTablesSilentReloadRef={rollTablesSilentReloadRef}
+                                    stageEventsSilentReloadRef={stageEventsSilentReloadRef}
+                                />
+                            </div>
+                            <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden contain-layout">
+                                <OrderExecutionOperatorPanel
+                                    operator={current.operator}
+                                    machineId={current.machineId}
+                                    workAreaId={current.workAreaId}
+                                    workAreaStart={current.workAreaStart}
+                                    order={current.order.orderId}
+                                    releaseBlockSummary={current.releaseBlockSummary}
+                                    writeOffBlockSummary={current.writeOffBlockSummary}
+                                    machineSignalsBlockSummary={current.machineSignalsBlockSummary}
+                                    stageCompletionBlockSummary={current.stageCompletionBlockSummary}
+                                    onMonitoringSummaryReload={() => {
+                                        lineMetersSilentReloadRef.current?.();
+                                        rollTablesSilentReloadRef.current?.();
+                                        stageEventsSilentReloadRef.current?.();
+                                    }}
+                                    onReleaseRegistered={() => {
+                                        lineMetersSilentReloadRef.current?.();
+                                        rollTablesSilentReloadRef.current?.();
+                                        stageEventsSilentReloadRef.current?.();
+                                        void reloadProgressRef.current({ silent: true });
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden contain-layout">
-                            <OrderExecutionOperatorPanel
-                                operator={current.operator}
-                                machineId={current.machineId}
-                                workAreaId={current.workAreaId}
-                                workAreaStart={current.workAreaStart}
-                                order={current.order.orderId}
-                                releaseBlockSummary={current.releaseBlockSummary}
-                                writeOffBlockSummary={current.writeOffBlockSummary}
-                                machineSignalsBlockSummary={current.machineSignalsBlockSummary}
-                                stageCompletionBlockSummary={current.stageCompletionBlockSummary}
-                                onMonitoringSummaryReload={() => {
-                                    lineMetersSilentReloadRef.current?.();
-                                    rollTablesSilentReloadRef.current?.();
-                                    stageEventsSilentReloadRef.current?.();
-                                }}
-                                onReleaseRegistered={() => {
-                                    lineMetersSilentReloadRef.current?.();
-                                    rollTablesSilentReloadRef.current?.();
-                                    stageEventsSilentReloadRef.current?.();
-                                    void reloadProgressRef.current({ silent: true });
-                                }}
-                            />
+                    ) : (
+                        <div className="mt-3">
+                            {isMachineContextPending ? (
+                                <p className="text-sm text-muted-foreground">Загрузка данных по машине…</p>
+                            ) : (
+                                <OrderExecutionEmpty />
+                            )}
                         </div>
-                    </div>
+                    )}
                 </OrderExecutionMachineStompProvider>
             ) : (
                 <div className="mt-3">

@@ -32,7 +32,7 @@ type OrderExecutionOperatorPanelProps = {
 };
 
 export function OrderExecutionOperatorPanel({
-    operator,
+    operator: _operator,
     machineId,
     workAreaId,
     workAreaStart,
@@ -57,7 +57,7 @@ export function OrderExecutionOperatorPanel({
         >
             <div className="app-scroll flex h-full min-h-0 flex-col gap-3 overflow-auto overscroll-contain [overflow-anchor:none]">
                 <OrderExecutionJbSection
-                    jb={operator.jb}
+                    machineId={machineId}
                     workAreaId={workAreaId}
                     workAreaStart={workAreaStart}
                     order={order}

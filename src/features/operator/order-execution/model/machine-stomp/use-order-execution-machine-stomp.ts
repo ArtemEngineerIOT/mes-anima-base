@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { webSocket, type IncomingMessage } from "@/shared/api/websocket";
 
 import {
-    ORDER_EXECUTION_MACHINE_STOMP_DESTINATION,
-    ORDER_EXECUTION_MACHINE_STOMP_TAGS_DESTINATION,
+    buildOrderExecutionMachineParametersStompDestination,
+    buildOrderExecutionMachineTagsStompDestination,
     mapOrderExecutionMachineStompPayload,
 } from "./map-order-execution-machine-stomp";
 import {
@@ -15,23 +15,29 @@ import { useWebSocketStompConnected } from "./use-web-socket-stomp-connected";
 
 type UseOrderExecutionMachineStompOptions = {
     enabled: boolean;
+    /** Код машины из комбобокса (`PR120`, `LM210`) — destinations `…/variables/{code}` и `…/{code}Tags`. */
+    machineId?: string;
     workAreaId?: string;
-    /** Подписка на `tags` — для таблиц технологических параметров («Показать все»). */
+    /** Подписка на `{machineId}Tags` — для таблиц технологических параметров («Показать все»). */
     subscribeToTags?: boolean;
 };
 
 type StompVariableKind = "parameters" | "tags";
 
-function resolveStompVariableKind(destination: string | undefined): StompVariableKind | null {
+function resolveStompVariableKind(
+    destination: string | undefined,
+    parametersDestination: string | null,
+    tagsDestination: string | null,
+): StompVariableKind | null {
     if (!destination) {
         return null;
     }
 
-    if (destination === ORDER_EXECUTION_MACHINE_STOMP_DESTINATION) {
+    if (parametersDestination && destination === parametersDestination) {
         return "parameters";
     }
 
-    if (destination === ORDER_EXECUTION_MACHINE_STOMP_TAGS_DESTINATION) {
+    if (tagsDestination && destination === tagsDestination) {
         return "tags";
     }
 
@@ -40,6 +46,7 @@ function resolveStompVariableKind(destination: string | undefined): StompVariabl
 
 export function useOrderExecutionMachineStomp({
     enabled,
+    machineId,
     workAreaId,
     subscribeToTags = false,
 }: UseOrderExecutionMachineStompOptions) {
@@ -69,25 +76,23 @@ export function useOrderExecutionMachineStomp({
         setTagsSnapshot(ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER);
         setHasReceivedStompData(false);
         setHasReceivedTagsData(false);
-    }, [workAreaId]);
+    }, [machineId, workAreaId]);
 
     useEffect(() => {
-        if (!enabled) {
-            setSnapshot(ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER);
-            setTagsSnapshot(ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER);
-            setHasReceivedStompData(false);
-            setHasReceivedTagsData(false);
+        const parametersDestination = buildOrderExecutionMachineParametersStompDestination(
+            machineId ?? "",
+        );
+        const tagsDestination = subscribeToTags
+            ? buildOrderExecutionMachineTagsStompDestination(machineId ?? "")
+            : null;
+
+        if (!enabled || !parametersDestination) {
             return;
         }
 
-        setSnapshot(ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER);
-        setTagsSnapshot(ORDER_EXECUTION_MACHINE_DATA_PLACEHOLDER);
-        setHasReceivedStompData(false);
-        setHasReceivedTagsData(false);
-
         const destinations = [
-            ORDER_EXECUTION_MACHINE_STOMP_DESTINATION,
-            ...(subscribeToTags ? [ORDER_EXECUTION_MACHINE_STOMP_TAGS_DESTINATION] : []),
+            parametersDestination,
+            ...(tagsDestination ? [tagsDestination] : []),
         ] as const;
 
         let disposed = false;
@@ -98,7 +103,11 @@ export function useOrderExecutionMachineStomp({
                 return;
             }
 
-            const kind = resolveStompVariableKind(message.headers.destination);
+            const kind = resolveStompVariableKind(
+                message.headers.destination,
+                parametersDestination,
+                tagsDestination,
+            );
             if (!kind) {
                 return;
             }
@@ -132,7 +141,9 @@ export function useOrderExecutionMachineStomp({
                 void webSocket.unsubscribe({ subscription: subscriptionId });
             }
         };
-    }, [enabled, workAreaId, subscribeToTags]);
+        // Подписка только по выбранной машине; workAreaId меняется после загрузки этапа
+        // и не должен вызывать повторный SUBSCRIBE на тот же destination.
+    }, [enabled, machineId, subscribeToTags]);
 
     const state: OrderExecutionMachineStompState = {
         snapshot,

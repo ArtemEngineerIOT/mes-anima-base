@@ -8,7 +8,7 @@ import {
     mapStageRollPresencePayload,
     MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT,
 } from "./map-stage-roll-presence-payload";
-import type { MaterialsPresenceRow } from "./types";
+import type { MaterialsPresenceRow, MaterialsPresenceSlot } from "./types";
 
 type UseMaterialsWriteoffRollPresenceOptions = {
     workAreaId?: string;
@@ -22,6 +22,7 @@ export function useMaterialsWriteoffRollPresence({
     refreshKey = 0,
 }: UseMaterialsWriteoffRollPresenceOptions) {
     const [rows, setRows] = useState<MaterialsPresenceRow[]>(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
+    const [slots, setSlots] = useState<MaterialsPresenceSlot[]>(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.slots);
     const [asOf, setAsOf] = useState<string | null>(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
     const [isLoading, setIsLoading] = useState(enabled);
     useSyncLoadingOnEnable(enabled, setIsLoading);
@@ -40,6 +41,7 @@ export function useMaterialsWriteoffRollPresence({
         const trimmedWorkAreaId = workAreaId?.trim();
         if (!trimmedWorkAreaId) {
             setRows(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
+            setSlots(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.slots);
             setAsOf(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
             setError("Не удалось определить workAreaId этапа");
             setIsLoading(false);
@@ -55,9 +57,11 @@ export function useMaterialsWriteoffRollPresence({
             });
             const snapshot = mapStageRollPresencePayload(payload);
             setRows(snapshot.rows);
+            setSlots(snapshot.slots);
             setAsOf(snapshot.asOf);
         } catch (loadError) {
             setRows(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
+            setSlots(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.slots);
             setAsOf(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
             setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить рулоны в машине");
         } finally {
@@ -68,6 +72,7 @@ export function useMaterialsWriteoffRollPresence({
     useEffect(() => {
         if (!enabled) {
             setRows(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.rows);
+            setSlots(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.slots);
             setAsOf(MATERIALS_ROLL_PRESENCE_EMPTY_SNAPSHOT.asOf);
             setError(null);
             setIsLoading(false);
@@ -83,6 +88,7 @@ export function useMaterialsWriteoffRollPresence({
 
     return {
         rows,
+        slots,
         asOf,
         isLoading,
         error,

@@ -34,7 +34,7 @@ import { useMaterialsWriteoffReturnWarehouses } from "./use-materials-writeoff-r
 import { useMaterialsWriteoffRollPresence } from "./use-materials-writeoff-roll-presence";
 import { useMaterialsWriteoffStageRegistry } from "./use-materials-writeoff-stage-registry";
 import { useMaterialsWriteoffWeight } from "./use-materials-writeoff-weight";
-import type { MaterialsPresenceRow, MaterialsReturnWarehouseOption } from "./types";
+import type { MaterialsPresenceRow, MaterialsPresenceSlot, MaterialsReturnWarehouseOption } from "./types";
 
 type ScanBannerState = {
     stageSpecBannerVisible: boolean;
@@ -120,6 +120,7 @@ export function useMaterialsWriteoff({
         DEFAULT_MATERIALS_INSTALLATION_PLACE,
     );
     const [presenceRows, setPresenceRows] = useState<MaterialsPresenceRow[]>([]);
+    const [presenceSlots, setPresenceSlots] = useState<MaterialsPresenceSlot[]>([]);
     const [expandedPresenceRowId, setExpandedPresenceRowId] = useState<string | null>(null);
     const [selectedWriteoffRoll, setSelectedWriteoffRoll] = useState<MaterialsPresenceRow | null>(null);
     const [scanBanner, setScanBanner] = useState<ScanBannerState | null>(null);
@@ -230,7 +231,7 @@ export function useMaterialsWriteoff({
 
             if (
                 installationPlace === "ON_UNWIND" &&
-                resolveInstallationPlaceOptions(presenceRows).find((option) => option.value === "ON_UNWIND")?.disabled
+                resolveInstallationPlaceOptions(presenceSlots).find((option) => option.value === "ON_UNWIND")?.disabled
             ) {
                 setSearchError("На размотке уже есть рулон. Выберите «Ожидание».");
                 return;
@@ -273,7 +274,7 @@ export function useMaterialsWriteoff({
                 setIsSearching(false);
             }
         },
-        [installationPlace, presenceRows, session, workAreaId],
+        [installationPlace, presenceSlots, session, workAreaId],
     );
 
     const toggleExpandedOpId = useCallback((opId: string) => {
@@ -367,19 +368,20 @@ export function useMaterialsWriteoff({
         }
 
         setPresenceRows(rollPresence.rows);
-    }, [enabled, rollPresence.rows]);
+        setPresenceSlots(rollPresence.slots);
+    }, [enabled, rollPresence.rows, rollPresence.slots]);
 
     useEffect(() => {
         if (!enabled || rollPresence.isLoading) {
             return;
         }
 
-        setInstallationPlace(resolveDefaultInstallationPlace(rollPresence.rows));
-    }, [enabled, rollPresence.isLoading, rollPresence.rows]);
+        setInstallationPlace(resolveDefaultInstallationPlace(rollPresence.slots));
+    }, [enabled, rollPresence.isLoading, rollPresence.slots]);
 
     const installationPlaceOptions = useMemo(
-        () => resolveInstallationPlaceOptions(presenceRows),
-        [presenceRows],
+        () => resolveInstallationPlaceOptions(presenceSlots),
+        [presenceSlots],
     );
 
     const refreshWriteoffTables = useCallback(async () => {
@@ -830,6 +832,7 @@ export function useMaterialsWriteoff({
         setInstallationPlace,
         installationPlaceOptions,
         presenceRows,
+        presenceSlots,
         isPresenceLoading: rollPresence.isLoading,
         presenceAsOf: rollPresence.asOf,
         presenceError: rollPresence.error,

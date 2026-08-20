@@ -223,8 +223,31 @@ export function mapOrderExecutionMachineStompPayload(body: unknown): OrderExecut
     };
 }
 
-export const ORDER_EXECUTION_MACHINE_STOMP_DESTINATION =
-    "/v1/contexts/users.admin.models.stomp/variables/parameters";
+const ORDER_EXECUTION_MACHINE_STOMP_VARIABLES_PREFIX =
+    "/v1/contexts/users.admin.models.stomp/variables";
 
-export const ORDER_EXECUTION_MACHINE_STOMP_TAGS_DESTINATION =
-    "/v1/contexts/users.admin.models.stomp/variables/tags";
+/**
+ * STOMP destination параметров машины по `resourceCode` / `machineId`
+ * (PR120 → `…/variables/pr120`, LM210 → `…/variables/lm210`).
+ */
+export function buildOrderExecutionMachineParametersStompDestination(machineId: string): string | null {
+    const code = machineId.trim().toLowerCase();
+    if (!code) {
+        return null;
+    }
+
+    return `${ORDER_EXECUTION_MACHINE_STOMP_VARIABLES_PREFIX}/${code}`;
+}
+
+/**
+ * STOMP destination tags машины по `resourceCode` / `machineId`
+ * (PR120 → `…/variables/pr120Tags`, LM210 → `…/variables/lm210Tags`).
+ */
+export function buildOrderExecutionMachineTagsStompDestination(machineId: string): string | null {
+    const code = machineId.trim().toLowerCase();
+    if (!code) {
+        return null;
+    }
+
+    return `${ORDER_EXECUTION_MACHINE_STOMP_VARIABLES_PREFIX}/${code}Tags`;
+}
